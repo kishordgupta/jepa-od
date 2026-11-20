@@ -10,17 +10,17 @@ The detectors are ported to PyOD as two commits on the branch `feature/jepa-od`,
 | `Add JEPA detector for tabular data (experimental)` | `pyod.models.jepa.JEPA`, shared helpers, tests, example, docs |
 | `Add TSJEPA detector for time series (experimental)` | `pyod.models.ts_jepa.TSJEPA`, tests, example, docs |
 
-**The branch is not on GitHub yet.** The push to `kishordgupta/pyod` was refused: the fork is 924
-commits behind upstream, so the push carries upstream's changes to `.github/workflows/`, and the
-`gh` login used here has no `workflow` scope. Either of these unblocks it:
+**The branch is on GitHub:** https://github.com/kishordgupta/pyod/tree/feature/jepa-od. It is two
+commits ahead of `yzhao062/pyod:development` and zero behind, and touches no workflow file. No issue
+or pull request has been opened on PyOD.
 
-* grant the scope, then push:
-  `gh auth refresh -h github.com -s workflow` and `git push -u origin feature/jepa-od`
-* or press "Sync fork" for the `development` branch on github.com/kishordgupta/pyod, then push
-  (the two commits themselves touch no workflow file).
+Getting it there needed one extra step. The fork was 924 commits behind upstream, and a push that
+carries upstream's changes to `.github/workflows/` is refused for a `gh` login without the
+`workflow` scope. The fork's `development` branch was therefore synced first with "Sync fork" on
+GitHub, after which the push went through. The same applies whenever the fork falls behind again.
 
-Until then the same two commits are kept as patches in `integration/pyod-patches/`. They apply to
-an up-to-date PyOD checkout with:
+The same two commits are also kept as patches in `integration/pyod-patches/`. They apply to an
+up-to-date PyOD checkout with:
 
 ```bash
 git switch -c feature/jepa-od upstream/development
@@ -28,6 +28,11 @@ git am --keep-cr /path/to/jepa-od/integration/pyod-patches/*.patch
 ```
 
 `--keep-cr` is needed because `README.rst` and `docs/index.rst` use CRLF line endings in PyOD.
+
+PyOD's test workflow runs on pushes to `master` and `development` and on pull requests against
+them, so the push of `feature/jepa-od` did not start CI. A pull request inside the fork, from
+`feature/jepa-od` into the fork's own `development`, would run the full matrix (Python 3.9 to 3.13)
+without involving upstream.
 
 ## File map
 

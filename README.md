@@ -95,8 +95,9 @@ Result tables for the committed runs are in `results/report_tables.md`.
 ## Status
 
 Research prototype. The same detectors are ported to PyOD as `pyod.models.jepa.JEPA` and
-`pyod.models.ts_jepa.TSJEPA`: two commits on top of PyOD 3.6.8, kept as patches in
-`integration/pyod-patches/`. `integration/PYOD_PR_CHECKLIST.md` has the file map, the checks that
+`pyod.models.ts_jepa.TSJEPA`: two commits on top of PyOD 3.6.8, on the branch
+[`feature/jepa-od`](https://github.com/kishordgupta/pyod/tree/feature/jepa-od) of the PyOD fork and
+as patches in `integration/pyod-patches/`. `integration/PYOD_PR_CHECKLIST.md` has the file map, the checks that
 ran and the steps to a pull request.
 
 ## License

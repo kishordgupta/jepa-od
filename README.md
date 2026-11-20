@@ -69,7 +69,7 @@ jepa_od/          package (detectors + shared network / regulariser)
 tests/            PyOD-style unittest suites
 benchmarks/       bench_tabular.py (ADBench), bench_ts.py (synthetic, NAB, SKAB)
 results/          CSV results + logs produced by the benchmarks
-integration/      files for a PyOD pull request (registry, knowledge base)
+integration/      PyOD port: patches, hand-off notes, drafted knowledge-base entries
 examples/         runnable example
 data/             benchmark datasets, not in the repository (see below)
 ```
@@ -94,9 +94,10 @@ Result tables for the committed runs are in `results/report_tables.md`.
 
 ## Status
 
-Research prototype. The same detectors are being ported to a PyOD fork as
-`pyod.models.jepa.JEPA` and `pyod.models.ts_jepa.TSJEPA`
-(`integration/PYOD_PR_CHECKLIST.md` has the file map).
+Research prototype. The same detectors are ported to PyOD as `pyod.models.jepa.JEPA` and
+`pyod.models.ts_jepa.TSJEPA`: two commits on top of PyOD 3.6.8, kept as patches in
+`integration/pyod-patches/`. `integration/PYOD_PR_CHECKLIST.md` has the file map, the checks that
+ran and the steps to a pull request.
 
 ## License
 

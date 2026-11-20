@@ -1,0 +1,1468 @@
+From 217ca87f276108a5c9a63ccadd13c178527f234f Mon Sep 17 00:00:00 2001
+From: Kishor Datta Gupta <2458509+kishordgupta@users.noreply.github.com>
+Date: Fri, 20 Nov 2026 14:02:30 -0500
+Subject: [PATCH 1/2] Add JEPA detector for tabular data (experimental)
+
+JEPA scores a row by how badly the latent representation of its hidden
+features can be predicted from the visible ones (Joint-Embedding
+Predictive Architecture). Each feature, or group of consecutive
+features, is a token; a Transformer encoder embeds the visible tokens
+and a light predictor forecasts the embeddings of the hidden ones.
+Representation collapse is prevented with SIGReg (LeJEPA), with an EMA
+target encoder as an alternative.
+
+- pyod/models/jepa.py: JEPA, on BaseDeepLearningDetector. Scores:
+  latent prediction error ('pred'), per-token Mahalanobis distance of
+  the embeddings ('embed'), or both ('combined', default).
+- pyod/models/_jepa_utils.py: shared network, masking and SIGReg code.
+- pyod/test/test_jepa.py: 27 tests; listed in conftest.py with the
+  other torch-dependent modules.
+- examples/jepa_example.py.
+- Docs: API reference entry, model table rows in README.rst and
+  docs/index.rst, three bibliography entries.
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+---
+ README.rst                   |   9 +
+ docs/index.rst               |   1 +
+ docs/pyod.models.tabular.rst |  10 +
+ docs/zreferences.bib         |  22 ++
+ examples/jepa_example.py     |  52 ++++
+ pyod/models/_jepa_utils.py   | 478 ++++++++++++++++++++++++++++++++
+ pyod/models/jepa.py          | 521 +++++++++++++++++++++++++++++++++++
+ pyod/test/conftest.py        |   1 +
+ pyod/test/test_jepa.py       | 248 +++++++++++++++++
+ 9 files changed, 1342 insertions(+)
+ create mode 100644 examples/jepa_example.py
+ create mode 100644 pyod/models/_jepa_utils.py
+ create mode 100644 pyod/models/jepa.py
+ create mode 100644 pyod/test/test_jepa.py
+
+diff --git a/README.rst b/README.rst
+index 68bc7ce..048f7a0 100644
+--- a/README.rst
++++ b/README.rst
+@@ -505,6 +505,11 @@ PyOD is organized into two functional groups: **(i) Detection Algorithms**, with
+      - Deep Anomaly Detection with Deviation Networks (`example <https://github.com/yzhao062/pyod/blob/development/examples/devnet_example.py>`__)
+      - 2019
+      - [#Pang2019Deep]_
++   * - Neural Networks
++     - JEPA
++     - Joint-Embedding Predictive Architecture (latent prediction error as outlier score), experimental (`example <https://github.com/yzhao062/pyod/blob/development/examples/jepa_example.py>`__)
++     - 2023
++     - [#Assran2023Self]_ [#Balestriero2025LeJEPA]_
+    * - Graph-based
+      - R-Graph
+      - Outlier detection by R-graph (`example <https://github.com/yzhao062/pyod/blob/development/examples/rgraph_example.py>`__)
+@@ -824,6 +829,10 @@ Reference
+ 
+ .. [#Arning1996A] Arning, A., Agrawal, R. and Raghavan, P., 1996, August. A Linear Method for Deviation Detection in Large Databases. In *KDD* (Vol. 1141, No. 50, pp. 972-981).
+ 
++.. [#Assran2023Self] Assran, M., Duval, Q., Misra, I., Bojanowski, P., Vincent, P., Rabbat, M., LeCun, Y. and Ballas, N., 2023. Self-Supervised Learning from Images with a Joint-Embedding Predictive Architecture. In *IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*.
++
++.. [#Balestriero2025LeJEPA] Balestriero, R. and LeCun, Y., 2025. LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics. *arXiv preprint arXiv:2511.08544*.
++
+ .. [#Bandaragoda2018Isolation] Bandaragoda, T. R., Ting, K. M., Albrecht, D., Liu, F. T., Zhu, Y., and Wells, J. R., 2018, Isolation-based anomaly detection using nearest-neighbor ensembles. *Computational Intelligence*\ , 34(4), pp. 968-998.
+ 
+ .. [#Breunig2000LOF] Breunig, M.M., Kriegel, H.P., Ng, R.T. and Sander, J., 2000, May. LOF: identifying density-based local outliers. *ACM Sigmod Record*\ , 29(2), pp. 93-104.
+diff --git a/docs/index.rst b/docs/index.rst
+index 62fe35f..dc4a072 100644
+--- a/docs/index.rst
++++ b/docs/index.rst
+@@ -261,6 +261,7 @@ Neural Networks      AnoGAN            Anomaly Detection with Generative Adversa
+ Neural Networks      ALAD              Adversarially learned anomaly detection                                                                 2018   :class:`pyod.models.alad.ALAD`                       :cite:`a-zenati2018adversarially`
+ Neural Networks      DevNet            Deep Anomaly Detection with Deviation Networks                                                          2019   :class:`pyod.models.devnet.DevNet`                   :cite:`a-pang2019deep`
+ Neural Networks      AE1SVM            Autoencoder-based One-class Support Vector Machine                                                      2019   :class:`pyod.models.ae1svm.AE1SVM`                   :cite:`a-nguyen2019scalable`
++Neural Networks      JEPA              Joint-Embedding Predictive Architecture (latent prediction error as the outlier score, experimental)    2023   :class:`pyod.models.jepa.JEPA`                       :cite:`a-assran2023self,a-balestriero2025lejepa`
+ Graph-based          R-Graph           Outlier detection by R-graph                                                                            2017   :class:`pyod.models.rgraph.RGraph`                   :cite:`a-you2017provable`
+ Graph-based          LUNAR             LUNAR: Unifying Local Outlier Detection Methods via Graph Neural Networks                               2022   :class:`pyod.models.lunar.LUNAR`                     :cite:`a-goodge2022lunar`
+ Embedding-based      EmbeddingOD       Multi-modal anomaly detection via foundation model embeddings (text, image, audio)                      2025   :class:`pyod.models.embedding.EmbeddingOD`           :cite:`a-li2024nlp`
+diff --git a/docs/pyod.models.tabular.rst b/docs/pyod.models.tabular.rst
+index a02e798..fc3c2e2 100644
+--- a/docs/pyod.models.tabular.rst
++++ b/docs/pyod.models.tabular.rst
+@@ -202,6 +202,16 @@ pyod.models.inne module
+     :show-inheritance:
+ 
+ 
++pyod.models.jepa module
++-----------------------
++
++.. automodule:: pyod.models.jepa
++    :members:
++    :exclude-members: get_params, set_params, decision_function_update, epoch_update, evaluating_prepare, evaluating_forward, training_prepare, training_forward, build_model, train, load
++    :undoc-members:
++    :show-inheritance:
++
++
+ pyod.models.kde module
+ ----------------------
+ 
+diff --git a/docs/zreferences.bib b/docs/zreferences.bib
+index fef40db..1833ff4 100644
+--- a/docs/zreferences.bib
++++ b/docs/zreferences.bib
+@@ -689,3 +689,25 @@
+   volume={35},
+   year={2022}
+ }
++
++@article{lecun2022path,
++  title={A Path Towards Autonomous Machine Intelligence},
++  author={LeCun, Yann},
++  journal={OpenReview},
++  note={Version 0.9.2},
++  year={2022}
++}
++
++@inproceedings{assran2023self,
++  title={Self-Supervised Learning from Images with a Joint-Embedding Predictive Architecture},
++  author={Assran, Mahmoud and Duval, Quentin and Misra, Ishan and Bojanowski, Piotr and Vincent, Pascal and Rabbat, Michael and LeCun, Yann and Ballas, Nicolas},
++  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
++  year={2023}
++}
++
++@article{balestriero2025lejepa,
++  title={LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics},
++  author={Balestriero, Randall and LeCun, Yann},
++  journal={arXiv preprint arXiv:2511.08544},
++  year={2025}
++}
+diff --git a/examples/jepa_example.py b/examples/jepa_example.py
+new file mode 100644
+index 0000000..8b14664
+--- /dev/null
++++ b/examples/jepa_example.py
+@@ -0,0 +1,52 @@
++# -*- coding: utf-8 -*-
++"""Example of using JEPA for outlier detection
++"""
++# Author: Kishor Datta Gupta
++# License: BSD 2 clause
++
++
++import os
++import sys
++
++# temporary solution for relative imports in case pyod is not installed
++# if pyod is installed, no need to use the following line
++sys.path.append(
++    os.path.abspath(os.path.join(os.path.dirname("__file__"), '..')))
++sys.path.append(os.path.abspath(os.path.dirname("__file__")))
++
++from pyod.models.jepa import JEPA
++from pyod.utils.data import generate_data
++from pyod.utils.data import evaluate_print
++
++if __name__ == "__main__":
++    contamination = 0.1  # percentage of outliers
++    n_train = 2000  # number of training points
++    n_test = 1000  # number of testing points
++    n_features = 20  # number of features
++
++    # Generate sample data
++    X_train, X_test, y_train, y_test = \
++        generate_data(n_train=n_train,
++                      n_test=n_test,
++                      n_features=n_features,
++                      contamination=contamination,
++                      random_state=42)
++
++    # train JEPA detector
++    clf_name = 'JEPA'
++    clf = JEPA(epoch_num=10, contamination=contamination)
++    clf.fit(X_train)
++
++    # get the prediction labels and outlier scores of the training data
++    y_train_pred = clf.labels_  # binary labels (0: inliers, 1: outliers)
++    y_train_scores = clf.decision_scores_  # raw outlier scores
++
++    # get the prediction on the test data
++    y_test_pred = clf.predict(X_test)  # outlier labels (0 or 1)
++    y_test_scores = clf.decision_function(X_test)  # outlier scores
++
++    # evaluate and print the results
++    print("\nOn Training Data:")
++    evaluate_print(clf_name, y_train, y_train_scores)
++    print("\nOn Test Data:")
++    evaluate_print(clf_name, y_test, y_test_scores)
+diff --git a/pyod/models/_jepa_utils.py b/pyod/models/_jepa_utils.py
+new file mode 100644
+index 0000000..aec4c19
+--- /dev/null
++++ b/pyod/models/_jepa_utils.py
+@@ -0,0 +1,478 @@
++# -*- coding: utf-8 -*-
++"""Shared PyTorch building blocks of the JEPA detectors.
++
++Used by :class:`pyod.models.jepa.JEPA` (tabular) and
++:class:`pyod.models.ts_jepa.TSJEPA` (time series). Both present their
++data to the network as a sequence of *tokens*:
++
++* tabular rows -> one token per feature (or per small group of
++  consecutive features);
++* time series  -> one token per patch of consecutive timestamps (all
++  channels of the patch are flattened into the token).
++
++:class:`JEPACore` implements a Joint-Embedding Predictive Architecture
++on top of these tokens::
++
++    context tokens --encoder--> h_ctx --predictor(+mask tokens)--> pred
++    all tokens     --target encoder--> h_all --gather--> h_tgt
++
++and the training signal is ``||pred - h_tgt||`` in *latent* space.
++Representation collapse is prevented either with SIGReg
++(:func:`sigreg_loss`) or with an EMA target encoder (:func:`ema_update`).
++
++This module imports torch at load time; detectors that must stay
++importable without torch should import it lazily.
++"""
++# Author: Kishor Datta Gupta
++# License: BSD 2 clause
++
++import copy
++import math
++
++import torch
++import torch.nn as nn
++import torch.nn.functional as F
++
++MASK_MODES = ('random', 'block', 'forecast', 'mixed')
++
++
++# ----------------------------------------------------------------------
++# Collapse prevention
++# ----------------------------------------------------------------------
++def sigreg_loss(z, num_slices=128, n_points=17, t_max=5.0, generator=None):
++    """Sketched Isotropic Gaussian Regularization (SIGReg).
++
++    Epps-Pulley characteristic-function statistic on random 1-D
++    projections of the embeddings, as used by LeJEPA. Minimising it
++    pushes the embedding distribution towards an isotropic Gaussian,
++    which rules out collapsed representations without a teacher network.
++
++    Parameters
++    ----------
++    z : torch.Tensor of shape (N, K) or (G, N, K)
++        Embeddings. With a leading group dimension ``G`` (for example
++        one group per token position) the statistic is computed per
++        group and averaged.
++
++    num_slices : int, optional (default=128)
++        Number of random unit directions, resampled on every call.
++
++    n_points : int, optional (default=17)
++        Trapezoidal quadrature knots on ``[-t_max, t_max]``.
++
++    t_max : float, optional (default=5.0)
++        Half-width of the integration domain.
++
++    generator : torch.Generator or None, optional (default=None)
++        CPU generator for the projection directions.
++
++    Returns
++    -------
++    loss : torch.Tensor (scalar)
++        ``N * integral |ecf(t) - exp(-t^2/2)|^2 exp(-t^2/2) dt`` averaged
++        over directions and groups.
++    """
++    if z.dim() == 2:
++        z = z.unsqueeze(0)
++    n_samples, n_dims = z.shape[1], z.shape[2]
++    # directions are sampled on CPU for device-independent reproducibility
++    directions = torch.randn(n_dims, num_slices, generator=generator)
++    directions = (directions
++                  / directions.norm(dim=0, keepdim=True).clamp_min(1e-12)
++                  ).to(device=z.device, dtype=z.dtype)
++    t = torch.linspace(-t_max, t_max, n_points, device=z.device,
++                       dtype=z.dtype)
++    window = torch.exp(-0.5 * t ** 2)  # CF of N(0, 1) and the weight
++    x_t = (z @ directions).unsqueeze(-1) * t  # (G, N, M, T)
++    ecf_re = torch.cos(x_t).mean(1)  # (G, M, T)
++    ecf_im = torch.sin(x_t).mean(1)
++    err = ((ecf_re - window) ** 2 + ecf_im ** 2) * window
++    stat = torch.trapezoid(err, t, dim=-1) * n_samples  # (G, M)
++    return stat.mean()
++
++
++@torch.no_grad()
++def ema_update(target, online, momentum):
++    """In-place update ``target <- m * target + (1 - m) * online``.
++
++    Parameters
++    ----------
++    target : torch.nn.Module
++        The EMA (teacher) network, updated in place.
++
++    online : torch.nn.Module
++        The trained (student) network.
++
++    momentum : float
++        EMA momentum ``m`` in [0, 1].
++    """
++    for p_t, p_o in zip(target.parameters(), online.parameters()):
++        p_t.mul_(momentum).add_(p_o.detach(), alpha=1.0 - momentum)
++    for b_t, b_o in zip(target.buffers(), online.buffers()):
++        b_t.copy_(b_o)
++
++
++# ----------------------------------------------------------------------
++# Network blocks
++# ----------------------------------------------------------------------
++class Tokenizer(nn.Module):
++    """Per-token affine map ``x[:, t] @ W[t] + b[t]``.
++
++    Parameters
++    ----------
++    n_tokens : int
++        Number of tokens per sample.
++
++    in_dim : int
++        Raw values per token.
++
++    out_dim : int
++        Output width per token.
++    """
++
++    def __init__(self, n_tokens, in_dim, out_dim):
++        super().__init__()
++        self.weight = nn.Parameter(
++            torch.randn(n_tokens, in_dim, out_dim) / math.sqrt(in_dim))
++        self.bias = nn.Parameter(torch.zeros(n_tokens, out_dim))
++
++    def forward(self, x):
++        # x: (B, T, in_dim) -> (B, T, out_dim)
++        return torch.einsum('bti,tio->bto', x, self.weight) + self.bias
++
++
++class TransformerStack(nn.Module):
++    """Pre-norm Transformer encoder with an optional final LayerNorm.
++
++    Parameters
++    ----------
++    d_model : int
++        Token width.
++
++    n_heads : int
++        Number of attention heads.
++
++    n_layers : int
++        Number of encoder layers.
++
++    dropout : float, optional (default=0.0)
++        Dropout rate.
++
++    ff_mult : int, optional (default=2)
++        Feed-forward width as a multiple of ``d_model``.
++
++    final_norm : bool, optional (default=True)
++        Apply a LayerNorm to the output.
++    """
++
++    def __init__(self, d_model, n_heads, n_layers, dropout=0.0, ff_mult=2,
++                 final_norm=True):
++        super().__init__()
++        layer = nn.TransformerEncoderLayer(
++            d_model=d_model, nhead=n_heads,
++            dim_feedforward=ff_mult * d_model, dropout=dropout,
++            activation='gelu', batch_first=True, norm_first=True)
++        self.layers = nn.TransformerEncoder(layer, num_layers=n_layers,
++                                            enable_nested_tensor=False)
++        self.norm = nn.LayerNorm(d_model) if final_norm else nn.Identity()
++
++    def forward(self, x):
++        return self.norm(self.layers(x))
++
++
++# ----------------------------------------------------------------------
++# Masking
++# ----------------------------------------------------------------------
++def _complement(tgt, n_tokens):
++    """Sorted context indices complementary to ``tgt`` (rows of size m)."""
++    batch_size, n_mask = tgt.shape
++    is_tgt = torch.zeros(batch_size, n_tokens, dtype=torch.bool)
++    is_tgt.scatter_(1, tgt, True)
++    ctx = torch.arange(n_tokens).unsqueeze(0).expand(batch_size, n_tokens)
++    return ctx[~is_tgt].view(batch_size, n_tokens - n_mask)
++
++
++def sample_masks(batch_size, n_tokens, n_mask, mode='random',
++                 generator=None):
++    """Sample one (context, target) split per row for training.
++
++    Parameters
++    ----------
++    batch_size : int
++        Number of rows.
++
++    n_tokens : int
++        Tokens per row.
++
++    n_mask : int
++        Target tokens per row, ``1 <= n_mask <= n_tokens - 1``.
++
++    mode : str, optional (default='random')
++        One of ``'random'`` (uniformly random token subset), ``'block'``
++        (one contiguous block at a random position), ``'forecast'``
++        (always the last ``n_mask`` tokens) or ``'mixed'`` (per-row coin
++        flip between block and forecast).
++
++    generator : torch.Generator or None, optional (default=None)
++        CPU generator.
++
++    Returns
++    -------
++    ctx_idx : torch.LongTensor of shape (batch_size, n_tokens - n_mask)
++        Indices of the visible tokens.
++
++    tgt_idx : torch.LongTensor of shape (batch_size, n_mask)
++        Indices of the hidden tokens.
++    """
++    if mode == 'random':
++        tgt = torch.rand(batch_size, n_tokens,
++                         generator=generator).argsort(dim=1)[:, :n_mask]
++        tgt, _ = tgt.sort(dim=1)
++    elif mode in ('block', 'forecast', 'mixed'):
++        last = n_tokens - n_mask
++        start = torch.randint(0, last + 1, (batch_size,),
++                              generator=generator)
++        if mode == 'forecast':
++            start = torch.full((batch_size,), last, dtype=torch.long)
++        elif mode == 'mixed':
++            flip = torch.rand(batch_size, generator=generator) < 0.5
++            start = torch.where(flip, torch.full_like(start, last), start)
++        tgt = start.unsqueeze(1) + torch.arange(n_mask).unsqueeze(0)
++    else:
++        raise ValueError("mask_mode must be one of %s; got %r"
++                         % (MASK_MODES, mode))
++    return _complement(tgt, n_tokens), tgt
++
++
++def eval_masks(n_tokens, n_mask, mode='random', n_samples=8,
++               generator=None):
++    """Build the mask set shared by all rows at inference.
++
++    * ``'block'`` and ``'mixed'`` enumerate all block positions when
++      ``n_samples`` is None or large enough (complete, deterministic
++      coverage); otherwise a random subset of positions.
++    * ``'forecast'`` is the single last block.
++    * ``'random'`` chains random permutations cut into groups of
++      ``n_mask`` tokens, so every token is masked about equally often.
++
++    Parameters
++    ----------
++    n_tokens : int
++        Tokens per row.
++
++    n_mask : int
++        Target tokens per mask.
++
++    mode : str, optional (default='random')
++        Masking pattern, see :func:`sample_masks`.
++
++    n_samples : int or None, optional (default=8)
++        Number of masks. Ignored for ``'forecast'``.
++
++    generator : torch.Generator or None, optional (default=None)
++        CPU generator.
++
++    Returns
++    -------
++    ctx_idx : torch.LongTensor of shape (n_masks, n_tokens - n_mask)
++        Indices of the visible tokens per mask.
++
++    tgt_idx : torch.LongTensor of shape (n_masks, n_mask)
++        Indices of the hidden tokens per mask.
++    """
++    if mode == 'forecast':
++        tgt = torch.arange(n_tokens - n_mask, n_tokens).unsqueeze(0)
++    elif mode in ('block', 'mixed'):
++        starts = torch.arange(0, n_tokens - n_mask + 1)
++        if n_samples is not None and n_samples < len(starts):
++            keep = torch.randperm(len(starts),
++                                  generator=generator)[:n_samples]
++            starts = starts[keep.sort().values]
++        tgt = starts.unsqueeze(1) + torch.arange(n_mask).unsqueeze(0)
++    elif mode == 'random':
++        n_masks = 8 if n_samples is None else int(n_samples)
++        rows = []
++        while len(rows) < n_masks:
++            perm = torch.randperm(n_tokens, generator=generator)
++            for s in range(0, n_tokens - n_mask + 1, n_mask):
++                rows.append(perm[s:s + n_mask].sort().values)
++                if len(rows) == n_masks:
++                    break
++        tgt = torch.stack(rows, 0)
++    else:
++        raise ValueError("mask_mode must be one of %s; got %r"
++                         % (MASK_MODES, mode))
++    return _complement(tgt, n_tokens), tgt
++
++
++def _gather_tokens(x, idx):
++    """Gather tokens ``x[b, idx[b, j]]`` -> (B, idx.shape[1], D)."""
++    return torch.gather(x, 1, idx.unsqueeze(-1).expand(-1, -1, x.size(-1)))
++
++
++# ----------------------------------------------------------------------
++# JEPA
++# ----------------------------------------------------------------------
++class JEPACore(nn.Module):
++    """Joint-Embedding Predictive Architecture over a token sequence.
++
++    Parameters
++    ----------
++    n_tokens : int
++        Tokens per sample.
++
++    in_dim : int
++        Raw values per token.
++
++    d_model : int, optional (default=64)
++        Token embedding width.
++
++    n_heads : int, optional (default=4)
++        Attention heads of the encoder.
++
++    n_layers : int, optional (default=2)
++        Depth of the encoder.
++
++    pred_layers : int, optional (default=1)
++        Depth of the predictor, which has width ``d_model // 2``.
++
++    dropout : float, optional (default=0.0)
++        Dropout rate.
++
++    target_mode : str, optional (default='sigreg')
++        ``'sigreg'``: one shared encoder produces both context and
++        target embeddings and collapse is prevented by SIGReg in the
++        loss. ``'ema'``: frozen EMA target encoder with LayerNorm'ed
++        targets.
++
++    recon_dim : int or None, optional (default=None)
++        If given, a per-token linear head decodes each target embedding
++        back to its raw token.
++
++    encoder_norm : bool, optional (default=False)
++        Final LayerNorm on the encoder output. With it, extreme inputs
++        saturate to a fixed direction that is trivially predictable and
++        can score as normal, so it is off by default.
++    """
++
++    def __init__(self, n_tokens, in_dim, d_model=64, n_heads=4, n_layers=2,
++                 pred_layers=1, dropout=0.0, target_mode='sigreg',
++                 recon_dim=None, encoder_norm=False):
++        super().__init__()
++        if target_mode not in ('sigreg', 'ema'):
++            raise ValueError("target_mode must be 'sigreg' or 'ema'; "
++                             "got %r" % (target_mode,))
++        self.n_tokens = n_tokens
++        self.d_model = d_model
++        self.target_mode = target_mode
++        pred_dim = max(16, d_model // 2)
++        pred_heads = max(1, min(n_heads, pred_dim // 16))
++
++        self.tokenizer = Tokenizer(n_tokens, in_dim, d_model)
++        self.pos = nn.Parameter(torch.randn(n_tokens, d_model) * 0.02)
++        self.encoder = TransformerStack(d_model, n_heads, n_layers, dropout,
++                                        final_norm=encoder_norm)
++        if target_mode == 'ema':
++            self.target_encoder = copy.deepcopy(self.encoder)
++            for p in self.target_encoder.parameters():
++                p.requires_grad_(False)
++        else:
++            self.target_encoder = None
++
++        self.pred_in = nn.Linear(d_model, pred_dim)
++        self.mask_token = nn.Parameter(torch.randn(pred_dim) * 0.02)
++        self.pred_pos = nn.Parameter(torch.randn(n_tokens, pred_dim) * 0.02)
++        self.predictor = TransformerStack(pred_dim, pred_heads, pred_layers,
++                                          dropout)
++        self.pred_out = nn.Linear(pred_dim, d_model)
++        self.recon_head = (Tokenizer(n_tokens, d_model, recon_dim)
++                           if recon_dim else None)
++
++    def embed(self, x):
++        """Raw tokens (B, T, in_dim) -> positional token embeddings."""
++        return self.tokenizer(x) + self.pos
++
++    def encode_target(self, tokens):
++        """Target representation of all tokens, shape (B, T, D)."""
++        if self.target_mode == 'ema':
++            with torch.no_grad():
++                h = self.target_encoder(tokens)
++                return F.layer_norm(h, (h.size(-1),))
++        return self.encoder(tokens)
++
++    def predict(self, h_ctx, ctx_idx, tgt_idx):
++        """Predict target-token representations from encoded context."""
++        c = self.pred_in(h_ctx) + self.pred_pos[ctx_idx]
++        q = self.mask_token + self.pred_pos[tgt_idx]
++        out = self.predictor(torch.cat([c, q], dim=1))
++        return self.pred_out(out[:, c.size(1):])
++
++    def forward(self, x, ctx_idx, tgt_idx):
++        """Training pass.
++
++        Parameters
++        ----------
++        x : torch.Tensor of shape (B, T, in_dim)
++            Raw tokens.
++
++        ctx_idx : torch.LongTensor of shape (B, T - m)
++            Visible token indices per row.
++
++        tgt_idx : torch.LongTensor of shape (B, m)
++            Hidden token indices per row.
++
++        Returns
++        -------
++        pred : torch.Tensor of shape (B, m, D)
++            Predicted target embeddings.
++
++        h_tgt : torch.Tensor of shape (B, m, D)
++            Actual target embeddings (not detached).
++
++        h_all : torch.Tensor of shape (B, T, D)
++            Target-encoder embeddings of all tokens.
++        """
++        tokens = self.embed(x)
++        h_ctx = self.encoder(_gather_tokens(tokens, ctx_idx))
++        h_all = self.encode_target(tokens)
++        h_tgt = _gather_tokens(h_all, tgt_idx)
++        pred = self.predict(h_ctx, ctx_idx, tgt_idx)
++        return pred, h_tgt, h_all
++
++    @torch.no_grad()
++    def multi_mask_errors(self, x, ctx_idx, tgt_idx):
++        """Latent prediction error of every row under a shared mask set.
++
++        Parameters
++        ----------
++        x : torch.Tensor of shape (B, T, in_dim)
++            Raw tokens.
++
++        ctx_idx : torch.LongTensor of shape (K, T - m)
++            Visible token indices per mask, from :func:`eval_masks`.
++
++        tgt_idx : torch.LongTensor of shape (K, m)
++            Hidden token indices per mask.
++
++        Returns
++        -------
++        err : torch.Tensor of shape (B, K, m)
++            Squared error per target token, averaged over embedding
++            dimensions.
++
++        h_all : torch.Tensor of shape (B, T, D)
++            Target embeddings of all tokens (mask independent).
++        """
++        batch_size = x.shape[0]
++        n_masks, n_mask = tgt_idx.shape
++        tokens = self.embed(x)
++        h_all = self.encode_target(tokens)
++        ctx = ctx_idx.to(x.device).repeat(batch_size, 1)
++        tgt = tgt_idx.to(x.device).repeat(batch_size, 1)
++        tokens_rep = tokens.repeat_interleave(n_masks, dim=0)
++        h_all_rep = h_all.repeat_interleave(n_masks, dim=0)
++        h_ctx = self.encoder(_gather_tokens(tokens_rep, ctx))
++        pred = self.predict(h_ctx, ctx, tgt)
++        h_tgt = _gather_tokens(h_all_rep, tgt)
++        err = (pred - h_tgt).pow(2).mean(-1)  # (B * K, m)
++        return err.view(batch_size, n_masks, n_mask), h_all
+diff --git a/pyod/models/jepa.py b/pyod/models/jepa.py
+new file mode 100644
+index 0000000..66ed12f
+--- /dev/null
++++ b/pyod/models/jepa.py
+@@ -0,0 +1,521 @@
++# -*- coding: utf-8 -*-
++"""Outlier detection with a Joint-Embedding Predictive Architecture (JEPA)
++"""
++# Author: Kishor Datta Gupta
++# License: BSD 2 clause
++
++
++try:
++    import torch
++except ImportError:
++    print('please install torch first')
++
++import math
++
++import numpy as np
++import torch.nn.functional as F
++
++from pyod.models._jepa_utils import JEPACore, MASK_MODES
++from pyod.models._jepa_utils import ema_update, eval_masks
++from pyod.models._jepa_utils import sample_masks, sigreg_loss
++from pyod.models.base_dl import BaseDeepLearningDetector
++
++_SCORES = ('pred', 'embed', 'combined')
++
++
++class JEPA(BaseDeepLearningDetector):
++    """
++    Joint-Embedding Predictive Architecture (JEPA) for outlier detection.
++
++    A JEPA learns to predict the *latent representation* of hidden parts
++    of an input from its visible parts :cite:`lecun2022path,assran2023self`.
++    Here every feature (or small group of consecutive features) of a row
++    is a token. During training a random subset of tokens is hidden, a
++    Transformer encoder embeds the visible tokens, and a light predictor
++    forecasts the embeddings of the hidden tokens. Normal rows have
++    feature dependencies the predictor can model, so a row whose hidden
++    features cannot be predicted from the others in representation space
++    is an outlier. Unlike reconstruction error (AutoEncoder), the error
++    is measured in a learned latent space, so unpredictable noise in the
++    raw features is not penalised.
++
++    Representation collapse is prevented with SIGReg, the Sketched
++    Isotropic Gaussian Regularization of LeJEPA
++    :cite:`balestriero2025lejepa`, which pushes the embeddings of the
++    training data towards an isotropic Gaussian and needs no teacher
++    network. This also gives a second score, the Mahalanobis distance of
++    each token embedding to the training Gaussian.
++
++    Three outlier scores are available through ``score``:
++
++    - ``'pred'``: latent prediction error, z-normalised per token and
++      averaged over ``n_mask_samples`` masks.
++    - ``'embed'``: Mahalanobis distance of each token embedding to the
++      Gaussian fitted on the training embeddings, averaged over tokens.
++    - ``'combined'``: the mean of both after z-normalisation with their
++      training statistics.
++
++    Parameters
++    ----------
++    contamination : float in (0., 0.5), optional (default=0.1)
++        The amount of contamination of the data set,
++        i.e. the proportion of outliers in the data set.
++        Used when fitting to define the threshold on the decision function.
++
++    preprocessing : bool, optional (default=True)
++        If True, apply the preprocessing procedure before training models.
++
++    lr : float, optional (default=1e-3)
++        The initial learning rate for the optimizer.
++
++    epoch_num : int, optional (default=30)
++        The number of epochs for training.
++
++    batch_size : int, optional (default=64)
++        The batch size for training.
++
++    optimizer_name : str, optional (default='adam')
++        The name of the optimizer used to train the model.
++
++    criterion_name : str, optional (default='mse')
++        The name of the criterion applied to the latent prediction error.
++
++    device : str, optional (default=None)
++        The device to use for the model. If None, it will be decided
++        automatically. If you want to use MPS, set it to 'mps'.
++
++    random_state : int, optional (default=42)
++        The random seed for reproducibility.
++
++    use_compile : bool, optional (default=False)
++        Whether to compile the model.
++        If True, the model will be compiled before training.
++        This is only available for
++        PyTorch version >= 2.0.0. and Python < 3.12.
++
++    compile_mode : str, optional (default='default')
++        The mode to compile the model.
++        Can be either "default", "reduce-overhead",
++        "max-autotune" or "max-autotune-no-cudagraphs".
++        See https://pytorch.org/docs/stable/generated/torch.compile.html#torch-compile for details.
++
++    verbose : int, optional (default=1)
++        Verbosity mode.
++        - 0 = silent
++        - 1 = progress bar
++        - 2 = one line per epoch.
++
++    optimizer_params : dict, optional (default={'weight_decay': 1e-4})
++        Additional parameters for the optimizer.
++        For example, `optimizer_params={'weight_decay': 1e-4}`.
++
++    criterion_params : dict, optional (default={})
++        Additional parameters for the criterion.
++        For example, `criterion_params={'reduction': 'sum'}`.
++
++    d_model : int, optional (default=64)
++        The width of the token embeddings.
++
++    n_heads : int, optional (default=4)
++        The number of attention heads of the encoder.
++        Must divide ``d_model`` evenly.
++
++    n_layers : int, optional (default=2)
++        The number of Transformer layers of the encoder.
++
++    pred_layers : int, optional (default=1)
++        The number of Transformer layers of the predictor, which has
++        width ``d_model // 2``.
++
++    dropout : float in [0., 1), optional (default=0.0)
++        The dropout rate of the encoder and the predictor.
++
++    max_tokens : int, optional (default=64)
++        The maximum number of tokens. With more than ``max_tokens``
++        features, consecutive features are grouped so that each token
++        holds ``ceil(n_features / max_tokens)`` features.
++
++    mask_ratio : float in (0., 1.), optional (default=0.3)
++        The fraction of tokens hidden from the encoder. At least one
++        token is hidden and at least one stays visible.
++
++    mask_mode : str, optional (default='random')
++        The masking pattern, one of 'random', 'block', 'forecast' and
++        'mixed'. 'random' hides a uniformly random subset of tokens and
++        suits tabular data, where the feature order carries no meaning.
++        'block' hides contiguous tokens, 'forecast' always hides the
++        last tokens, and 'mixed' alternates between these two.
++
++    n_mask_samples : int, optional (default=8)
++        The number of masks each sample is scored under. The mask set
++        is drawn once from ``random_state``, so scoring is deterministic.
++
++    target_mode : str, optional (default='sigreg')
++        How representation collapse is prevented. 'sigreg' uses one
++        shared encoder and adds SIGReg to the loss. 'ema' uses an
++        exponential-moving-average target encoder as in I-JEPA.
++
++    sigreg_weight : float in [0., 1.], optional (default=0.05)
++        The weight ``w`` of SIGReg. The loss is
++        ``(1 - w) * prediction + w * SIGReg``.
++        Only used when ``target_mode='sigreg'``.
++
++    sigreg_slices : int, optional (default=128)
++        The number of random projections per SIGReg evaluation.
++        Only used when ``target_mode='sigreg'``.
++
++    ema_momentum : float in [0., 1.], optional (default=0.996)
++        The initial momentum of the target encoder, annealed to 1 over
++        training. Only used when ``target_mode='ema'``.
++
++    recon_weight : float, optional (default=0.0)
++        The weight of an auxiliary loss that linearly reconstructs each
++        raw token from its embedding. 0 disables it.
++
++    score : str, optional (default='combined')
++        The outlier score, one of 'pred', 'embed' and 'combined' as
++        described above. The embedding distance is sensitive to a shift
++        between training and test data, so prefer 'pred' when the test
++        data may be shifted.
++
++    error_norm : bool, optional (default=True)
++        If True, z-normalise the latent error of every token with its
++        training mean and standard deviation, so that features that are
++        hard to predict for all samples do not dominate the score.
++
++    lr_schedule : bool, optional (default=True)
++        If True, decay the learning rate with a cosine schedule over
++        ``epoch_num``.
++
++    grad_clip : float or None, optional (default=1.0)
++        The maximum gradient norm. None or 0 disables clipping.
++
++    encoder_norm : bool, optional (default=False)
++        If True, apply a LayerNorm to the encoder output. It is off by
++        default because it lets extreme inputs saturate to a direction
++        that is easy to predict, so that strong outliers can receive
++        low scores.
++
++    Attributes
++    ----------
++    model : torch.nn.Module
++        The underlying JEPA model.
++
++    optimizer : torch.optim
++        The optimizer used to train the model.
++
++    criterion : torch.nn.modules
++        The loss function applied to the latent prediction error.
++
++    n_tokens_ : int
++        The number of tokens each sample is split into.
++
++    token_dim_ : int
++        The number of features per token.
++
++    err_mean_ : numpy array of shape (n_tokens,)
++        The mean latent prediction error of every token on the
++        training data.
++
++    err_std_ : numpy array of shape (n_tokens,)
++        The standard deviation of the latent prediction error of every
++        token on the training data.
++
++    emb_mean_ : numpy array of shape (n_tokens, d_model)
++        The mean training embedding of every token.
++
++    emb_prec_ : numpy array of shape (d_model, d_model)
++        The inverse of the covariance of the training embeddings around
++        their token means, shared by all tokens.
++
++    decision_scores_ : numpy array of shape (n_samples,)
++        The outlier scores of the training data.
++        The higher, the more abnormal. Outliers tend to have higher
++        scores. This value is available once the detector is fitted.
++
++    threshold_ : float
++        The threshold is based on ``contamination``. It is the
++        ``n_samples * contamination`` most abnormal samples in
++        ``decision_scores_``. The threshold is calculated for generating
++        binary outlier labels.
++
++    labels_ : numpy array of shape (n_samples,)
++        The binary labels of the training data. 0 stands for inliers
++        and 1 for outliers/anomalies. It is generated by applying
++        ``threshold_`` on ``decision_scores_``.
++    """
++
++    def __init__(self,
++                 contamination=0.1, preprocessing=True,
++                 lr=1e-3, epoch_num=30, batch_size=64,
++                 optimizer_name='adam', criterion_name='mse',
++                 device=None, random_state=42,
++                 use_compile=False, compile_mode='default',
++                 verbose=1,
++                 optimizer_params: dict = {'weight_decay': 1e-4},
++                 criterion_params: dict = {},
++                 d_model=64, n_heads=4, n_layers=2, pred_layers=1,
++                 dropout=0.0, max_tokens=64,
++                 mask_ratio=0.3, mask_mode='random', n_mask_samples=8,
++                 target_mode='sigreg', sigreg_weight=0.05,
++                 sigreg_slices=128, ema_momentum=0.996,
++                 recon_weight=0.0,
++                 score='combined', error_norm=True,
++                 lr_schedule=True, grad_clip=1.0, encoder_norm=False):
++        super(JEPA, self).__init__(contamination=contamination,
++                                   preprocessing=preprocessing,
++                                   lr=lr, epoch_num=epoch_num,
++                                   batch_size=batch_size,
++                                   optimizer_name=optimizer_name,
++                                   criterion_name=criterion_name,
++                                   device=device,
++                                   random_state=random_state,
++                                   use_compile=use_compile,
++                                   compile_mode=compile_mode,
++                                   verbose=verbose,
++                                   optimizer_params=optimizer_params,
++                                   criterion_params=criterion_params)
++        self.criterion_name = criterion_name
++        self.d_model = d_model
++        self.n_heads = n_heads
++        self.n_layers = n_layers
++        self.pred_layers = pred_layers
++        self.dropout = dropout
++        self.max_tokens = max_tokens
++        self.mask_ratio = mask_ratio
++        self.mask_mode = mask_mode
++        self.n_mask_samples = n_mask_samples
++        self.target_mode = target_mode
++        self.sigreg_weight = sigreg_weight
++        self.sigreg_slices = sigreg_slices
++        self.ema_momentum = ema_momentum
++        self.recon_weight = recon_weight
++        self.score = score
++        self.error_norm = error_norm
++        self.lr_schedule = lr_schedule
++        self.grad_clip = grad_clip
++        self.encoder_norm = encoder_norm
++
++    def build_model(self):
++        if self.feature_size < 2:
++            raise ValueError("JEPA needs at least 2 features to form a "
++                             "context / target split; got %d."
++                             % self.feature_size)
++        if self.score not in _SCORES:
++            raise ValueError("score must be one of %s; got %r"
++                             % (_SCORES, self.score))
++        if self.mask_mode not in MASK_MODES:
++            raise ValueError("mask_mode must be one of %s; got %r"
++                             % (MASK_MODES, self.mask_mode))
++        if not 0.0 < self.mask_ratio < 1.0:
++            raise ValueError("mask_ratio must be in (0, 1); got %r"
++                             % (self.mask_ratio,))
++        if self.max_tokens < 2:
++            raise ValueError("max_tokens must be at least 2; got %r"
++                             % (self.max_tokens,))
++
++        # group features into at most max_tokens tokens of equal size
++        n_tokens = min(self.feature_size, self.max_tokens)
++        token_dim = int(math.ceil(self.feature_size / n_tokens))
++        n_tokens = int(math.ceil(self.feature_size / token_dim))
++        self.n_tokens_ = n_tokens
++        self.token_dim_ = token_dim
++        self.pad_ = n_tokens * token_dim - self.feature_size
++        self.n_mask_ = int(np.clip(round(self.mask_ratio * n_tokens),
++                                   1, n_tokens - 1))
++        self.model = JEPACore(
++            n_tokens=n_tokens, in_dim=token_dim, d_model=self.d_model,
++            n_heads=self.n_heads, n_layers=self.n_layers,
++            pred_layers=self.pred_layers, dropout=self.dropout,
++            target_mode=self.target_mode,
++            recon_dim=token_dim if self.recon_weight > 0 else None,
++            encoder_norm=self.encoder_norm)
++
++    def training_prepare(self):
++        super(JEPA, self).training_prepare()
++        self._train_gen = torch.Generator().manual_seed(self.random_state)
++        self.scheduler = None
++        if self.lr_schedule and self.epoch_num > 1:
++            self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
++                self.optimizer, T_max=self.epoch_num, eta_min=self.lr * 0.05)
++        steps_per_epoch = max(1, self.data_num // self.batch_size)
++        self._total_steps = max(1, self.epoch_num * steps_per_epoch)
++        self._step = 0
++
++    def _to_tokens(self, x):
++        """Reshape (B, n_features) to (B, n_tokens, token_dim).
++
++        Features are zero-padded when ``n_features`` is not a multiple
++        of the token size.
++        """
++        if self.pad_ > 0:
++            x = F.pad(x, (0, self.pad_))
++        return x.view(x.size(0), self.n_tokens_, self.token_dim_)
++
++    def training_forward(self, batch_data):
++        x = batch_data.to(self.device)
++        tokens = self._to_tokens(x)
++        ctx, tgt = sample_masks(tokens.size(0), self.n_tokens_,
++                                self.n_mask_, self.mask_mode,
++                                self._train_gen)
++        ctx, tgt = ctx.to(self.device), tgt.to(self.device)
++
++        self.optimizer.zero_grad()
++        pred, h_tgt, h_all = self.model(tokens, ctx, tgt)
++        # The targets are detached: the encoder must not lower the loss
++        # by making its own targets easier to predict.
++        loss_pred = self.criterion(pred, h_tgt.detach())
++        loss = loss_pred
++        parts = [loss_pred.item()]
++        if self.target_mode == 'sigreg':
++            # one group per token position: (T, B, D)
++            reg = sigreg_loss(h_all.transpose(0, 1),
++                              num_slices=self.sigreg_slices,
++                              generator=self._train_gen)
++            loss = (1.0 - self.sigreg_weight) * loss_pred \
++                   + self.sigreg_weight * reg
++            parts.append(reg.item())
++        if self.recon_weight > 0:
++            loss_rec = F.mse_loss(self.model.recon_head(h_all), tokens)
++            loss = loss + self.recon_weight * loss_rec
++            parts.append(loss_rec.item())
++        loss.backward()
++        if self.grad_clip:
++            torch.nn.utils.clip_grad_norm_(self.model.parameters(),
++                                           self.grad_clip)
++        self.optimizer.step()
++
++        if self.target_mode == 'ema':
++            frac = min(1.0, self._step / self._total_steps)
++            momentum = self.ema_momentum + (1.0 - self.ema_momentum) * frac
++            ema_update(self.model.target_encoder, self.model.encoder,
++                       momentum)
++        self._step += 1
++        return tuple(parts) if len(parts) > 1 else parts[0]
++
++    def epoch_update(self):
++        if self.scheduler is not None:
++            self.scheduler.step()
++
++    def train(self, train_loader):
++        super(JEPA, self).train(train_loader)
++        self._calibrate(train_loader)
++
++    def evaluating_prepare(self):
++        self.model.eval()
++        gen = torch.Generator().manual_seed(self.random_state + 1)
++        self._eval_ctx, self._eval_tgt = eval_masks(
++            self.n_tokens_, self.n_mask_, self.mask_mode,
++            self.n_mask_samples, gen)
++
++    def evaluating_forward(self, batch_data):
++        x = batch_data.to(self.device)
++        s_pred, s_emb = self._component_scores(x)
++        return self._combine(s_pred, s_emb)
++
++    def _raw(self, x):
++        """Latent errors and embeddings of one batch, on CPU.
++
++        Returns
++        -------
++        err : torch.Tensor of shape (B, n_masks, n_mask)
++            Latent prediction error per mask and hidden token.
++
++        tgt : torch.LongTensor of shape (n_masks, n_mask)
++            Hidden token indices per mask.
++
++        h_all : torch.Tensor of shape (B, n_tokens, d_model)
++            Token embeddings.
++        """
++        err, h_all = self.model.multi_mask_errors(
++            self._to_tokens(x), self._eval_ctx, self._eval_tgt)
++        return err.cpu(), self._eval_tgt, h_all.cpu()
++
++    def _component_scores(self, x):
++        """Return the 'pred' and 'embed' scores of one batch."""
++        err, tgt, h_all = self._raw(x)
++        if self.error_norm:
++            mu = torch.as_tensor(self.err_mean_, dtype=err.dtype)[tgt]
++            sd = torch.as_tensor(self.err_std_, dtype=err.dtype)[tgt]
++            err = (err - mu) / sd
++        s_pred = err.mean(dim=(1, 2)).numpy()
++        diff = h_all.numpy() - self.emb_mean_  # (B, T, D)
++        s_emb = np.einsum('bti,ij,btj->bt', diff, self.emb_prec_,
++                          diff).mean(1)
++        return s_pred, s_emb
++
++    def _combine(self, s_pred, s_emb):
++        """Select or fuse the component scores according to ``score``."""
++        if self.score == 'pred':
++            return s_pred
++        if self.score == 'embed':
++            return s_emb
++        z_pred = (s_pred - self.comp_mean_[0]) / self.comp_std_[0]
++        z_emb = (s_emb - self.comp_mean_[1]) / self.comp_std_[1]
++        return 0.5 * (z_pred + z_emb)
++
++    @torch.no_grad()
++    def _calibrate(self, train_loader):
++        """Fit the scoring statistics on the training data.
++
++        Sets the per-token error statistics (``err_mean_``,
++        ``err_std_``), the embedding Gaussian (``emb_mean_``,
++        ``emb_prec_``) and the statistics used to z-normalise the two
++        component scores (``comp_mean_``, ``comp_std_``).
++        """
++        self.evaluating_prepare()
++        n_tokens, d_model = self.n_tokens_, self.d_model
++        err_sum = torch.zeros(n_tokens, dtype=torch.float64)
++        err_sq = torch.zeros(n_tokens, dtype=torch.float64)
++        err_cnt = torch.zeros(n_tokens, dtype=torch.float64)
++        emb_sum = torch.zeros(n_tokens, d_model, dtype=torch.float64)
++        emb_sq = torch.zeros(d_model, d_model, dtype=torch.float64)
++        n_rows = 0
++        for batch in train_loader:
++            err, tgt, h_all = self._raw(batch.to(self.device))
++            h = h_all.double()
++            emb_sum += h.sum(0)
++            emb_sq += torch.einsum('bti,btj->ij', h, h)
++            n_rows += h.size(0)
++            e = err.double().reshape(err.size(0), -1)  # (B, K * m)
++            idx = tgt.reshape(-1).expand(e.size(0), -1).reshape(-1)
++            e = e.reshape(-1)
++            err_sum.index_add_(0, idx, e)
++            err_sq.index_add_(0, idx, e ** 2)
++            err_cnt.index_add_(0, idx, torch.ones_like(e))
++
++        # tokens never hidden by the mask set fall back to global stats
++        seen = err_cnt > 0
++        g_mean = (err_sum.sum() / err_cnt.sum()).item()
++        g_var = max((err_sq.sum() / err_cnt.sum()).item() - g_mean ** 2,
++                    1e-12)
++        mean = torch.full((n_tokens,), g_mean, dtype=torch.float64)
++        var = torch.full((n_tokens,), g_var, dtype=torch.float64)
++        mean[seen] = err_sum[seen] / err_cnt[seen]
++        var[seen] = (err_sq[seen] / err_cnt[seen]
++                     - mean[seen] ** 2).clamp_min(0)
++        std = var.sqrt()
++        std = torch.where(std > 1e-8, std,
++                          torch.full_like(std, g_var ** 0.5))
++        self.err_mean_ = mean.numpy()
++        self.err_std_ = np.maximum(std.numpy(), 1e-8)
++
++        # covariance of the token embeddings around their token means,
++        # pooled over tokens
++        token_mean = emb_sum / max(n_rows, 1)  # (T, D)
++        cov = (emb_sq - n_rows * token_mean.t() @ token_mean) \
++              / max(n_rows * n_tokens - 1, 1)
++        cov = cov.numpy()
++        ridge = 1e-3 * max(np.trace(cov) / d_model, 1e-6)
++        self.emb_mean_ = token_mean.numpy()
++        self.emb_prec_ = np.linalg.inv(cov + ridge * np.eye(d_model))
++
++        s_pred, s_emb = [], []
++        for batch in train_loader:
++            a, b = self._component_scores(batch.to(self.device))
++            s_pred.append(a)
++            s_emb.append(b)
++        s_pred, s_emb = np.concatenate(s_pred), np.concatenate(s_emb)
++        self.comp_mean_ = np.array([s_pred.mean(), s_emb.mean()])
++        self.comp_std_ = np.maximum(
++            np.array([s_pred.std(), s_emb.std()]), 1e-8)
+diff --git a/pyod/test/conftest.py b/pyod/test/conftest.py
+index 54d2213..666550e 100644
+--- a/pyod/test/conftest.py
++++ b/pyod/test/conftest.py
+@@ -75,6 +75,7 @@ except (ImportError, OSError) as _torch_exc:
+         "test_devnet.py",
+         "test_dif.py",
+         "test_lunar.py",
++        "test_jepa.py",
+         "test_embedding.py",
+         # Shared deep learning machinery
+         "test_base_dl.py",
+diff --git a/pyod/test/test_jepa.py b/pyod/test/test_jepa.py
+new file mode 100644
+index 0000000..b6e7c11
+--- /dev/null
++++ b/pyod/test/test_jepa.py
+@@ -0,0 +1,248 @@
++# -*- coding: utf-8 -*-
++
++
++import os
++import pickle
++import sys
++import unittest
++
++import numpy as np
++from numpy.testing import assert_allclose
++from scipy.stats import rankdata
++from sklearn.base import clone
++from sklearn.metrics import roc_auc_score
++
++# temporary solution for relative imports in case pyod is not installed
++# if pyod is installed, no need to use the following line
++sys.path.append(
++    os.path.abspath(os.path.join(os.path.dirname("__file__"), '..')))
++sys.path.append(os.path.abspath(os.path.dirname("__file__")))
++
++from pyod.models.jepa import JEPA
++from pyod.utils.data import generate_data
++
++
++class TestJEPA(unittest.TestCase):
++    def assertHasAttr(self, obj, intended_attr):
++        self.assertTrue(hasattr(obj, intended_attr))
++
++    def assertInRange(self, data, lower, upper):
++        self.assertGreaterEqual(data.min(), lower)
++        self.assertLessEqual(data.max(), upper)
++
++    def setUp(self):
++        self.n_train = 600
++        self.n_test = 200
++        self.n_features = 12
++        self.contamination = 0.1
++        self.roc_floor = 0.8
++
++        self.X_train, self.X_test, self.y_train, self.y_test = generate_data(
++            n_train=self.n_train, n_test=self.n_test,
++            n_features=self.n_features, contamination=self.contamination,
++            random_state=42)
++
++        self.clf = JEPA(epoch_num=3, contamination=self.contamination,
++                        verbose=0)
++        self.clf.fit(self.X_train)
++
++    def test_parameters(self):
++        self.assertHasAttr(self.clf, 'decision_scores_')
++        self.assertIsNotNone(self.clf.decision_scores_)
++        self.assertHasAttr(self.clf, 'labels_')
++        self.assertIsNotNone(self.clf.labels_)
++        self.assertHasAttr(self.clf, 'threshold_')
++        self.assertIsNotNone(self.clf.threshold_)
++        self.assertHasAttr(self.clf, '_mu')
++        self.assertIsNotNone(self.clf._mu)
++        self.assertHasAttr(self.clf, '_sigma')
++        self.assertIsNotNone(self.clf._sigma)
++        self.assertHasAttr(self.clf, 'model')
++        self.assertIsNotNone(self.clf.model)
++
++    def test_fitted_statistics(self):
++        self.assertEqual(self.clf.n_tokens_, self.n_features)
++        self.assertEqual(self.clf.token_dim_, 1)
++        self.assertEqual(self.clf.err_mean_.shape, (self.n_features,))
++        self.assertEqual(self.clf.err_std_.shape, (self.n_features,))
++        self.assertEqual(self.clf.emb_mean_.shape,
++                         (self.n_features, self.clf.d_model))
++        self.assertEqual(self.clf.emb_prec_.shape,
++                         (self.clf.d_model, self.clf.d_model))
++        self.assertTrue(np.all(self.clf.err_std_ > 0))
++
++    def test_train_scores(self):
++        self.assertEqual(len(self.clf.decision_scores_),
++                         self.X_train.shape[0])
++        self.assertTrue(np.isfinite(self.clf.decision_scores_).all())
++
++    def test_prediction_scores(self):
++        pred_scores = self.clf.decision_function(self.X_test)
++
++        # check score shapes
++        self.assertEqual(pred_scores.shape[0], self.X_test.shape[0])
++
++        # check performance
++        self.assertGreaterEqual(roc_auc_score(self.y_test, pred_scores),
++                                self.roc_floor)
++
++    def test_prediction_scores_deterministic(self):
++        # the scoring masks are seeded, so repeated calls must agree
++        assert_allclose(self.clf.decision_function(self.X_test),
++                        self.clf.decision_function(self.X_test))
++
++    def test_prediction_labels(self):
++        pred_labels = self.clf.predict(self.X_test)
++        self.assertEqual(pred_labels.shape, self.y_test.shape)
++
++    def test_prediction_proba(self):
++        pred_proba = self.clf.predict_proba(self.X_test)
++        self.assertInRange(pred_proba, 0, 1)
++
++    def test_prediction_proba_linear(self):
++        pred_proba = self.clf.predict_proba(self.X_test, method='linear')
++        self.assertInRange(pred_proba, 0, 1)
++
++    def test_prediction_proba_unify(self):
++        pred_proba = self.clf.predict_proba(self.X_test, method='unify')
++        self.assertInRange(pred_proba, 0, 1)
++
++    def test_prediction_proba_parameter(self):
++        with self.assertRaises(ValueError):
++            self.clf.predict_proba(self.X_test, method='something')
++
++    def test_prediction_labels_confidence(self):
++        pred_labels, confidence = self.clf.predict(self.X_test,
++                                                   return_confidence=True)
++        self.assertEqual(pred_labels.shape, self.y_test.shape)
++        self.assertEqual(confidence.shape, self.y_test.shape)
++        self.assertInRange(confidence, 0, 1)
++
++    def test_prediction_proba_linear_confidence(self):
++        pred_proba, confidence = self.clf.predict_proba(
++            self.X_test, method='linear', return_confidence=True)
++        self.assertInRange(pred_proba, 0, 1)
++        self.assertEqual(confidence.shape, self.y_test.shape)
++        self.assertInRange(confidence, 0, 1)
++
++    def test_fit_predict(self):
++        pred_labels = self.clf.fit_predict(self.X_train)
++        self.assertEqual(pred_labels.shape, self.y_train.shape)
++
++    def test_fit_predict_score(self):
++        self.clf.fit_predict_score(self.X_test, self.y_test)
++        self.clf.fit_predict_score(self.X_test, self.y_test,
++                                   scoring='roc_auc_score')
++        self.clf.fit_predict_score(self.X_test, self.y_test,
++                                   scoring='prc_n_score')
++        with self.assertRaises(NotImplementedError):
++            self.clf.fit_predict_score(self.X_test, self.y_test,
++                                       scoring='something')
++
++    def test_predict_rank(self):
++        pred_scores = self.clf.decision_function(self.X_test)
++        pred_ranks = self.clf._predict_rank(self.X_test)
++
++        # assert the order is reserved
++        assert_allclose(rankdata(pred_ranks), rankdata(pred_scores), atol=3)
++        self.assertInRange(pred_ranks, 0, self.X_train.shape[0] + 1)
++
++    def test_model_clone(self):
++        clone_clf = clone(self.clf)
++        self.assertEqual(clone_clf.get_params(), self.clf.get_params())
++
++    def test_refit_reproduces_scores(self):
++        refit = clone(self.clf).fit(self.X_train)
++        assert_allclose(refit.decision_scores_, self.clf.decision_scores_,
++                        rtol=1e-4, atol=1e-5)
++
++    def test_pickle_roundtrip(self):
++        restored = pickle.loads(pickle.dumps(self.clf))
++        assert_allclose(restored.decision_function(self.X_test),
++                        self.clf.decision_function(self.X_test))
++
++    def test_score_pred(self):
++        clf = JEPA(epoch_num=3, score='pred', verbose=0).fit(self.X_train)
++        pred_scores = clf.decision_function(self.X_test)
++        self.assertGreaterEqual(roc_auc_score(self.y_test, pred_scores),
++                                self.roc_floor)
++
++    def test_score_embed(self):
++        clf = JEPA(epoch_num=3, score='embed', verbose=0).fit(self.X_train)
++        pred_scores = clf.decision_function(self.X_test)
++        self.assertGreaterEqual(roc_auc_score(self.y_test, pred_scores),
++                                self.roc_floor)
++
++    def test_ema_target_and_reconstruction(self):
++        clf = JEPA(epoch_num=3, target_mode='ema', recon_weight=0.1,
++                   verbose=0).fit(self.X_train)
++        self.assertIsNotNone(clf.model.target_encoder)
++        self.assertIsNotNone(clf.model.recon_head)
++        pred_scores = clf.decision_function(self.X_test)
++        self.assertGreaterEqual(roc_auc_score(self.y_test, pred_scores),
++                                self.roc_floor)
++
++    def test_mask_modes(self):
++        for mask_mode in ('block', 'forecast', 'mixed'):
++            clf = JEPA(epoch_num=1, mask_mode=mask_mode,
++                       verbose=0).fit(self.X_train)
++            pred_scores = clf.decision_function(self.X_test)
++            self.assertEqual(pred_scores.shape[0], self.X_test.shape[0])
++            self.assertTrue(np.isfinite(pred_scores).all())
++
++    def test_two_features(self):
++        # The smallest input: one context token and one target token.
++        # Outliers lie far outside the training range here. With
++        # encoder_norm=True they saturate and the ROC AUC drops below
++        # 0.5, so this guards the default (about 0.9 without the norm).
++        X_train, X_test, _, y_test = generate_data(
++            n_train=600, n_test=200, n_features=2, random_state=0)
++        clf = JEPA(epoch_num=5, verbose=0).fit(X_train)
++        self.assertEqual(clf.n_tokens_, 2)
++        self.assertGreaterEqual(
++            roc_auc_score(y_test, clf.decision_function(X_test)), 0.75)
++
++    def test_feature_grouping(self):
++        # 150 features and at most 32 tokens -> 30 tokens of 5 features
++        X_train, X_test, _, _ = generate_data(
++            n_train=300, n_test=100, n_features=150, random_state=0)
++        clf = JEPA(epoch_num=1, max_tokens=32, verbose=0).fit(X_train)
++        self.assertEqual(clf.n_tokens_, 30)
++        self.assertEqual(clf.token_dim_, 5)
++        self.assertEqual(clf.decision_function(X_test).shape[0], 100)
++
++    def test_feature_grouping_with_padding(self):
++        # 23 features and at most 8 tokens -> 8 tokens of 3 features,
++        # the last token is zero-padded
++        X_train, X_test, _, _ = generate_data(
++            n_train=300, n_test=100, n_features=23, random_state=0)
++        clf = JEPA(epoch_num=1, max_tokens=8, verbose=0).fit(X_train)
++        self.assertEqual(clf.n_tokens_, 8)
++        self.assertEqual(clf.token_dim_, 3)
++        self.assertTrue(np.isfinite(clf.decision_function(X_test)).all())
++
++    def test_invalid_parameters(self):
++        with self.assertRaises(ValueError):
++            JEPA(epoch_num=1, score='something',
++                 verbose=0).fit(self.X_train)
++        with self.assertRaises(ValueError):
++            JEPA(epoch_num=1, mask_mode='something',
++                 verbose=0).fit(self.X_train)
++        with self.assertRaises(ValueError):
++            JEPA(epoch_num=1, target_mode='something',
++                 verbose=0).fit(self.X_train)
++        with self.assertRaises(ValueError):
++            JEPA(epoch_num=1, mask_ratio=1.0, verbose=0).fit(self.X_train)
++        with self.assertRaises(ValueError):
++            JEPA(epoch_num=1, max_tokens=1, verbose=0).fit(self.X_train)
++
++    def test_single_feature_raises(self):
++        with self.assertRaises(ValueError):
++            JEPA(epoch_num=1, verbose=0).fit(self.X_train[:, :1])
++
++    def tearDown(self):
++        pass
++
++
++if __name__ == '__main__':
++    unittest.main()
+-- 
+2.54.0 (Apple Git-157)
+

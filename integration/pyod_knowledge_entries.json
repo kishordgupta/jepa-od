@@ -2,11 +2,11 @@
   "JEPA": {
     "class_path": "pyod.models.jepa.JEPA",
     "full_name": "Joint-Embedding Predictive Architecture Outlier Detector",
-    "status": "proposed",
+    "status": "experimental",
     "data_types": [
       "tabular"
     ],
-    "category": "neural_networks",
+    "category": "deep_learning",
     "complexity": {
       "time": "O(epochs * n * T^2 * d_model) with T = min(d, max_tokens) tokens",
       "space": "O(T^2 + T * d_model)"
@@ -18,18 +18,19 @@
       "Second complementary score (token-embedding Mahalanobis) from the same model"
     ],
     "weaknesses": [
-      "Needs >= 2 features and some inter-feature dependency to exploit",
-      "Slower than shallow detectors (transformer over feature tokens)",
-      "Transductive fitting Gaussianises training outliers along with inliers (like all unsupervised deep detectors)"
+      "Requires PyTorch",
+      "Needs at least 2 features and some dependency between features",
+      "Much slower than shallow detectors and about 8x slower than AutoEncoder at default settings",
+      "Weak on local outliers in low dimension, where KNN and LOF are better"
     ],
     "best_for": "Medium-to-high dimensional tabular data whose anomalies violate joint feature structure rather than single marginals",
-    "avoid_when": "Very few features, tiny datasets (< 200 rows) or when a shallow detector already works",
+    "avoid_when": "Very few features, local outliers in low dimension, or when training time is limited",
     "benchmark_refs": [
-      "ADBench (16 datasets, see jepa_od/results)"
+      "ADBench"
     ],
     "paper": {
-      "id": "jepa_od",
-      "short": "LeCun 2022 (JEPA); Assran et al. CVPR 2023 (I-JEPA); Balestriero & LeCun 2025 (LeJEPA/SIGReg)"
+      "id": "assran2023self",
+      "short": "Assran et al., CVPR 2023; Balestriero & LeCun, 2025 (SIGReg)"
     },
     "default_params": {
       "contamination": 0.1,
@@ -43,20 +44,21 @@
       "target_mode": "sigreg",
       "encoder_norm": false
     },
-    "preprocessing_mode": "internal",
+    "preprocessing_mode": "external",
     "requires": [
       "torch"
     ],
-    "version_added": "TBD"
+    "version_added": "TBD",
+    "benchmark_rank": {}
   },
   "TSJEPA": {
     "class_path": "pyod.models.ts_jepa.TSJEPA",
     "full_name": "Joint-Embedding Predictive Architecture for Time Series",
-    "status": "proposed",
+    "status": "experimental",
     "data_types": [
       "time_series"
     ],
-    "category": "neural_networks",
+    "category": "time_series",
     "complexity": {
       "time": "O(epochs * n_windows * P^2 * d_model) with P = window_size / patch_len patches",
       "space": "O(n_windows * window_size * n_channels)"
@@ -69,20 +71,17 @@
       "'pred' score is robust to operating-regime shift between training and test series (SKAB), unlike embedding-density scores"
     ],
     "weaknesses": [
-      "window_size must be a multiple of patch_len; needs a few thousand timestamps to train",
-      "Heavier than MatrixProfile / SpectralResidual",
-      "Transductive fitting on long contaminated series can absorb an anomalous regime; keep the training budget small or fit on a cleaner segment"
+      "Requires PyTorch",
+      "window_size must be a multiple of patch_len",
+      "Sustained level shifts score high only at the transition; windowed IForest or KNN are better there",
+      "Long training on a contaminated series can absorb an anomalous regime"
     ],
-    "best_for": "Multivariate or noisy series with contextual / collective anomalies",
-    "avoid_when": "Very short series or when only simple spikes must be detected",
-    "benchmark_refs": [
-      "NAB realKnownCause",
-      "SKAB valve1",
-      "PyOD synthetic (see jepa_od/results)"
-    ],
+    "best_for": "Regular signals whose anomalies are short breaks of temporal structure; multivariate series",
+    "avoid_when": "Anomalies are sustained level shifts, the series is very short, or only simple spikes must be detected",
+    "benchmark_refs": [],
     "paper": {
-      "id": "jepa_od",
-      "short": "LeCun 2022; Ennadir et al. 2025 (TS-JEPA); Balestriero & LeCun 2025 (LeJEPA)"
+      "id": "assran2023self",
+      "short": "Assran et al., CVPR 2023; Balestriero & LeCun, 2025 (SIGReg)"
     },
     "default_params": {
       "window_size": 100,
@@ -94,10 +93,11 @@
       "score": "pred",
       "target_mode": "sigreg"
     },
-    "preprocessing_mode": "internal",
+    "preprocessing_mode": "external",
     "requires": [
       "torch"
     ],
-    "version_added": "TBD"
+    "version_added": "TBD",
+    "benchmark_rank": {}
   }
 }

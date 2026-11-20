@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jepa-od"
+version = "0.1.0"
+description = "Joint-Embedding Predictive Architectures for outlier detection (PyOD-compatible, tabular and time series)"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "BSD-2-Clause"}
+dependencies = ["numpy", "scipy", "scikit-learn", "torch>=2.0", "pyod>=3.0"]
+
+[tool.setuptools]
+packages = ["jepa_od"]

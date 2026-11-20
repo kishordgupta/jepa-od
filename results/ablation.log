@@ -1,0 +1,44 @@
+synthetic-1ch-point done
+synthetic-1ch-subsequence done
+synthetic-3ch-both done
+NAB-ambient_temperature_system_failure done
+NAB-cpu_utilization_asg_misconfiguration done
+NAB-ec2_request_latency_system_failure done
+NAB-machine_temperature_system_failure done
+NAB-nyc_taxi done
+NAB-rogue_agent_key_hold done
+NAB-rogue_agent_key_updown done
+6_cardio done
+38_thyroid done
+44_Wilt done
+40_vowels done
+42_WBC done
+45_wine done
+29_Pima done
+18_Ionosphere done
+                                             auc     ap
+kind    encoder_norm target_mode score                 
+tabular False        ema         combined  0.717  0.313
+                                 embed     0.674  0.240
+                                 pred      0.746  0.386
+                     sigreg      combined  0.804  0.433
+                                 embed     0.810  0.431
+                                 pred      0.766  0.410
+        True         ema         combined  0.717  0.310
+                                 embed     0.676  0.238
+                                 pred      0.745  0.383
+                     sigreg      combined  0.762  0.349
+                                 embed     0.750  0.324
+                                 pred      0.739  0.351
+ts      False        ema         combined  0.707  0.337
+                                 embed     0.702  0.336
+                                 pred      0.695  0.332
+                     sigreg      combined  0.725  0.367
+                                 embed     0.719  0.365
+                                 pred      0.731  0.364
+        True         ema         combined  0.707  0.336
+                                 embed     0.703  0.336
+                                 pred      0.694  0.332
+                     sigreg      combined  0.767  0.381
+                                 embed     0.744  0.365
+                                 pred      0.751  0.368

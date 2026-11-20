@@ -1,0 +1,97 @@
+Training:   0%|          | 0/10 [00:00<?, ?it/s]Training:  10%|█         | 1/10 [00:00<00:01,  7.56it/s]Training:  30%|███       | 3/10 [00:00<00:00, 10.94it/s]Training:  50%|█████     | 5/10 [00:00<00:00, 12.26it/s]Training:  70%|███████   | 7/10 [00:00<00:00, 12.97it/s]Training:  90%|█████████ | 9/10 [00:00<00:00, 13.38it/s]Training: 100%|██████████| 10/10 [00:00<00:00, 12.74it/s]
+  synthetic-1ch-point MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+synthetic-1ch-point 0 done
+Training:   0%|          | 0/10 [00:00<?, ?it/s]Training:  10%|█         | 1/10 [00:00<00:01,  7.95it/s]Training:  30%|███       | 3/10 [00:00<00:00, 10.81it/s]Training:  50%|█████     | 5/10 [00:00<00:00, 12.09it/s]Training:  70%|███████   | 7/10 [00:00<00:00, 12.67it/s]Training:  90%|█████████ | 9/10 [00:00<00:00, 13.10it/s]Training: 100%|██████████| 10/10 [00:00<00:00, 12.53it/s]
+  synthetic-1ch-point MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+synthetic-1ch-point 1 done
+Training:   0%|          | 0/10 [00:00<?, ?it/s]Training:  10%|█         | 1/10 [00:00<00:01,  6.87it/s]Training:  30%|███       | 3/10 [00:00<00:00,  9.63it/s]Training:  50%|█████     | 5/10 [00:00<00:00, 10.56it/s]Training:  70%|███████   | 7/10 [00:00<00:00, 11.06it/s]Training:  90%|█████████ | 9/10 [00:00<00:00, 11.30it/s]Training: 100%|██████████| 10/10 [00:00<00:00, 10.73it/s]
+  synthetic-1ch-subsequence MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+synthetic-1ch-subsequence 0 done
+Training:   0%|          | 0/10 [00:00<?, ?it/s]Training:  10%|█         | 1/10 [00:00<00:01,  7.10it/s]Training:  30%|███       | 3/10 [00:00<00:00,  9.16it/s]Training:  40%|████      | 4/10 [00:00<00:00,  9.01it/s]Training:  50%|█████     | 5/10 [00:00<00:00,  8.87it/s]Training:  60%|██████    | 6/10 [00:00<00:00,  8.79it/s]Training:  70%|███████   | 7/10 [00:00<00:00,  8.71it/s]Training:  80%|████████  | 8/10 [00:00<00:00,  8.72it/s]Training:  90%|█████████ | 9/10 [00:01<00:00,  8.71it/s]Training: 100%|██████████| 10/10 [00:01<00:00,  8.71it/s]Training: 100%|██████████| 10/10 [00:01<00:00,  8.73it/s]
+  synthetic-1ch-subsequence MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+synthetic-1ch-subsequence 1 done
+Training:   0%|          | 0/10 [00:00<?, ?it/s]Training:  10%|█         | 1/10 [00:00<00:01,  7.74it/s]Training:  30%|███       | 3/10 [00:00<00:00, 10.72it/s]Training:  50%|█████     | 5/10 [00:00<00:00, 11.85it/s]Training:  70%|███████   | 7/10 [00:00<00:00, 12.44it/s]Training:  90%|█████████ | 9/10 [00:00<00:00, 12.84it/s]Training: 100%|██████████| 10/10 [00:00<00:00, 12.28it/s]
+  synthetic-3ch-both MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+synthetic-3ch-both 0 done
+Training:   0%|          | 0/10 [00:00<?, ?it/s]Training:  10%|█         | 1/10 [00:00<00:01,  8.75it/s]Training:  30%|███       | 3/10 [00:00<00:00, 10.82it/s]Training:  50%|█████     | 5/10 [00:00<00:00, 11.93it/s]Training:  70%|███████   | 7/10 [00:00<00:00, 12.48it/s]Training:  90%|█████████ | 9/10 [00:00<00:00, 12.73it/s]Training: 100%|██████████| 10/10 [00:00<00:00, 12.30it/s]
+  synthetic-3ch-both MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+synthetic-3ch-both 1 done
+Training:   0%|          | 0/10 [00:00<?, ?it/s]Training:  10%|█         | 1/10 [00:00<00:02,  3.79it/s]Training:  20%|██        | 2/10 [00:00<00:02,  3.95it/s]Training:  30%|███       | 3/10 [00:00<00:01,  3.96it/s]Training:  40%|████      | 4/10 [00:01<00:01,  3.95it/s]Training:  50%|█████     | 5/10 [00:01<00:01,  3.95it/s]Training:  60%|██████    | 6/10 [00:01<00:01,  3.94it/s]Training:  70%|███████   | 7/10 [00:01<00:00,  3.94it/s]Training:  80%|████████  | 8/10 [00:02<00:00,  3.92it/s]Training:  90%|█████████ | 9/10 [00:02<00:00,  3.73it/s]Training: 100%|██████████| 10/10 [00:02<00:00,  3.84it/s]Training: 100%|██████████| 10/10 [00:02<00:00,  3.88it/s]
+NAB-ambient_temperature_system_failure done 9.99% anomalous
+Training:   0%|          | 0/10 [00:00<?, ?it/s]Training:  10%|█         | 1/10 [00:00<00:06,  1.43it/s]Training:  20%|██        | 2/10 [00:01<00:05,  1.44it/s]Training:  30%|███       | 3/10 [00:02<00:04,  1.44it/s]Training:  40%|████      | 4/10 [00:02<00:04,  1.44it/s]Training:  50%|█████     | 5/10 [00:03<00:03,  1.45it/s]Training:  60%|██████    | 6/10 [00:04<00:02,  1.44it/s]Training:  70%|███████   | 7/10 [00:04<00:02,  1.44it/s]Training:  80%|████████  | 8/10 [00:05<00:01,  1.44it/s]Training:  90%|█████████ | 9/10 [00:06<00:00,  1.44it/s]Training: 100%|██████████| 10/10 [00:06<00:00,  1.44it/s]Training: 100%|██████████| 10/10 [00:06<00:00,  1.44it/s]
+NAB-cpu_utilization_asg_misconfiguration done 8.30% anomalous
+Training:   0%|          | 0/10 [00:00<?, ?it/s]Training:  10%|█         | 1/10 [00:00<00:01,  6.17it/s]Training:  20%|██        | 2/10 [00:00<00:01,  6.51it/s]Training:  30%|███       | 3/10 [00:00<00:01,  6.64it/s]Training:  40%|████      | 4/10 [00:00<00:00,  6.73it/s]Training:  50%|█████     | 5/10 [00:00<00:00,  6.76it/s]Training:  60%|██████    | 6/10 [00:00<00:00,  6.78it/s]Training:  70%|███████   | 7/10 [00:01<00:00,  6.78it/s]Training:  80%|████████  | 8/10 [00:01<00:00,  6.79it/s]Training:  90%|█████████ | 9/10 [00:01<00:00,  6.79it/s]Training: 100%|██████████| 10/10 [00:01<00:00,  6.81it/s]Training: 100%|██████████| 10/10 [00:01<00:00,  6.74it/s]
+NAB-ec2_request_latency_system_failure done 8.58% anomalous
+Training:   0%|          | 0/10 [00:00<?, ?it/s]Training:  10%|█         | 1/10 [00:00<00:07,  1.14it/s]Training:  20%|██        | 2/10 [00:01<00:06,  1.15it/s]Training:  30%|███       | 3/10 [00:02<00:06,  1.15it/s]Training:  40%|████      | 4/10 [00:03<00:05,  1.15it/s]Training:  50%|█████     | 5/10 [00:04<00:04,  1.15it/s]Training:  60%|██████    | 6/10 [00:05<00:03,  1.15it/s]Training:  70%|███████   | 7/10 [00:06<00:02,  1.16it/s]Training:  80%|████████  | 8/10 [00:06<00:01,  1.16it/s]Training:  90%|█████████ | 9/10 [00:07<00:00,  1.15it/s]Training: 100%|██████████| 10/10 [00:08<00:00,  1.16it/s]Training: 100%|██████████| 10/10 [00:08<00:00,  1.15it/s]
+NAB-machine_temperature_system_failure done 9.99% anomalous
+Training:   0%|          | 0/10 [00:00<?, ?it/s]Training:  10%|█         | 1/10 [00:00<00:03,  2.51it/s]Training:  20%|██        | 2/10 [00:00<00:03,  2.53it/s]Training:  30%|███       | 3/10 [00:01<00:02,  2.55it/s]Training:  40%|████      | 4/10 [00:01<00:02,  2.54it/s]Training:  50%|█████     | 5/10 [00:01<00:01,  2.54it/s]Training:  60%|██████    | 6/10 [00:02<00:01,  2.56it/s]Training:  70%|███████   | 7/10 [00:02<00:01,  2.55it/s]Training:  80%|████████  | 8/10 [00:03<00:00,  2.55it/s]Training:  90%|█████████ | 9/10 [00:03<00:00,  2.55it/s]Training: 100%|██████████| 10/10 [00:03<00:00,  2.55it/s]Training: 100%|██████████| 10/10 [00:03<00:00,  2.55it/s]
+NAB-nyc_taxi done 10.03% anomalous
+Training:   0%|          | 0/10 [00:00<?, ?it/s]Training:  20%|██        | 2/10 [00:00<00:00, 11.38it/s]Training:  40%|████      | 4/10 [00:00<00:00, 13.21it/s]Training:  60%|██████    | 6/10 [00:00<00:00, 13.94it/s]Training:  80%|████████  | 8/10 [00:00<00:00, 14.33it/s]Training: 100%|██████████| 10/10 [00:00<00:00, 14.54it/s]Training: 100%|██████████| 10/10 [00:00<00:00, 14.04it/s]
+  NAB-rogue_agent_key_hold MatrixProfile FAILED: ValueError: Input contains infinity or a value too large for dtype('float64').
+NAB-rogue_agent_key_hold done 10.10% anomalous
+Training:   0%|          | 0/10 [00:00<?, ?it/s]Training:  10%|█         | 1/10 [00:00<00:01,  4.74it/s]Training:  20%|██        | 2/10 [00:00<00:01,  4.81it/s]Training:  30%|███       | 3/10 [00:00<00:01,  4.82it/s]Training:  40%|████      | 4/10 [00:00<00:01,  4.82it/s]Training:  50%|█████     | 5/10 [00:01<00:01,  4.84it/s]Training:  60%|██████    | 6/10 [00:01<00:00,  4.83it/s]Training:  70%|███████   | 7/10 [00:01<00:00,  4.83it/s]Training:  80%|████████  | 8/10 [00:01<00:00,  4.85it/s]Training:  90%|█████████ | 9/10 [00:01<00:00,  4.85it/s]Training: 100%|██████████| 10/10 [00:02<00:00,  4.85it/s]Training: 100%|██████████| 10/10 [00:02<00:00,  4.84it/s]
+  NAB-rogue_agent_key_updown MatrixProfile FAILED: ValueError: Input contains infinity or a value too large for dtype('float64').
+NAB-rogue_agent_key_updown done 9.97% anomalous
+Training:   0%|          | 0/10 [00:00<?, ?it/s]Training:  10%|█         | 1/10 [00:00<00:03,  2.55it/s]Training:  20%|██        | 2/10 [00:00<00:03,  2.57it/s]Training:  30%|███       | 3/10 [00:01<00:02,  2.56it/s]Training:  40%|████      | 4/10 [00:01<00:02,  2.57it/s]Training:  50%|█████     | 5/10 [00:01<00:01,  2.56it/s]Training:  60%|██████    | 6/10 [00:02<00:01,  2.56it/s]Training:  70%|███████   | 7/10 [00:02<00:01,  2.55it/s]Training:  80%|████████  | 8/10 [00:03<00:00,  2.55it/s]Training:  90%|█████████ | 9/10 [00:03<00:00,  2.55it/s]Training: 100%|██████████| 10/10 [00:03<00:00,  2.55it/s]Training: 100%|██████████| 10/10 [00:03<00:00,  2.56it/s]
+  SKAB-valve1_0 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_0 done
+  SKAB-valve1_1 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_1 done
+  SKAB-valve1_10 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_10 done
+  SKAB-valve1_11 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_11 done
+  SKAB-valve1_12 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_12 done
+  SKAB-valve1_13 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_13 done
+  SKAB-valve1_14 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_14 done
+  SKAB-valve1_15 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_15 done
+  SKAB-valve1_2 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_2 done
+  SKAB-valve1_3 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_3 done
+  SKAB-valve1_4 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_4 done
+  SKAB-valve1_5 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_5 done
+  SKAB-valve1_6 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_6 done
+  SKAB-valve1_7 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_7 done
+  SKAB-valve1_8 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_8 done
+  SKAB-valve1_9 MatrixProfile FAILED: NotImplementedError: MatrixProfile is a transductive detector and does not support decision_function on new data. Access decision_scores_ after fit() for training scores.
+SKAB-valve1_9 done
+group                          NAB   SKAB  synthetic   MEAN
+model                                                      
+AnomalyTransformer           0.458  0.496      0.586  0.513
+LSTMAD                       0.556  0.853      0.866  0.758
+MatrixProfile                0.691    NaN        NaN  0.691
+SpectralResidual             0.457  0.472      0.819  0.583
+TSJEPAOD-block[combined]     0.628  0.826      0.945  0.799
+TSJEPAOD-block[embed]        0.628  0.817      0.932  0.793
+TSJEPAOD-block[pred]         0.631  0.834      0.954  0.806
+TSJEPAOD-forecast[combined]  0.626  0.819      0.958  0.801
+TSJEPAOD-forecast[embed]     0.619  0.844      0.934  0.799
+TSJEPAOD-forecast[pred]      0.585  0.859      0.962  0.802
+TSOD-AutoEncoder             0.776  0.680      0.780  0.745
+TSOD-IForest                 0.825  0.530      0.727  0.694
+TSOD-KNN                     0.741  0.994      0.781  0.839
+group                          NAB   SKAB  synthetic   MEAN
+model                                                      
+AnomalyTransformer           0.119  0.327      0.073  0.173
+LSTMAD                       0.164  0.757      0.657  0.526
+MatrixProfile                0.453    NaN        NaN  0.453
+SpectralResidual             0.113  0.332      0.582  0.342
+TSJEPAOD-block[combined]     0.281  0.625      0.575  0.493
+TSJEPAOD-block[embed]        0.286  0.604      0.558  0.483
+TSJEPAOD-block[pred]         0.269  0.649      0.591  0.503
+TSJEPAOD-forecast[combined]  0.279  0.620      0.592  0.497
+TSJEPAOD-forecast[embed]     0.281  0.699      0.556  0.512
+TSJEPAOD-forecast[pred]      0.248  0.706      0.603  0.519
+TSOD-AutoEncoder             0.492  0.541      0.133  0.389
+TSOD-IForest                 0.486  0.439      0.123  0.349
+TSOD-KNN                     0.442  0.991      0.135  0.523

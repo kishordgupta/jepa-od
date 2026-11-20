@@ -1,0 +1,5 @@
+group,AnomalyTransformer,LSTMAD,MatrixProfile,SpectralResidual,TSJEPAOD-block[combined],TSJEPAOD-block[embed],TSJEPAOD-block[pred],TSJEPAOD-forecast[combined],TSJEPAOD-forecast[embed],TSJEPAOD-forecast[pred],TSOD-AutoEncoder,TSOD-IForest,TSOD-KNN
+NAB,0.119,0.164,0.453,0.113,0.281,0.286,0.269,0.279,0.281,0.248,0.492,0.486,0.442
+SKAB,0.327,0.757,,0.332,0.625,0.604,0.649,0.62,0.699,0.706,0.541,0.439,0.991
+synthetic,0.073,0.657,,0.582,0.575,0.558,0.591,0.592,0.556,0.603,0.133,0.123,0.135
+MEAN,0.173,0.526,0.453,0.342,0.493,0.483,0.503,0.497,0.512,0.519,0.389,0.349,0.523

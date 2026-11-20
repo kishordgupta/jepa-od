@@ -1,0 +1,25 @@
+=== (1) SKAB shift diagnostic ===
+train embed score: median=62.85  p90=66.74
+train channel means: [0.213, 0.268, 2.403, 0.111, 89.472, 28.474, 228.647, 125.237]
+    file    n anom  embed_median_normal  embed_median_anom  max_normal_shift_in_std  auc_embed  auc_pred  auc_ifo_trainfree  own_pred  own_embed  own_combined
+valve1_0 1147  35%               86.192             85.727                   57.993      0.183     0.768              0.272     0.442      0.434         0.432
+valve1_1 1145 35% 85.455 85.423 58.113 0.404 0.576 0.651 0.402 0.479 0.438
+valve1_10 1146 35% 84.863 84.656 57.959 0.112 0.828 0.554 0.356 0.668 0.547
+valve1_11 1141 35% 84.792 84.728 57.939 0.395 0.722 0.462 0.31 0.416 0.322
+valve1_12 1140 35% 84.914 84.68 57.991 0.214 0.822 0.44 0.525 0.666 0.625
+valve1_13 1140 35% 84.691 84.631 57.865 0.414 0.737 0.411 0.673 0.698 0.723
+
+=== (2) NAB absorption diagnostic (machine_temperature_system_failure) ===
+n=22695  anomalous=10.0%  anomalous in first half=10.0%  second half=10.0%
+    protocol  epochs  sigreg_weight  pred  embed  combined
+transductive       5           0.05 0.835  0.804     0.829
+transductive 5 0.01 0.829 0.761 0.812
+transductive 20 0.05 0.552 0.801 0.753
+transductive 20 0.01 0.367 0.781 0.666
+inductive-first-half 5 0.05 0.925 0.807 0.91
+inductive-first-half 5 0.01 0.85 0.565 0.758
+inductive-first-half 20 0.05 0.801 0.918 0.88
+inductive-first-half 20 0.01 0.56 0.855 0.747
+IForest inductive second-half AUC: 0.963
+IForest transductive AUC: 0.873
+DIAG DONE

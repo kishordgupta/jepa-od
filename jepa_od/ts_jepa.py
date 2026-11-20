@@ -1,0 +1,437 @@
+# -*- coding: utf-8 -*-
+"""TS-JEPA-OD: time-series anomaly detection with a Joint-Embedding
+Predictive Architecture (PyOD time-series ``BaseDetector`` API).
+
+A sliding window of ``window_size`` timestamps is cut into
+``window_size // patch_len`` patches (all channels of a patch form one
+token). The JEPA hides some patches from the context encoder and predicts
+their *latent* embeddings; timestamps whose patch embedding cannot be
+predicted from the surrounding (or preceding, in ``'forecast'`` mode)
+context are anomalous. Per-patch errors are mapped back to the timestamps
+they cover and averaged over all windows / masks, following PyOD's
+masked-score workflow (timestamps never scored get ``threshold_``).
+
+Compared with raw-space forecasting (LSTMAD) or reconstruction, the error
+lives in representation space: unpredictable high-frequency noise is not
+penalised and the detector focuses on breaks of temporal structure. Normal
+embeddings are kept isotropic-Gaussian with SIGReg (LeJEPA), which gives a
+second, localisation-friendly score: the Mahalanobis distance of every
+patch embedding to the training Gaussian (``score='embed'``).
+"""
+# License: BSD 2 clause
+
+import math
+
+import numpy as np
+import torch
+import torch.nn.functional as F
+from sklearn.utils.validation import check_is_fitted
+
+from pyod.models.base import BaseDetector
+from pyod.models._ts_utils import validate_ts_input
+
+from ._nets import JEPACore, sample_masks, eval_masks, _MASK_MODES
+from ._sigreg import sigreg_loss, ema_update
+
+_SCORES = ('pred', 'embed', 'combined')
+
+
+class TSJEPAOD(BaseDetector):
+    """Joint-Embedding Predictive Architecture for time-series anomaly
+    detection.
+
+    Parameters
+    ----------
+    window_size : int, optional (default=100)
+        Sliding window length (must be a multiple of ``patch_len``).
+
+    patch_len : int, optional (default=10)
+        Timestamps per token; a window has ``window_size // patch_len``
+        tokens.
+
+    step : int, optional (default=1)
+        Stride between scoring windows.
+
+    train_step : int or None, optional (default=None)
+        Stride between training windows (``None`` -> ``patch_len // 2``).
+
+    max_train_windows : int, optional (default=5000)
+        Random cap on the number of training windows per fit. Together
+        with ``epochs`` this bounds the number of gradient steps; long
+        contaminated series are otherwise over-fitted (the anomalous
+        regime gets absorbed into the model, see REPORT.md).
+
+    d_model, n_heads, n_layers, pred_layers, dropout
+        Transformer sizes, see :class:`jepa_od.JEPAOD`.
+
+    mask_mode : {'block', 'random', 'forecast', 'mixed'}, default 'block'
+        'block' hides one contiguous run of patches anywhere in the window
+        (bidirectional context); 'forecast' always hides the last patches
+        (causal, online-friendly); 'mixed' trains on both.
+
+    mask_ratio : float, optional (default=0.3)
+        Fraction of patches hidden.
+
+    n_mask_samples : int or None, optional (default=None)
+        Masks per window at inference. ``None`` enumerates every block
+        position (deterministic, complete coverage).
+
+    target_mode : {'sigreg', 'ema'}, optional (default='sigreg')
+
+    sigreg_weight, sigreg_slices, ema_momentum, recon_weight
+        See :class:`jepa_od.JEPAOD`.
+
+    score : {'pred', 'embed', 'combined'}, optional (default='pred')
+
+    score_aggregation : {'mean', 'max'}, optional (default='mean')
+        How the (window, mask, patch) scores covering a timestamp are
+        aggregated.
+
+    epochs : int, optional (default=10)
+
+    lr : float, optional (default=1e-3)
+
+    weight_decay : float, optional (default=1e-4)
+
+    batch_size : int, optional (default=64)
+
+    grad_clip : float or None, optional (default=1.0)
+
+    encoder_norm : bool, optional (default=False)
+        Final LayerNorm on the encoder. Keep False: it gains ~0.04 ROC-AUC
+        when test data follow the training distribution (synthetic, NAB)
+        but saturates shifted inputs and loses ~0.3 ROC-AUC when the test
+        series has a different operating regime (SKAB), where it also
+        inverts the ``'embed'`` score.
+
+    device : str, optional (default='auto')
+        'auto' -> CUDA if available else CPU; 'mps' for Apple silicon.
+
+    random_state : int, optional (default=42)
+
+    verbose : int, optional (default=0)
+
+    contamination : float, optional (default=0.1)
+
+    Attributes
+    ----------
+    decision_scores_ : numpy array of shape (n_timestamps,)
+    threshold_ : float
+    labels_ : numpy array of shape (n_timestamps,)
+    model_ : torch.nn.Module
+    """
+
+    def __init__(self, window_size=100, patch_len=10, step=1,
+                 train_step=None, max_train_windows=5000,
+                 d_model=64, n_heads=4, n_layers=2, pred_layers=1,
+                 dropout=0.0,
+                 mask_mode='block', mask_ratio=0.3, n_mask_samples=None,
+                 target_mode='sigreg', sigreg_weight=0.05,
+                 sigreg_slices=128, ema_momentum=0.996, recon_weight=0.0,
+                 score='pred', score_aggregation='mean',
+                 epochs=10, lr=1e-3, weight_decay=1e-4, batch_size=64,
+                 grad_clip=1.0, encoder_norm=False, device='auto',
+                 random_state=42, verbose=0, contamination=0.1):
+        super(TSJEPAOD, self).__init__(contamination=contamination)
+        self.window_size = window_size
+        self.patch_len = patch_len
+        self.step = step
+        self.train_step = train_step
+        self.max_train_windows = max_train_windows
+        self.d_model = d_model
+        self.n_heads = n_heads
+        self.n_layers = n_layers
+        self.pred_layers = pred_layers
+        self.dropout = dropout
+        self.mask_mode = mask_mode
+        self.mask_ratio = mask_ratio
+        self.n_mask_samples = n_mask_samples
+        self.target_mode = target_mode
+        self.sigreg_weight = sigreg_weight
+        self.sigreg_slices = sigreg_slices
+        self.ema_momentum = ema_momentum
+        self.recon_weight = recon_weight
+        self.score = score
+        self.score_aggregation = score_aggregation
+        self.epochs = epochs
+        self.lr = lr
+        self.weight_decay = weight_decay
+        self.batch_size = batch_size
+        self.grad_clip = grad_clip
+        self.encoder_norm = encoder_norm
+        self.device = device
+        self.random_state = random_state
+        self.verbose = verbose
+
+    # ------------------------------------------------------------------
+    def _get_min_length(self):
+        return self.window_size + self.patch_len
+
+    def _resolve_device(self):
+        if self.device == 'auto':
+            return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        return torch.device(self.device)
+
+    def _validate_params(self):
+        if self.window_size % self.patch_len != 0:
+            raise ValueError("window_size (%d) must be a multiple of "
+                             "patch_len (%d)" % (self.window_size,
+                                                  self.patch_len))
+        if self.window_size // self.patch_len < 2:
+            raise ValueError("window_size must hold at least 2 patches")
+        if self.mask_mode not in _MASK_MODES:
+            raise ValueError("mask_mode must be one of %s" % (_MASK_MODES,))
+        if self.score not in _SCORES:
+            raise ValueError("score must be one of %s" % (_SCORES,))
+        if self.score_aggregation not in ('mean', 'max'):
+            raise ValueError("score_aggregation must be 'mean' or 'max'")
+        if not 0.0 < self.mask_ratio < 1.0:
+            raise ValueError("mask_ratio must be in (0, 1)")
+
+    @staticmethod
+    def _windows(X, window_size, step):
+        """(n, C) -> (n_windows, window_size, C) float32 view-copy."""
+        n = X.shape[0]
+        n_w = (n - window_size) // step + 1
+        idx = np.arange(window_size)[None, :] + step * np.arange(n_w)[:, None]
+        return np.ascontiguousarray(X[idx], dtype=np.float32)
+
+    def _to_patches(self, W):
+        """(n_w, window_size, C) -> (n_w, P, patch_len * C)."""
+        n_w, L, C = W.shape
+        P = L // self.patch_len
+        return W.reshape(n_w, P, self.patch_len * C)
+
+    # ------------------------------------------------------------------
+    def fit(self, X, y=None):
+        """Fit detector on a (mostly normal) time series.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_timestamps,) or (n_timestamps, n_channels)
+
+        y : Ignored
+
+        Returns
+        -------
+        self : object
+        """
+        self._validate_params()
+        X = validate_ts_input(X)
+        n, C = X.shape
+        if n < self._get_min_length():
+            raise ValueError("Time series length %d is shorter than minimum "
+                             "required length %d (window_size=%d)"
+                             % (n, self._get_min_length(), self.window_size))
+        self._set_n_classes(y)
+
+        torch.manual_seed(self.random_state)
+        rng = np.random.RandomState(self.random_state)
+        device = self._resolve_device()
+
+        self.n_channels_ = C
+        self.X_mean_ = X.mean(0)
+        self.X_std_ = X.std(0) + 1e-8
+        Xs = (X - self.X_mean_) / self.X_std_
+
+        P = self.window_size // self.patch_len
+        self.n_tokens_ = P
+        self.n_mask_ = int(np.clip(round(self.mask_ratio * P), 1, P - 1))
+        token_dim = self.patch_len * C
+
+        tstep = self.train_step or max(1, self.patch_len // 2)
+        W = self._windows(Xs, self.window_size, tstep)
+        if len(W) > self.max_train_windows:
+            keep = rng.choice(len(W), self.max_train_windows, replace=False)
+            W = W[np.sort(keep)]
+        train_patches = torch.from_numpy(self._to_patches(W))
+
+        self.model_ = JEPACore(
+            n_tokens=P, in_dim=token_dim, d_model=self.d_model,
+            n_heads=self.n_heads, n_layers=self.n_layers,
+            pred_layers=self.pred_layers, dropout=self.dropout,
+            target_mode=self.target_mode,
+            recon_dim=token_dim if self.recon_weight > 0 else None,
+            encoder_norm=self.encoder_norm
+        ).to(device)
+        self._train(train_patches, device)
+        self._calibrate(train_patches, device)
+
+        scores, valid = self._score_series(Xs, device)
+        self.decision_scores_ = scores[valid]
+        self._process_decision_scores()
+        full = scores.copy()
+        full[~valid] = self.threshold_
+        self.decision_scores_ = full
+        self.labels_ = (full > self.threshold_).astype(int)
+        return self
+
+    def decision_function(self, X):
+        """Raw anomaly scores per timestamp (higher = more abnormal)."""
+        check_is_fitted(self, ['decision_scores_', 'threshold_', 'labels_'])
+        X = validate_ts_input(X)
+        if X.shape[1] != self.n_channels_:
+            raise ValueError("Expected %d channels, got %d"
+                             % (self.n_channels_, X.shape[1]))
+        if X.shape[0] < self.window_size:
+            raise ValueError("Time series shorter than window_size")
+        Xs = (X - self.X_mean_) / self.X_std_
+        scores, valid = self._score_series(Xs, self._resolve_device())
+        scores[~valid] = self.threshold_
+        return scores
+
+    # ------------------------------------------------------------------
+    def _train(self, patches, device):
+        model = self.model_
+        gen = torch.Generator().manual_seed(self.random_state)
+        loader = torch.utils.data.DataLoader(
+            torch.utils.data.TensorDataset(patches),
+            batch_size=self.batch_size, shuffle=True,
+            drop_last=len(patches) >= self.batch_size, generator=gen)
+        opt = torch.optim.AdamW(model.parameters(), lr=self.lr,
+                                weight_decay=self.weight_decay)
+        sched = torch.optim.lr_scheduler.CosineAnnealingLR(
+            opt, T_max=max(1, self.epochs), eta_min=self.lr * 0.05)
+        total_steps = max(1, self.epochs * len(loader))
+        step = 0
+        model.train()
+        for epoch in range(self.epochs):
+            run = []
+            for (xb,) in loader:
+                xb = xb.to(device)
+                ctx, tgt = sample_masks(xb.size(0), self.n_tokens_,
+                                        self.n_mask_, self.mask_mode, gen)
+                ctx, tgt = ctx.to(device), tgt.to(device)
+                opt.zero_grad()
+                pred, h_tgt, h_all = model(xb, ctx, tgt)
+                loss_pred = F.mse_loss(pred, h_tgt.detach())
+                loss = loss_pred
+                if self.target_mode == 'sigreg':
+                    reg = sigreg_loss(h_all.transpose(0, 1),
+                                      num_slices=self.sigreg_slices,
+                                      generator=gen)
+                    loss = (1 - self.sigreg_weight) * loss_pred \
+                        + self.sigreg_weight * reg
+                if self.recon_weight > 0:
+                    loss = loss + self.recon_weight * F.mse_loss(
+                        model.recon_head(h_all), xb)
+                loss.backward()
+                if self.grad_clip:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                   self.grad_clip)
+                opt.step()
+                if self.target_mode == 'ema':
+                    frac = min(1.0, step / total_steps)
+                    m = self.ema_momentum + (1 - self.ema_momentum) * frac
+                    ema_update(model.target_encoder, model.encoder, m)
+                step += 1
+                run.append(loss_pred.item())
+            sched.step()
+            if self.verbose:
+                print('Epoch %d/%d, latent pred loss=%.4f'
+                      % (epoch + 1, self.epochs, float(np.mean(run))))
+        model.eval()
+
+    def _eval_mask_set(self):
+        gen = torch.Generator().manual_seed(self.random_state + 1)
+        return eval_masks(self.n_tokens_, self.n_mask_, self.mask_mode,
+                          self.n_mask_samples, gen)
+
+    @torch.no_grad()
+    def _raw(self, patches, device, ctx, tgt):
+        """Yield (err (B,K,m), h_all (B,P,D)) batch by batch, on CPU."""
+        self.model_.eval()
+        bs = max(8, self.batch_size)
+        for s in range(0, len(patches), bs):
+            xb = patches[s:s + bs].to(device)
+            err, h_all = self.model_.multi_mask_errors(xb, ctx, tgt)
+            yield err.cpu().numpy(), h_all.cpu().numpy()
+
+    def _calibrate(self, patches, device):
+        ctx, tgt = self._eval_mask_set()
+        errs, embs = [], []
+        for err, h_all in self._raw(patches, device, ctx, tgt):
+            errs.append(err.reshape(-1))
+            embs.append(h_all.reshape(-1, h_all.shape[-1]))
+        errs = np.concatenate(errs)
+        self.err_mean_ = float(errs.mean())
+        self.err_std_ = float(max(errs.std(), 1e-8))
+        Z = np.concatenate(embs, 0)
+        self.emb_mean_ = Z.mean(0)
+        cov = np.atleast_2d(np.cov(Z, rowvar=False))
+        ridge = 1e-3 * max(np.trace(cov) / cov.shape[0], 1e-6)
+        self.emb_prec_ = np.linalg.inv(cov + ridge * np.eye(cov.shape[0]))
+        # component statistics for 'combined' (patch-level, on training)
+        sp, se = [], []
+        for err, h_all in self._raw(patches, device, ctx, tgt):
+            sp.append(((err - self.err_mean_) / self.err_std_).reshape(-1))
+            se.append(self._mahal(h_all).reshape(-1))
+        sp, se = np.concatenate(sp), np.concatenate(se)
+        self.comp_mean_ = np.array([sp.mean(), se.mean()])
+        self.comp_std_ = np.maximum(np.array([sp.std(), se.std()]), 1e-8)
+
+    def _mahal(self, h_all):
+        d = h_all - self.emb_mean_
+        return np.einsum('...i,ij,...j->...', d, self.emb_prec_, d)
+
+    def _score_series(self, Xs, device):
+        """Standardised series (n, C) -> (scores (n,), valid_mask (n,))."""
+        n = Xs.shape[0]
+        W = self._windows(Xs, self.window_size, self.step)
+        patches = torch.from_numpy(self._to_patches(W))
+        n_w, L = len(W), self.patch_len
+        ctx, tgt = self._eval_mask_set()
+        tgt_np = tgt.numpy()  # (K, m)
+        use_max = self.score_aggregation == 'max'
+        init = -np.inf if use_max else 0.0
+        acc_p = np.full(n, init)
+        cnt_p = np.zeros(n)
+        acc_e = np.full(n, init)
+        cnt_e = np.zeros(n)
+        pos_in_patch = np.arange(L)
+        offs_p = np.arange(self.n_tokens_) * L   # (P,)
+        start = 0
+        for err, h_all in self._raw(patches, device, ctx, tgt):
+            B = err.shape[0]
+            w0 = (np.arange(start, start + B) * self.step)  # (B,)
+            start += B
+            if self.score in ('pred', 'combined'):
+                e = (err - self.err_mean_) / self.err_std_        # (B,K,m)
+                base = w0[:, None, None] + tgt_np[None] * L        # (B,K,m)
+                idx = (base[..., None] + pos_in_patch).reshape(-1)
+                val = np.broadcast_to(e[..., None],
+                                      e.shape + (L,)).reshape(-1)
+                self._accumulate(acc_p, cnt_p, idx, val, use_max)
+            if self.score in ('embed', 'combined'):
+                me = self._mahal(h_all)                           # (B,P)
+                base = w0[:, None] + offs_p[None]                  # (B,P)
+                idx = (base[..., None] + pos_in_patch).reshape(-1)
+                val = np.broadcast_to(me[..., None],
+                                      me.shape + (L,)).reshape(-1)
+                self._accumulate(acc_e, cnt_e, idx, val, use_max)
+
+        def _finish(acc, cnt):
+            out = np.full(n, np.nan)
+            ok = cnt > 0
+            out[ok] = acc[ok] if use_max else acc[ok] / cnt[ok]
+            return out, ok
+
+        if self.score == 'pred':
+            return _finish(acc_p, cnt_p)
+        if self.score == 'embed':
+            return _finish(acc_e, cnt_e)
+        sp, okp = _finish(acc_p, cnt_p)
+        se, oke = _finish(acc_e, cnt_e)
+        zp = (sp - self.comp_mean_[0]) / self.comp_std_[0]
+        ze = (se - self.comp_mean_[1]) / self.comp_std_[1]
+        out = np.where(okp & oke, 0.5 * (zp + ze),
+                       np.where(okp, zp, ze))
+        return out, okp | oke
+
+    @staticmethod
+    def _accumulate(acc, cnt, idx, val, use_max):
+        if use_max:
+            np.maximum.at(acc, idx, val)
+        else:
+            np.add.at(acc, idx, val)
+        np.add.at(cnt, idx, 1.0)

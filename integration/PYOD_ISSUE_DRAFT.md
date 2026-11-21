@@ -1,25 +1,19 @@
-# Draft issue for yzhao062/pyod
+# Issue for yzhao062/pyod
 
-**Status: draft, not posted.** PyOD's `CONTRIBUTING.md` asks the contributor to open the issue, so
-this is for you to post at https://github.com/yzhao062/pyod/issues/new. Copy the title and
-everything below the "Body" line.
+**Status: posted on 2026-11-21 as https://github.com/yzhao062/pyod/issues/795.** PyOD's
+`CONTRIBUTING.md` asks the contributor to open the issue, and the author posted it. The title and
+body below are the text as posted. Two lines under "AI disclosure" are the author's own wording.
 
-## Before posting
+## What happens next
 
-1. **The two-year commitment is yours to make.** The body says "I commit to maintaining both
-   detectors for at least two years". PyOD requires that sentence for a detector that does not meet
-   its age and citation rule of thumb. Remove the proposal rather than the sentence if you cannot
-   commit to it.
-2. **Fill in the diff-review line** under "AI disclosure". It is the only bracketed placeholder.
-3. **Links.** The fork branch, the CI pull request and the jepa-od repository are public, and the
-   body links all three. The repository was made public on 2026-11-21, after a scan of every file
-   version in its history found no keys, credentials or personal data.
-4. **Duplicates.** A search of PyOD's issues and pull requests for "JEPA", "joint embedding" and
-   "predictive architecture" on 2026-11-21 found nothing. Search once more on the day you post.
+Per `CONTRIBUTING.md`:
 
-What happens next, per `CONTRIBUTING.md`: the maintainer answers within 14 days. If the issue gets
-the `accepted` label and is assigned to you, open the pull request against `development` within 14
-days and link the issue. A pull request opened earlier may be closed without review.
+1. The maintainer aims to answer within 14 days, which is 2026-12-05.
+2. If the issue gets the `accepted` label and is assigned to the author, open the pull request
+   against `development` within 14 days of the assignment and link the issue. A pull request opened
+   earlier may be closed without review.
+3. Until then nothing else is opened on PyOD. The CI-only pull request in the fork stays a draft and
+   is not merged.
 
 Every number in the body was recomputed from `results/tabular_results.csv`, `results/ts_results.csv`
 and `results/ts_results_jepa_final.csv`, or taken from the bundled-data table in
@@ -110,9 +104,9 @@ Not included, because I understand these are yours to decide: `CHANGES.txt`, ent
 
 ### AI disclosure
 
-- Tools that contributed: Claude Code wrote the implementation, tests, docs and benchmark scripts.
+- Tools that contributed: Claude Code wrote the implementation, tests, docs and benchmark scripts.  i only provided the direction and some cases sample psedocode.
 - Checks that actually ran: the CI run above. Locally (Python 3.11.18, torch 2.15.0, macOS, CPU): the 44 new tests, 106 tests when related PyOD suites are included, and both examples.
-- Did a person read the full diff? **[yes / not yet: fill in before posting]**
+- Did a person read the full diff? - not thoroughly but i checked as humanly possible
 
 ### Questions
 

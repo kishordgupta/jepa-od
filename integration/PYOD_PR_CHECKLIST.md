@@ -11,8 +11,9 @@ The detectors are ported to PyOD as two commits on the branch `feature/jepa-od`,
 | `Add TSJEPA detector for time series (experimental)` | `pyod.models.ts_jepa.TSJEPA`, tests, example, docs |
 
 **The branch is on GitHub:** https://github.com/kishordgupta/pyod/tree/feature/jepa-od. It is two
-commits ahead of `yzhao062/pyod:development` and zero behind, and touches no workflow file. No issue
-or pull request has been opened on PyOD.
+commits ahead of `yzhao062/pyod:development` and zero behind, and touches no workflow file. The
+proposal was posted on 2026-11-21 as https://github.com/yzhao062/pyod/issues/795. No pull request has
+been opened on PyOD.
 
 Getting it there needed one extra step. The fork was 924 commits behind upstream, and a push that
 carries upstream's changes to `.github/workflows/` is refused for a `gh` login without the
@@ -105,8 +106,8 @@ seed 42, default parameters):
 PyOD's process (`CONTRIBUTING.md` on `development`):
 
 1. Open an issue first. For a new detector it must state the inclusion criterion or a commitment to
-   maintain the detector for at least two years. JEPA-OD is new, so it needs that commitment. A
-   draft of the issue, with notes on what to settle before posting, is in
+   maintain the detector for at least two years. JEPA-OD is new, so it needs that commitment.
+   Done on 2026-11-21: https://github.com/yzhao062/pyod/issues/795. The text as posted is in
    `integration/PYOD_ISSUE_DRAFT.md`.
 2. Wait until the maintainer labels the issue `accepted` and assigns it. A pull request without
    such an issue may be closed without review.

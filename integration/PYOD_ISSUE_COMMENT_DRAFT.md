@@ -2,7 +2,7 @@
 
 **Status: draft, not posted.** It is written for the author to post. Every number is from
 `results/extended_tables.md` and `results/ts_control_tables.md` (`REPORT.md` section 7.6). At the
-author's choice it states the facts only and leaves the judgement to the maintainer.
+author's choice it ends with an offer to drop the tabular detector and narrow the proposal to `TSJEPA`.
 
 ## Body
 
@@ -37,7 +37,7 @@ JEPA is mid-table. IForest is better on 35 of the 47 datasets (Wilcoxon signed-r
 
 Training is what makes the score work on the synthetic series. On SKAB and NAB it adds nothing measurable.
 
-I wanted you to have these numbers before you assess the proposal. How to weigh them is your call.
+**Proposal.** Given these numbers I am happy to drop the tabular `JEPA` detector and narrow this proposal to `TSJEPA` only. Its supported strength is anomalies that break temporal structure (the `generate_ts_data` rows, where training is what makes the score work). It shows no advantage on SKAB or NAB. How to weigh this is your call.
 
 Scripts, raw results and the full write-up are in sections 7.5 and 7.6 of the [report](https://github.com/kishordgupta/jepa-od/blob/main/REPORT.md).
 

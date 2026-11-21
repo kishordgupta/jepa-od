@@ -38,10 +38,10 @@ in all of them. The workflow means to leave torch out on macOS, but the job log 
 installed, so the torch-dependent tests ran there as well. Do not merge the pull request, because
 that would make the fork's `development` diverge from upstream.
 
-First run, 2026-11-21: 11 of the 12 jobs had passed when this was written, and
-`build (windows-latest, 3.12)` was still running. The five test-job logs that were read (Ubuntu
-3.9 and 3.12, Windows 3.9 and 3.13, macOS 3.9) each show 1714 passed, 18 skipped, with every test
-in `test_jepa.py` and `test_ts_jepa.py` passing. The pull request's Checks tab has the final state.
+Result of the run on 2026-11-21 (commit 5a225ef): all 12 jobs passed. Each of the 11 test-job logs
+shows 1714 passed, 18 skipped, with every test in `test_jepa.py` and `test_ts_jepa.py` passing.
+Test time per job ranged from 14 to 42 minutes, against a 60-minute job limit. Coveralls reported
+98.36% patch coverage (840 of 854 changed lines) and overall coverage up 0.3 points to 92.993%.
 
 ## File map
 

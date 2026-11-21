@@ -1,0 +1,261 @@
+47 datasets, 227 tasks to run, 13 workers
+[1/227 2603s] 3_backdoor seed=4 n_train=12000 d=196 2599s KNN=0.733 IForest=0.690 JEPAOD[combined]=0.782 JEPAOD-untrained[combined]=0.786 TJEPAOD[combined]=0.783 TJEPAOD-untrained[embed]=0.886
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[2/227 2606s] 3_backdoor seed=0 n_train=12000 d=196 2601s KNN=0.776 IForest=0.732 JEPAOD[combined]=0.818 JEPAOD-untrained[combined]=0.869 TJEPAOD[combined]=0.928 TJEPAOD-untrained[embed]=0.889
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[3/227 2606s] 3_backdoor seed=1 n_train=12000 d=196 2602s KNN=0.747 IForest=0.754 JEPAOD[combined]=0.838 JEPAOD-untrained[combined]=0.793 TJEPAOD[combined]=0.916 TJEPAOD-untrained[embed]=0.910
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[4/227 2609s] 3_backdoor seed=2 n_train=12000 d=196 2605s KNN=0.757 IForest=0.739 JEPAOD[combined]=0.887 JEPAOD-untrained[combined]=0.831 TJEPAOD[combined]=0.855 TJEPAOD-untrained[embed]=0.904
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[5/227 2611s] 3_backdoor seed=3 n_train=12000 d=196 2606s KNN=0.755 IForest=0.720 JEPAOD[combined]=0.889 JEPAOD-untrained[combined]=0.812 TJEPAOD[combined]=0.908 TJEPAOD-untrained[embed]=0.902
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[6/227 3342s] 5_campaign seed=0 n_train=12000 d=62 3337s KNN=0.709 IForest=0.701 JEPAOD[combined]=0.651 JEPAOD-untrained[combined]=0.734 TJEPAOD[combined]=0.683 TJEPAOD-untrained[embed]=0.701
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[7/227 3342s] 5_campaign seed=1 n_train=12000 d=62 3338s KNN=0.728 IForest=0.707 JEPAOD[combined]=0.683 JEPAOD-untrained[combined]=0.736 TJEPAOD[combined]=0.704 TJEPAOD-untrained[embed]=0.713
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[8/227 3347s] 5_campaign seed=2 n_train=12000 d=62 3343s KNN=0.715 IForest=0.696 JEPAOD[combined]=0.678 JEPAOD-untrained[combined]=0.730 TJEPAOD[combined]=0.616 TJEPAOD-untrained[embed]=0.715
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[9/227 3412s] 9_census seed=1 n_train=12000 d=500 3408s KNN=0.660 IForest=0.658 JEPAOD[combined]=0.660 JEPAOD-untrained[combined]=0.678 TJEPAOD[combined]=0.653 TJEPAOD-untrained[embed]=0.657
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[10/227 3415s] 9_census seed=2 n_train=12000 d=500 3410s KNN=0.651 IForest=0.614 JEPAOD[combined]=0.622 JEPAOD-untrained[combined]=0.677 TJEPAOD[combined]=0.655 TJEPAOD-untrained[embed]=0.651
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[11/227 3421s] 9_census seed=4 n_train=12000 d=500 3417s KNN=0.629 IForest=0.598 JEPAOD[combined]=0.569 JEPAOD-untrained[combined]=0.680 TJEPAOD[combined]=0.592 TJEPAOD-untrained[embed]=0.665
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[12/227 3422s] 9_census seed=3 n_train=12000 d=500 3417s KNN=0.643 IForest=0.620 JEPAOD[combined]=0.615 JEPAOD-untrained[combined]=0.652 TJEPAOD[combined]=0.680 TJEPAOD-untrained[embed]=0.639
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[13/227 3424s] 9_census seed=0 n_train=12000 d=500 3420s KNN=0.653 IForest=0.639 JEPAOD[combined]=0.563 JEPAOD-untrained[combined]=0.668 TJEPAOD[combined]=0.623 TJEPAOD-untrained[embed]=0.657
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[14/227 4369s] 8_celeba seed=2 n_train=12000 d=39 1758s KNN=0.613 IForest=0.715 JEPAOD[combined]=0.666 JEPAOD-untrained[combined]=0.765 TJEPAOD[combined]=0.503 TJEPAOD-untrained[embed]=0.780
+[15/227 4369s] 8_celeba seed=1 n_train=12000 d=39 1760s KNN=0.615 IForest=0.681 JEPAOD[combined]=0.635 JEPAOD-untrained[combined]=0.730 TJEPAOD[combined]=0.472 TJEPAOD-untrained[embed]=0.774
+[16/227 4370s] 8_celeba seed=0 n_train=12000 d=39 1763s KNN=0.612 IForest=0.647 JEPAOD[combined]=0.692 JEPAOD-untrained[combined]=0.712 TJEPAOD[combined]=0.495 TJEPAOD-untrained[embed]=0.782
+[17/227 4551s] 1_ALOI seed=0 n_train=12000 d=27 1126s KNN=0.654 IForest=0.564 JEPAOD[combined]=0.560 JEPAOD-untrained[combined]=0.570 TJEPAOD[combined]=0.576 TJEPAOD-untrained[embed]=0.567
+[18/227 4604s] 13_fraud seed=0 n_train=12000 d=29 1257s KNN=0.934 IForest=0.924 JEPAOD[combined]=0.908 JEPAOD-untrained[combined]=0.904 TJEPAOD[combined]=0.612 TJEPAOD-untrained[embed]=0.915
+[19/227 4652s] 13_fraud seed=2 n_train=12000 d=29 1238s KNN=0.942 IForest=0.949 JEPAOD[combined]=0.953 JEPAOD-untrained[combined]=0.960 TJEPAOD[combined]=0.919 TJEPAOD-untrained[embed]=0.949
+[20/227 4665s] 13_fraud seed=1 n_train=12000 d=29 1253s KNN=0.988 IForest=0.982 JEPAOD[combined]=0.992 JEPAOD-untrained[combined]=0.989 TJEPAOD[combined]=0.957 TJEPAOD-untrained[embed]=0.986
+[21/227 4666s] 13_fraud seed=3 n_train=12000 d=29 1245s KNN=0.843 IForest=0.860 JEPAOD[combined]=0.861 JEPAOD-untrained[combined]=0.880 TJEPAOD[combined]=0.747 TJEPAOD-untrained[embed]=0.854
+[22/227 4675s] 13_fraud seed=4 n_train=12000 d=29 1253s KNN=0.966 IForest=0.950 JEPAOD[combined]=0.949 JEPAOD-untrained[combined]=0.939 TJEPAOD[combined]=0.740 TJEPAOD-untrained[embed]=0.952
+[23/227 5036s] 8_celeba seed=3 n_train=12000 d=39 1694s KNN=0.641 IForest=0.701 JEPAOD[combined]=0.670 JEPAOD-untrained[combined]=0.776 TJEPAOD[combined]=0.662 TJEPAOD-untrained[embed]=0.783
+[24/227 5039s] 8_celeba seed=4 n_train=12000 d=39 1696s KNN=0.604 IForest=0.659 JEPAOD[combined]=0.624 JEPAOD-untrained[combined]=0.673 TJEPAOD[combined]=0.564 TJEPAOD-untrained[embed]=0.777
+[25/227 5441s] 24_mnist seed=0 n_train=4561 d=100 837s KNN=0.811 IForest=0.791 JEPAOD[combined]=0.728 JEPAOD-untrained[combined]=0.849 TJEPAOD[combined]=0.691 TJEPAOD-untrained[embed]=0.855
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[26/227 5487s] 24_mnist seed=1 n_train=4561 d=100 835s KNN=0.818 IForest=0.809 JEPAOD[combined]=0.799 JEPAOD-untrained[combined]=0.866 TJEPAOD[combined]=0.889 TJEPAOD-untrained[embed]=0.867
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[27/227 5490s] 24_mnist seed=2 n_train=4561 d=100 825s KNN=0.810 IForest=0.790 JEPAOD[combined]=0.739 JEPAOD-untrained[combined]=0.826 TJEPAOD[combined]=0.673 TJEPAOD-untrained[embed]=0.846
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[28/227 5495s] 24_mnist seed=3 n_train=4561 d=100 829s KNN=0.815 IForest=0.774 JEPAOD[combined]=0.780 JEPAOD-untrained[combined]=0.797 TJEPAOD[combined]=0.669 TJEPAOD-untrained[embed]=0.848
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[29/227 5500s] 1_ALOI seed=2 n_train=12000 d=27 1131s KNN=0.648 IForest=0.543 JEPAOD[combined]=0.568 JEPAOD-untrained[combined]=0.544 TJEPAOD[combined]=0.573 TJEPAOD-untrained[embed]=0.554
+[30/227 5501s] 24_mnist seed=4 n_train=4561 d=100 827s KNN=0.812 IForest=0.785 JEPAOD[combined]=0.768 JEPAOD-untrained[combined]=0.705 TJEPAOD[combined]=0.737 TJEPAOD-untrained[embed]=0.855
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[31/227 5503s] 1_ALOI seed=1 n_train=12000 d=27 1134s KNN=0.648 IForest=0.558 JEPAOD[combined]=0.578 JEPAOD-untrained[combined]=0.560 TJEPAOD[combined]=0.602 TJEPAOD-untrained[embed]=0.557
+[32/227 5505s] 1_ALOI seed=3 n_train=12000 d=27 1135s KNN=0.624 IForest=0.553 JEPAOD[combined]=0.559 JEPAOD-untrained[combined]=0.534 TJEPAOD[combined]=0.609 TJEPAOD-untrained[embed]=0.535
+[33/227 5636s] 5_campaign seed=4 n_train=12000 d=62 3030s KNN=0.714 IForest=0.716 JEPAOD[combined]=0.644 JEPAOD-untrained[combined]=0.720 TJEPAOD[combined]=0.756 TJEPAOD-untrained[embed]=0.703
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[34/227 5638s] 5_campaign seed=3 n_train=12000 d=62 3035s KNN=0.739 IForest=0.715 JEPAOD[combined]=0.675 JEPAOD-untrained[combined]=0.750 TJEPAOD[combined]=0.748 TJEPAOD-untrained[embed]=0.723
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[35/227 5685s] 1_ALOI seed=4 n_train=12000 d=27 1134s KNN=0.608 IForest=0.522 JEPAOD[combined]=0.538 JEPAOD-untrained[combined]=0.535 TJEPAOD[combined]=0.564 TJEPAOD-untrained[embed]=0.536
+[36/227 5806s] 26_optdigits seed=0 n_train=3129 d=64 770s KNN=0.423 IForest=0.791 JEPAOD[combined]=0.628 JEPAOD-untrained[combined]=0.518 TJEPAOD[combined]=0.617 TJEPAOD-untrained[embed]=0.562
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[37/227 5807s] 26_optdigits seed=1 n_train=3129 d=64 768s KNN=0.416 IForest=0.693 JEPAOD[combined]=0.686 JEPAOD-untrained[combined]=0.499 TJEPAOD[combined]=0.698 TJEPAOD-untrained[embed]=0.600
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[38/227 6045s] 35_SpamBase seed=0 n_train=2524 d=57 551s KNN=0.700 IForest=0.651 JEPAOD[combined]=0.584 JEPAOD-untrained[combined]=0.597 TJEPAOD[combined]=0.658 TJEPAOD-untrained[embed]=0.614
+[39/227 6046s] 35_SpamBase seed=1 n_train=2524 d=57 546s KNN=0.698 IForest=0.632 JEPAOD[combined]=0.522 JEPAOD-untrained[combined]=0.536 TJEPAOD[combined]=0.589 TJEPAOD-untrained[embed]=0.571
+[40/227 6048s] 35_SpamBase seed=2 n_train=2524 d=57 546s KNN=0.705 IForest=0.600 JEPAOD[combined]=0.536 JEPAOD-untrained[combined]=0.565 TJEPAOD[combined]=0.627 TJEPAOD-untrained[embed]=0.583
+[41/227 6054s] 35_SpamBase seed=4 n_train=2524 d=57 549s KNN=0.713 IForest=0.642 JEPAOD[combined]=0.543 JEPAOD-untrained[combined]=0.570 TJEPAOD[combined]=0.561 TJEPAOD-untrained[embed]=0.593
+[42/227 6055s] 35_SpamBase seed=3 n_train=2524 d=57 552s KNN=0.692 IForest=0.595 JEPAOD[combined]=0.535 JEPAOD-untrained[combined]=0.554 TJEPAOD[combined]=0.613 TJEPAOD-untrained[embed]=0.582
+[43/227 6130s] 36_speech seed=0 n_train=2211 d=400 494s KNN=0.524 IForest=0.542 JEPAOD[combined]=0.555 JEPAOD-untrained[combined]=0.511 TJEPAOD[combined]=0.567 TJEPAOD-untrained[embed]=0.514
+[44/227 6135s] 36_speech seed=1 n_train=2211 d=400 497s KNN=0.452 IForest=0.493 JEPAOD[combined]=0.416 JEPAOD-untrained[combined]=0.431 TJEPAOD[combined]=0.417 TJEPAOD-untrained[embed]=0.439
+[45/227 6186s] 36_speech seed=2 n_train=2211 d=400 502s KNN=0.515 IForest=0.511 JEPAOD[combined]=0.501 JEPAOD-untrained[combined]=0.512 TJEPAOD[combined]=0.531 TJEPAOD-untrained[embed]=0.562
+[46/227 6231s] 26_optdigits seed=2 n_train=3129 d=64 789s KNN=0.445 IForest=0.719 JEPAOD[combined]=0.555 JEPAOD-untrained[combined]=0.561 TJEPAOD[combined]=0.427 TJEPAOD-untrained[embed]=0.619
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[47/227 6273s] 26_optdigits seed=3 n_train=3129 d=64 786s KNN=0.415 IForest=0.759 JEPAOD[combined]=0.765 JEPAOD-untrained[combined]=0.455 TJEPAOD[combined]=0.664 TJEPAOD-untrained[embed]=0.587
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[48/227 6275s] 26_optdigits seed=4 n_train=3129 d=64 785s KNN=0.462 IForest=0.721 JEPAOD[combined]=0.516 JEPAOD-untrained[combined]=0.497 TJEPAOD[combined]=0.580 TJEPAOD-untrained[embed]=0.625
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[49/227 6303s] 36_speech seed=3 n_train=2211 d=400 497s KNN=0.497 IForest=0.507 JEPAOD[combined]=0.502 JEPAOD-untrained[combined]=0.479 TJEPAOD[combined]=0.475 TJEPAOD-untrained[embed]=0.489
+[50/227 6304s] 36_speech seed=4 n_train=2211 d=400 497s KNN=0.436 IForest=0.418 JEPAOD[combined]=0.376 JEPAOD-untrained[combined]=0.420 TJEPAOD[combined]=0.425 TJEPAOD-untrained[embed]=0.426
+[51/227 6527s] 19_landsat seed=0 n_train=3861 d=36 482s KNN=0.581 IForest=0.464 JEPAOD[combined]=0.450 JEPAOD-untrained[combined]=0.340 TJEPAOD[combined]=0.482 TJEPAOD-untrained[embed]=0.376
+[52/227 6531s] 19_landsat seed=2 n_train=3861 d=36 483s KNN=0.584 IForest=0.507 JEPAOD[combined]=0.409 JEPAOD-untrained[combined]=0.372 TJEPAOD[combined]=0.500 TJEPAOD-untrained[embed]=0.398
+[53/227 6531s] 19_landsat seed=1 n_train=3861 d=36 485s KNN=0.585 IForest=0.483 JEPAOD[combined]=0.450 JEPAOD-untrained[combined]=0.363 TJEPAOD[combined]=0.487 TJEPAOD-untrained[embed]=0.391
+[54/227 6536s] 19_landsat seed=3 n_train=3861 d=36 482s KNN=0.584 IForest=0.408 JEPAOD[combined]=0.405 JEPAOD-untrained[combined]=0.338 TJEPAOD[combined]=0.458 TJEPAOD-untrained[embed]=0.369
+[55/227 6542s] 19_landsat seed=4 n_train=3861 d=36 487s KNN=0.594 IForest=0.504 JEPAOD[combined]=0.497 JEPAOD-untrained[combined]=0.374 TJEPAOD[combined]=0.511 TJEPAOD-untrained[embed]=0.402
+[56/227 6613s] 30_satellite seed=0 n_train=3861 d=36 483s KNN=0.699 IForest=0.697 JEPAOD[combined]=0.648 JEPAOD-untrained[combined]=0.609 TJEPAOD[combined]=0.608 TJEPAOD-untrained[embed]=0.637
+[57/227 6621s] 30_satellite seed=1 n_train=3861 d=36 485s KNN=0.683 IForest=0.706 JEPAOD[combined]=0.623 JEPAOD-untrained[combined]=0.586 TJEPAOD[combined]=0.681 TJEPAOD-untrained[embed]=0.607
+[58/227 6679s] 30_satellite seed=2 n_train=3861 d=36 493s KNN=0.684 IForest=0.745 JEPAOD[combined]=0.598 JEPAOD-untrained[combined]=0.605 TJEPAOD[combined]=0.585 TJEPAOD-untrained[embed]=0.629
+[59/227 6704s] 31_satimage-2 seed=0 n_train=3481 d=36 429s KNN=0.945 IForest=0.980 JEPAOD[combined]=0.989 JEPAOD-untrained[combined]=0.964 TJEPAOD[combined]=0.975 TJEPAOD-untrained[embed]=0.963
+[60/227 6711s] 30_satellite seed=3 n_train=3861 d=36 481s KNN=0.694 IForest=0.726 JEPAOD[combined]=0.661 JEPAOD-untrained[combined]=0.607 TJEPAOD[combined]=0.713 TJEPAOD-untrained[embed]=0.630
+[61/227 6724s] 31_satimage-2 seed=1 n_train=3481 d=36 421s KNN=0.949 IForest=0.991 JEPAOD[combined]=1.000 JEPAOD-untrained[combined]=0.979 TJEPAOD[combined]=0.990 TJEPAOD-untrained[embed]=0.969
+[62/227 6729s] 31_satimage-2 seed=2 n_train=3481 d=36 425s KNN=0.949 IForest=0.996 JEPAOD[combined]=0.989 JEPAOD-untrained[combined]=0.985 TJEPAOD[combined]=0.963 TJEPAOD-untrained[embed]=0.981
+[63/227 6746s] 30_satellite seed=4 n_train=3861 d=36 473s KNN=0.678 IForest=0.695 JEPAOD[combined]=0.679 JEPAOD-untrained[combined]=0.594 TJEPAOD[combined]=0.631 TJEPAOD-untrained[embed]=0.618
+[64/227 6929s] 31_satimage-2 seed=3 n_train=3481 d=36 402s KNN=0.940 IForest=0.985 JEPAOD[combined]=0.995 JEPAOD-untrained[combined]=0.971 TJEPAOD[combined]=0.990 TJEPAOD-untrained[embed]=0.964
+[65/227 6929s] 31_satimage-2 seed=4 n_train=3481 d=36 398s KNN=0.947 IForest=0.984 JEPAOD[combined]=0.999 JEPAOD-untrained[combined]=0.979 TJEPAOD[combined]=0.977 TJEPAOD-untrained[embed]=0.963
+[66/227 6984s] 11_donors seed=0 n_train=12000 d=10 453s KNN=0.786 IForest=0.771 JEPAOD[combined]=0.759 JEPAOD-untrained[combined]=0.772 TJEPAOD[combined]=0.747 TJEPAOD-untrained[embed]=0.839
+[67/227 6990s] 11_donors seed=2 n_train=12000 d=10 448s KNN=0.821 IForest=0.772 JEPAOD[combined]=0.609 JEPAOD-untrained[combined]=0.823 TJEPAOD[combined]=0.703 TJEPAOD-untrained[embed]=0.842
+[68/227 7018s] 11_donors seed=1 n_train=12000 d=10 482s KNN=0.792 IForest=0.785 JEPAOD[combined]=0.627 JEPAOD-untrained[combined]=0.783 TJEPAOD[combined]=0.689 TJEPAOD-untrained[embed]=0.825
+[69/227 7079s] 11_donors seed=3 n_train=12000 d=10 466s KNN=0.819 IForest=0.782 JEPAOD[combined]=0.701 JEPAOD-untrained[combined]=0.815 TJEPAOD[combined]=0.845 TJEPAOD-untrained[embed]=0.850
+[70/227 7085s] 25_musk seed=0 n_train=1837 d=166 339s KNN=0.555 IForest=1.000 JEPAOD[combined]=1.000 JEPAOD-untrained[combined]=1.000 TJEPAOD[combined]=0.999 TJEPAOD-untrained[embed]=0.986
+[71/227 7086s] 11_donors seed=4 n_train=12000 d=10 465s KNN=0.782 IForest=0.755 JEPAOD[combined]=0.624 JEPAOD-untrained[combined]=0.890 TJEPAOD[combined]=0.557 TJEPAOD-untrained[embed]=0.836
+[72/227 7138s] 10_cover seed=0 n_train=12000 d=10 459s KNN=0.868 IForest=0.856 JEPAOD[combined]=0.894 JEPAOD-untrained[combined]=0.894 TJEPAOD[combined]=0.559 TJEPAOD-untrained[embed]=0.976
+[73/227 7155s] 10_cover seed=1 n_train=12000 d=10 451s KNN=0.808 IForest=0.868 JEPAOD[combined]=0.900 JEPAOD-untrained[combined]=0.906 TJEPAOD[combined]=0.446 TJEPAOD-untrained[embed]=0.964
+[74/227 7169s] 10_cover seed=2 n_train=12000 d=10 457s KNN=0.838 IForest=0.861 JEPAOD[combined]=0.887 JEPAOD-untrained[combined]=0.905 TJEPAOD[combined]=0.626 TJEPAOD-untrained[embed]=0.919
+[75/227 7181s] 10_cover seed=3 n_train=12000 d=10 458s KNN=0.842 IForest=0.862 JEPAOD[combined]=0.956 JEPAOD-untrained[combined]=0.929 TJEPAOD[combined]=0.715 TJEPAOD-untrained[embed]=0.928
+[76/227 7187s] 10_cover seed=4 n_train=12000 d=10 458s KNN=0.782 IForest=0.890 JEPAOD[combined]=0.916 JEPAOD-untrained[combined]=0.921 TJEPAOD[combined]=0.504 TJEPAOD-untrained[embed]=0.914
+[77/227 7273s] 25_musk seed=2 n_train=1837 d=166 344s KNN=0.535 IForest=1.000 JEPAOD[combined]=0.999 JEPAOD-untrained[combined]=1.000 TJEPAOD[combined]=0.672 TJEPAOD-untrained[embed]=0.992
+[78/227 7277s] 25_musk seed=1 n_train=1837 d=166 348s KNN=0.512 IForest=1.000 JEPAOD[combined]=1.000 JEPAOD-untrained[combined]=1.000 TJEPAOD[combined]=0.855 TJEPAOD-untrained[embed]=0.996
+[79/227 7333s] 25_musk seed=3 n_train=1837 d=166 349s KNN=0.461 IForest=0.996 JEPAOD[combined]=1.000 JEPAOD-untrained[combined]=1.000 TJEPAOD[combined]=0.705 TJEPAOD-untrained[embed]=0.994
+[80/227 7337s] 25_musk seed=4 n_train=1837 d=166 348s KNN=0.456 IForest=1.000 JEPAOD[combined]=1.000 JEPAOD-untrained[combined]=1.000 TJEPAOD[combined]=0.992 TJEPAOD-untrained[embed]=0.996
+[81/227 7440s] 22_magic.gamma seed=0 n_train=11412 d=10 423s KNN=0.813 IForest=0.712 JEPAOD[combined]=0.711 JEPAOD-untrained[combined]=0.692 TJEPAOD[combined]=0.694 TJEPAOD-untrained[embed]=0.694
+[82/227 7518s] 22_magic.gamma seed=1 n_train=11412 d=10 439s KNN=0.805 IForest=0.725 JEPAOD[combined]=0.674 JEPAOD-untrained[combined]=0.699 TJEPAOD[combined]=0.611 TJEPAOD-untrained[embed]=0.726
+[83/227 7523s] 22_magic.gamma seed=2 n_train=11412 d=10 439s KNN=0.814 IForest=0.738 JEPAOD[combined]=0.688 JEPAOD-untrained[combined]=0.712 TJEPAOD[combined]=0.729 TJEPAOD-untrained[embed]=0.719
+[84/227 7525s] 22_magic.gamma seed=3 n_train=11412 d=10 439s KNN=0.816 IForest=0.717 JEPAOD[combined]=0.667 JEPAOD-untrained[combined]=0.706 TJEPAOD[combined]=0.664 TJEPAOD-untrained[embed]=0.728
+[85/227 7528s] 17_InternetAds seed=0 n_train=1179 d=1555 252s KNN=0.688 IForest=0.662 JEPAOD[combined]=0.581 JEPAOD-untrained[combined]=0.593 TJEPAOD[combined]=0.662 TJEPAOD-untrained[embed]=0.664
+[86/227 7572s] 32_shuttle seed=0 n_train=12000 d=9 417s KNN=0.744 IForest=0.997 JEPAOD[combined]=0.906 JEPAOD-untrained[combined]=0.995 TJEPAOD[combined]=0.679 TJEPAOD-untrained[embed]=0.995
+[87/227 7573s] 22_magic.gamma seed=4 n_train=11412 d=10 435s KNN=0.807 IForest=0.714 JEPAOD[combined]=0.668 JEPAOD-untrained[combined]=0.710 TJEPAOD[combined]=0.659 TJEPAOD-untrained[embed]=0.722
+[88/227 7587s] 17_InternetAds seed=1 n_train=1179 d=1555 254s KNN=0.665 IForest=0.669 JEPAOD[combined]=0.538 JEPAOD-untrained[combined]=0.553 TJEPAOD[combined]=0.593 TJEPAOD-untrained[embed]=0.597
+[89/227 7591s] 17_InternetAds seed=2 n_train=1179 d=1555 253s KNN=0.708 IForest=0.668 JEPAOD[combined]=0.632 JEPAOD-untrained[combined]=0.631 TJEPAOD[combined]=0.661 TJEPAOD-untrained[embed]=0.661
+[90/227 7600s] 32_shuttle seed=1 n_train=12000 d=9 431s KNN=0.750 IForest=0.998 JEPAOD[combined]=0.958 JEPAOD-untrained[combined]=0.997 TJEPAOD[combined]=0.934 TJEPAOD-untrained[embed]=0.995
+[91/227 7613s] 32_shuttle seed=2 n_train=12000 d=9 432s KNN=0.751 IForest=0.997 JEPAOD[combined]=0.902 JEPAOD-untrained[combined]=0.995 TJEPAOD[combined]=0.674 TJEPAOD-untrained[embed]=0.996
+[92/227 7619s] 32_shuttle seed=3 n_train=12000 d=9 432s KNN=0.744 IForest=0.998 JEPAOD[combined]=0.728 JEPAOD-untrained[combined]=0.995 TJEPAOD[combined]=0.683 TJEPAOD-untrained[embed]=0.993
+[93/227 7694s] 32_shuttle seed=4 n_train=12000 d=9 421s KNN=0.757 IForest=0.998 JEPAOD[combined]=0.870 JEPAOD-untrained[combined]=0.997 TJEPAOD[combined]=0.775 TJEPAOD-untrained[embed]=0.994
+[94/227 7699s] 17_InternetAds seed=3 n_train=1179 d=1555 258s KNN=0.708 IForest=0.676 JEPAOD[combined]=0.634 JEPAOD-untrained[combined]=0.634 TJEPAOD[combined]=0.667 TJEPAOD-untrained[embed]=0.668
+[95/227 7729s] 41_Waveform seed=1 n_train=2065 d=21 138s KNN=0.785 IForest=0.679 JEPAOD[combined]=0.674 JEPAOD-untrained[combined]=0.704 TJEPAOD[combined]=0.878 TJEPAOD-untrained[embed]=0.684
+[96/227 7730s] 41_Waveform seed=0 n_train=2065 d=21 142s KNN=0.722 IForest=0.756 JEPAOD[combined]=0.581 JEPAOD-untrained[combined]=0.666 TJEPAOD[combined]=0.842 TJEPAOD-untrained[embed]=0.699
+[97/227 7739s] 41_Waveform seed=2 n_train=2065 d=21 140s KNN=0.765 IForest=0.687 JEPAOD[combined]=0.646 JEPAOD-untrained[combined]=0.661 TJEPAOD[combined]=0.896 TJEPAOD-untrained[embed]=0.684
+[98/227 7741s] 28_pendigits seed=1 n_train=4122 d=16 216s KNN=0.717 IForest=0.968 JEPAOD[combined]=0.806 JEPAOD-untrained[combined]=0.937 TJEPAOD[combined]=0.781 TJEPAOD-untrained[embed]=0.942
+[99/227 7743s] 28_pendigits seed=2 n_train=4122 d=16 215s KNN=0.731 IForest=0.949 JEPAOD[combined]=0.886 JEPAOD-untrained[combined]=0.924 TJEPAOD[combined]=0.847 TJEPAOD-untrained[embed]=0.925
+[100/227 7747s] 28_pendigits seed=0 n_train=4122 d=16 224s KNN=0.724 IForest=0.968 JEPAOD[combined]=0.775 JEPAOD-untrained[combined]=0.910 TJEPAOD[combined]=0.768 TJEPAOD-untrained[embed]=0.933
+[101/227 7753s] 41_Waveform seed=3 n_train=2065 d=21 140s KNN=0.747 IForest=0.774 JEPAOD[combined]=0.606 JEPAOD-untrained[combined]=0.726 TJEPAOD[combined]=0.871 TJEPAOD-untrained[embed]=0.746
+[102/227 7759s] 41_Waveform seed=4 n_train=2065 d=21 140s KNN=0.773 IForest=0.730 JEPAOD[combined]=0.562 JEPAOD-untrained[combined]=0.679 TJEPAOD[combined]=0.936 TJEPAOD-untrained[embed]=0.693
+[103/227 7785s] 17_InternetAds seed=4 n_train=1179 d=1555 267s KNN=0.656 IForest=0.643 JEPAOD[combined]=0.576 JEPAOD-untrained[combined]=0.575 TJEPAOD[combined]=0.611 TJEPAOD-untrained[embed]=0.620
+[104/227 7791s] 28_pendigits seed=3 n_train=4122 d=16 218s KNN=0.741 IForest=0.943 JEPAOD[combined]=0.866 JEPAOD-untrained[combined]=0.923 TJEPAOD[combined]=0.885 TJEPAOD-untrained[embed]=0.920
+[105/227 7792s] 28_pendigits seed=4 n_train=4122 d=16 219s KNN=0.692 IForest=0.940 JEPAOD[combined]=0.622 JEPAOD-untrained[combined]=0.914 TJEPAOD[combined]=0.685 TJEPAOD-untrained[embed]=0.898
+[106/227 7851s] 23_mammography seed=0 n_train=6709 d=6 157s KNN=0.847 IForest=0.860 JEPAOD[combined]=0.815 JEPAOD-untrained[combined]=0.887 TJEPAOD[combined]=0.615 TJEPAOD-untrained[embed]=0.865
+[107/227 7853s] 23_mammography seed=1 n_train=6709 d=6 154s KNN=0.857 IForest=0.874 JEPAOD[combined]=0.874 JEPAOD-untrained[combined]=0.885 TJEPAOD[combined]=0.610 TJEPAOD-untrained[embed]=0.866
+[108/227 7884s] 23_mammography seed=2 n_train=6709 d=6 156s KNN=0.851 IForest=0.867 JEPAOD[combined]=0.842 JEPAOD-untrained[combined]=0.889 TJEPAOD[combined]=0.385 TJEPAOD-untrained[embed]=0.856
+[109/227 7885s] 23_mammography seed=3 n_train=6709 d=6 156s KNN=0.843 IForest=0.871 JEPAOD[combined]=0.788 JEPAOD-untrained[combined]=0.874 TJEPAOD[combined]=0.674 TJEPAOD-untrained[embed]=0.848
+[110/227 7896s] 23_mammography seed=4 n_train=6709 d=6 157s KNN=0.827 IForest=0.848 JEPAOD[combined]=0.796 JEPAOD-untrained[combined]=0.867 TJEPAOD[combined]=0.564 TJEPAOD-untrained[embed]=0.820
+[111/227 7938s] 33_skin seed=0 n_train=12000 d=3 197s KNN=0.715 IForest=0.681 JEPAOD[combined]=0.713 JEPAOD-untrained[combined]=0.567 TJEPAOD[combined]=0.873 TJEPAOD-untrained[embed]=0.776
+[112/227 7948s] 33_skin seed=1 n_train=12000 d=3 204s KNN=0.710 IForest=0.650 JEPAOD[combined]=0.738 JEPAOD-untrained[combined]=0.647 TJEPAOD[combined]=0.851 TJEPAOD-untrained[embed]=0.770
+[113/227 7951s] 33_skin seed=2 n_train=12000 d=3 204s KNN=0.726 IForest=0.661 JEPAOD[combined]=0.777 JEPAOD-untrained[combined]=0.616 TJEPAOD[combined]=0.836 TJEPAOD-untrained[embed]=0.810
+[114/227 7954s] 33_skin seed=3 n_train=12000 d=3 201s KNN=0.719 IForest=0.683 JEPAOD[combined]=0.772 JEPAOD-untrained[combined]=0.630 TJEPAOD[combined]=0.810 TJEPAOD-untrained[embed]=0.784
+[115/227 7957s] 33_skin seed=4 n_train=12000 d=3 198s KNN=0.726 IForest=0.669 JEPAOD[combined]=0.799 JEPAOD-untrained[combined]=0.641 TJEPAOD[combined]=0.764 TJEPAOD-untrained[embed]=0.804
+[116/227 7982s] 34_smtp seed=2 n_train=12000 d=3 197s KNN=1.000 IForest=0.978 JEPAOD[combined]=1.000 JEPAOD-untrained[combined]=1.000 TJEPAOD[combined]=0.794 TJEPAOD-untrained[embed]=1.000
+[117/227 7987s] 34_smtp seed=4 n_train=12000 d=3 195s KNN=1.000 IForest=0.978 JEPAOD[combined]=1.000 JEPAOD-untrained[combined]=1.000 TJEPAOD[combined]=0.758 TJEPAOD-untrained[embed]=1.000
+[118/227 7990s] 34_smtp seed=3 n_train=12000 d=3 199s KNN=1.000 IForest=0.979 JEPAOD[combined]=1.000 JEPAOD-untrained[combined]=1.000 TJEPAOD[combined]=0.637 TJEPAOD-untrained[embed]=1.000
+[119/227 8048s] 16_http seed=0 n_train=12000 d=3 196s KNN=0.033 IForest=1.000 JEPAOD[combined]=0.998 JEPAOD-untrained[combined]=0.995 TJEPAOD[combined]=0.999 TJEPAOD-untrained[embed]=0.993
+[120/227 8050s] 16_http seed=1 n_train=12000 d=3 197s KNN=0.034 IForest=0.999 JEPAOD[combined]=0.997 JEPAOD-untrained[combined]=0.995 TJEPAOD[combined]=0.882 TJEPAOD-untrained[embed]=0.996
+[121/227 8050s] 27_PageBlocks seed=0 n_train=3235 d=10 112s KNN=0.561 IForest=0.896 JEPAOD[combined]=0.880 JEPAOD-untrained[combined]=0.851 TJEPAOD[combined]=0.923 TJEPAOD-untrained[embed]=0.904
+[122/227 8061s] 27_PageBlocks seed=1 n_train=3235 d=10 113s KNN=0.601 IForest=0.913 JEPAOD[combined]=0.924 JEPAOD-untrained[combined]=0.904 TJEPAOD[combined]=0.923 TJEPAOD-untrained[embed]=0.922
+[123/227 8065s] 27_PageBlocks seed=2 n_train=3235 d=10 114s KNN=0.584 IForest=0.899 JEPAOD[combined]=0.901 JEPAOD-untrained[combined]=0.823 TJEPAOD[combined]=0.958 TJEPAOD-untrained[embed]=0.912
+[124/227 8068s] 27_PageBlocks seed=3 n_train=3235 d=10 114s KNN=0.563 IForest=0.905 JEPAOD[combined]=0.910 JEPAOD-untrained[combined]=0.870 TJEPAOD[combined]=0.944 TJEPAOD-untrained[embed]=0.916
+[125/227 8071s] 27_PageBlocks seed=4 n_train=3235 d=10 114s KNN=0.582 IForest=0.906 JEPAOD[combined]=0.939 JEPAOD-untrained[combined]=0.908 TJEPAOD[combined]=0.937 TJEPAOD-untrained[embed]=0.918
+[126/227 8076s] 12_fault seed=0 n_train=1164 d=27 93s KNN=0.727 IForest=0.587 JEPAOD[combined]=0.582 JEPAOD-untrained[combined]=0.488 TJEPAOD[combined]=0.485 TJEPAOD-untrained[embed]=0.498
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[127/227 8079s] 16_http seed=2 n_train=12000 d=3 195s KNN=0.002 IForest=1.000 JEPAOD[combined]=0.996 JEPAOD-untrained[combined]=0.993 TJEPAOD[combined]=0.987 TJEPAOD-untrained[embed]=0.994
+[128/227 8081s] 12_fault seed=1 n_train=1164 d=27 94s KNN=0.734 IForest=0.548 JEPAOD[combined]=0.612 JEPAOD-untrained[combined]=0.428 TJEPAOD[combined]=0.432 TJEPAOD-untrained[embed]=0.444
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[129/227 8085s] 12_fault seed=2 n_train=1164 d=27 95s KNN=0.695 IForest=0.526 JEPAOD[combined]=0.577 JEPAOD-untrained[combined]=0.413 TJEPAOD[combined]=0.435 TJEPAOD-untrained[embed]=0.451
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[130/227 8085s] 16_http seed=3 n_train=12000 d=3 200s KNN=0.002 IForest=1.000 JEPAOD[combined]=0.998 JEPAOD-untrained[combined]=0.995 TJEPAOD[combined]=0.980 TJEPAOD-untrained[embed]=0.996
+[131/227 8102s] 16_http seed=4 n_train=12000 d=3 206s KNN=0.109 IForest=0.999 JEPAOD[combined]=0.998 JEPAOD-untrained[combined]=0.995 TJEPAOD[combined]=0.985 TJEPAOD-untrained[embed]=0.994
+[132/227 8145s] 12_fault seed=3 n_train=1164 d=27 98s KNN=0.739 IForest=0.589 JEPAOD[combined]=0.623 JEPAOD-untrained[combined]=0.499 TJEPAOD[combined]=0.513 TJEPAOD-untrained[embed]=0.512
+[133/227 8146s] 12_fault seed=4 n_train=1164 d=27 97s KNN=0.753 IForest=0.597 JEPAOD[combined]=0.612 JEPAOD-untrained[combined]=0.505 TJEPAOD[combined]=0.459 TJEPAOD-untrained[embed]=0.482
+[134/227 8148s] 20_letter seed=0 n_train=960 d=32 97s KNN=0.882 IForest=0.674 JEPAOD[combined]=0.605 JEPAOD-untrained[combined]=0.592 TJEPAOD[combined]=0.629 TJEPAOD-untrained[embed]=0.606
+[135/227 8161s] 20_letter seed=1 n_train=960 d=32 100s KNN=0.852 IForest=0.632 JEPAOD[combined]=0.618 JEPAOD-untrained[combined]=0.598 TJEPAOD[combined]=0.593 TJEPAOD-untrained[embed]=0.597
+[136/227 8164s] 7_Cardiotocography seed=0 n_train=1268 d=21 88s KNN=0.629 IForest=0.657 JEPAOD[combined]=0.588 JEPAOD-untrained[combined]=0.731 TJEPAOD[combined]=0.717 TJEPAOD-untrained[embed]=0.646
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[137/227 8165s] 20_letter seed=2 n_train=960 d=32 101s KNN=0.858 IForest=0.598 JEPAOD[combined]=0.598 JEPAOD-untrained[combined]=0.559 TJEPAOD[combined]=0.498 TJEPAOD-untrained[embed]=0.567
+[138/227 8166s] 7_Cardiotocography seed=1 n_train=1268 d=21 87s KNN=0.623 IForest=0.681 JEPAOD[combined]=0.628 JEPAOD-untrained[combined]=0.711 TJEPAOD[combined]=0.791 TJEPAOD-untrained[embed]=0.671
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[139/227 8168s] 20_letter seed=3 n_train=960 d=32 100s KNN=0.873 IForest=0.617 JEPAOD[combined]=0.603 JEPAOD-untrained[combined]=0.532 TJEPAOD[combined]=0.501 TJEPAOD-untrained[embed]=0.548
+[140/227 8169s] 7_Cardiotocography seed=2 n_train=1268 d=21 88s KNN=0.640 IForest=0.660 JEPAOD[combined]=0.624 JEPAOD-untrained[combined]=0.711 TJEPAOD[combined]=0.807 TJEPAOD-untrained[embed]=0.673
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[141/227 8172s] 7_Cardiotocography seed=4 n_train=1268 d=21 87s KNN=0.606 IForest=0.737 JEPAOD[combined]=0.594 JEPAOD-untrained[combined]=0.717 TJEPAOD[combined]=0.826 TJEPAOD-untrained[embed]=0.707
+  NOTE PCA failed: ValueError("Input contains infinity or a value too large for dtype('float64').")
+[142/227 8173s] 7_Cardiotocography seed=3 n_train=1268 d=21 88s KNN=0.597 IForest=0.672 JEPAOD[combined]=0.617 JEPAOD-untrained[combined]=0.698 TJEPAOD[combined]=0.643 TJEPAOD-untrained[embed]=0.678
+[143/227 8175s] 20_letter seed=4 n_train=960 d=32 103s KNN=0.909 IForest=0.677 JEPAOD[combined]=0.615 JEPAOD-untrained[combined]=0.606 TJEPAOD[combined]=0.548 TJEPAOD-untrained[embed]=0.620
+[144/227 8210s] 2_annthyroid seed=0 n_train=4320 d=6 108s KNN=0.712 IForest=0.755 JEPAOD[combined]=0.598 JEPAOD-untrained[combined]=0.815 TJEPAOD[combined]=0.663 TJEPAOD-untrained[embed]=0.800
+[145/227 8229s] 44_Wilt seed=0 n_train=2891 d=5 62s KNN=0.680 IForest=0.441 JEPAOD[combined]=0.729 JEPAOD-untrained[combined]=0.633 TJEPAOD[combined]=0.734 TJEPAOD-untrained[embed]=0.505
+[146/227 8231s] 44_Wilt seed=1 n_train=2891 d=5 62s KNN=0.716 IForest=0.440 JEPAOD[combined]=0.568 JEPAOD-untrained[combined]=0.657 TJEPAOD[combined]=0.549 TJEPAOD-untrained[embed]=0.501
+[147/227 8234s] 44_Wilt seed=2 n_train=2891 d=5 62s KNN=0.707 IForest=0.480 JEPAOD[combined]=0.649 JEPAOD-untrained[combined]=0.605 TJEPAOD[combined]=0.714 TJEPAOD-untrained[embed]=0.582
+[148/227 8235s] 44_Wilt seed=3 n_train=2891 d=5 62s KNN=0.705 IForest=0.456 JEPAOD[combined]=0.659 JEPAOD-untrained[combined]=0.647 TJEPAOD[combined]=0.788 TJEPAOD-untrained[embed]=0.562
+[149/227 8236s] 6_cardio seed=2 n_train=1098 d=21 72s KNN=0.732 IForest=0.936 JEPAOD[combined]=0.880 JEPAOD-untrained[combined]=0.940 TJEPAOD[combined]=0.942 TJEPAOD-untrained[embed]=0.949
+[150/227 8237s] 6_cardio seed=3 n_train=1098 d=21 71s KNN=0.747 IForest=0.899 JEPAOD[combined]=0.874 JEPAOD-untrained[combined]=0.909 TJEPAOD[combined]=0.894 TJEPAOD-untrained[embed]=0.933
+[151/227 8238s] 44_Wilt seed=4 n_train=2891 d=5 63s KNN=0.689 IForest=0.497 JEPAOD[combined]=0.627 JEPAOD-untrained[combined]=0.580 TJEPAOD[combined]=0.692 TJEPAOD-untrained[embed]=0.514
+[152/227 8238s] 6_cardio seed=4 n_train=1098 d=21 72s KNN=0.743 IForest=0.938 JEPAOD[combined]=0.869 JEPAOD-untrained[combined]=0.936 TJEPAOD[combined]=0.954 TJEPAOD-untrained[embed]=0.941
+[153/227 8247s] 2_annthyroid seed=1 n_train=4320 d=6 101s KNN=0.737 IForest=0.824 JEPAOD[combined]=0.638 JEPAOD-untrained[combined]=0.814 TJEPAOD[combined]=0.674 TJEPAOD-untrained[embed]=0.814
+[154/227 8247s] 2_annthyroid seed=2 n_train=4320 d=6 101s KNN=0.721 IForest=0.842 JEPAOD[combined]=0.646 JEPAOD-untrained[combined]=0.855 TJEPAOD[combined]=0.678 TJEPAOD-untrained[embed]=0.801
+[155/227 8249s] 2_annthyroid seed=3 n_train=4320 d=6 102s KNN=0.742 IForest=0.835 JEPAOD[combined]=0.664 JEPAOD-untrained[combined]=0.828 TJEPAOD[combined]=0.682 TJEPAOD-untrained[embed]=0.800
+[156/227 8259s] 2_annthyroid seed=4 n_train=4320 d=6 98s KNN=0.746 IForest=0.823 JEPAOD[combined]=0.638 JEPAOD-untrained[combined]=0.824 TJEPAOD[combined]=0.710 TJEPAOD-untrained[embed]=0.848
+[157/227 8261s] 38_thyroid seed=0 n_train=2263 d=6 51s KNN=0.958 IForest=0.976 JEPAOD[combined]=0.867 JEPAOD-untrained[combined]=0.937 TJEPAOD[combined]=0.965 TJEPAOD-untrained[embed]=0.967
+[158/227 8270s] 40_vowels seed=0 n_train=873 d=12 34s KNN=0.974 IForest=0.770 JEPAOD[combined]=0.792 JEPAOD-untrained[combined]=0.751 TJEPAOD[combined]=0.903 TJEPAOD-untrained[embed]=0.800
+[159/227 8270s] 40_vowels seed=1 n_train=873 d=12 33s KNN=0.975 IForest=0.764 JEPAOD[combined]=0.835 JEPAOD-untrained[combined]=0.839 TJEPAOD[combined]=0.869 TJEPAOD-untrained[embed]=0.828
+[160/227 8272s] 40_vowels seed=3 n_train=873 d=12 34s KNN=0.956 IForest=0.793 JEPAOD[combined]=0.811 JEPAOD-untrained[combined]=0.841 TJEPAOD[combined]=0.888 TJEPAOD-untrained[embed]=0.840
+[161/227 8272s] 40_vowels seed=2 n_train=873 d=12 34s KNN=0.975 IForest=0.723 JEPAOD[combined]=0.747 JEPAOD-untrained[combined]=0.764 TJEPAOD[combined]=0.874 TJEPAOD-untrained[embed]=0.836
+[162/227 8272s] 47_yeast seed=0 n_train=890 d=8 25s KNN=0.419 IForest=0.408 JEPAOD[combined]=0.443 JEPAOD-untrained[combined]=0.409 TJEPAOD[combined]=0.438 TJEPAOD-untrained[embed]=0.415
+[163/227 8274s] 47_yeast seed=1 n_train=890 d=8 25s KNN=0.397 IForest=0.387 JEPAOD[combined]=0.386 JEPAOD-untrained[combined]=0.399 TJEPAOD[combined]=0.397 TJEPAOD-untrained[embed]=0.410
+[164/227 8280s] 38_thyroid seed=1 n_train=2263 d=6 51s KNN=0.946 IForest=0.977 JEPAOD[combined]=0.858 JEPAOD-untrained[combined]=0.915 TJEPAOD[combined]=0.934 TJEPAOD-untrained[embed]=0.966
+[165/227 8281s] 40_vowels seed=4 n_train=873 d=12 34s KNN=0.953 IForest=0.762 JEPAOD[combined]=0.734 JEPAOD-untrained[combined]=0.779 TJEPAOD[combined]=0.636 TJEPAOD-untrained[embed]=0.807
+[166/227 8282s] 38_thyroid seed=2 n_train=2263 d=6 51s KNN=0.964 IForest=0.990 JEPAOD[combined]=0.935 JEPAOD-untrained[combined]=0.960 TJEPAOD[combined]=0.901 TJEPAOD-untrained[embed]=0.979
+[167/227 8284s] 47_yeast seed=2 n_train=890 d=8 26s KNN=0.390 IForest=0.384 JEPAOD[combined]=0.411 JEPAOD-untrained[combined]=0.376 TJEPAOD[combined]=0.432 TJEPAOD-untrained[embed]=0.404
+[168/227 8286s] 38_thyroid seed=3 n_train=2263 d=6 52s KNN=0.950 IForest=0.973 JEPAOD[combined]=0.841 JEPAOD-untrained[combined]=0.921 TJEPAOD[combined]=0.900 TJEPAOD-untrained[embed]=0.962
+[169/227 8287s] 47_yeast seed=3 n_train=890 d=8 26s KNN=0.428 IForest=0.434 JEPAOD[combined]=0.429 JEPAOD-untrained[combined]=0.398 TJEPAOD[combined]=0.447 TJEPAOD-untrained[embed]=0.438
+[170/227 8288s] 38_thyroid seed=4 n_train=2263 d=6 53s KNN=0.956 IForest=0.979 JEPAOD[combined]=0.923 JEPAOD-untrained[combined]=0.942 TJEPAOD[combined]=0.963 TJEPAOD-untrained[embed]=0.978
+[171/227 8290s] 18_Ionosphere seed=0 n_train=210 d=32 20s KNN=0.935 IForest=0.859 JEPAOD[combined]=0.848 JEPAOD-untrained[combined]=0.839 TJEPAOD[combined]=0.810 TJEPAOD-untrained[embed]=0.834
+[172/227 8292s] 18_Ionosphere seed=1 n_train=210 d=32 20s KNN=0.910 IForest=0.789 JEPAOD[combined]=0.767 JEPAOD-untrained[combined]=0.786 TJEPAOD[combined]=0.743 TJEPAOD-untrained[embed]=0.770
+[173/227 8292s] 18_Ionosphere seed=2 n_train=210 d=32 20s KNN=0.910 IForest=0.821 JEPAOD[combined]=0.794 JEPAOD-untrained[combined]=0.816 TJEPAOD[combined]=0.755 TJEPAOD-untrained[embed]=0.794
+[174/227 8293s] 18_Ionosphere seed=3 n_train=210 d=32 20s KNN=0.908 IForest=0.801 JEPAOD[combined]=0.761 JEPAOD-untrained[combined]=0.782 TJEPAOD[combined]=0.750 TJEPAOD-untrained[embed]=0.792
+[175/227 8296s] 18_Ionosphere seed=4 n_train=210 d=32 22s KNN=0.907 IForest=0.842 JEPAOD[combined]=0.827 JEPAOD-untrained[combined]=0.825 TJEPAOD[combined]=0.792 TJEPAOD-untrained[embed]=0.831
+[176/227 8296s] 46_WPBC seed=0 n_train=118 d=33 9s KNN=0.568 IForest=0.487 JEPAOD[combined]=0.471 JEPAOD-untrained[combined]=0.485 TJEPAOD[combined]=0.488 TJEPAOD-untrained[embed]=0.535
+[177/227 8297s] 46_WPBC seed=1 n_train=118 d=33 9s KNN=0.651 IForest=0.609 JEPAOD[combined]=0.616 JEPAOD-untrained[combined]=0.635 TJEPAOD[combined]=0.659 TJEPAOD-untrained[embed]=0.651
+[178/227 8298s] 47_yeast seed=4 n_train=890 d=8 28s KNN=0.394 IForest=0.393 JEPAOD[combined]=0.409 JEPAOD-untrained[combined]=0.402 TJEPAOD[combined]=0.383 TJEPAOD-untrained[embed]=0.407
+[179/227 8299s] 46_WPBC seed=2 n_train=118 d=33 9s KNN=0.581 IForest=0.553 JEPAOD[combined]=0.537 JEPAOD-untrained[combined]=0.540 TJEPAOD[combined]=0.530 TJEPAOD-untrained[embed]=0.582
+[180/227 8300s] 43_WDBC seed=0 n_train=220 d=30 19s KNN=1.000 IForest=0.988 JEPAOD[combined]=0.977 JEPAOD-untrained[combined]=0.977 TJEPAOD[combined]=0.979 TJEPAOD-untrained[embed]=0.977
+[181/227 8301s] 46_WPBC seed=3 n_train=118 d=33 9s KNN=0.523 IForest=0.497 JEPAOD[combined]=0.439 JEPAOD-untrained[combined]=0.473 TJEPAOD[combined]=0.456 TJEPAOD-untrained[embed]=0.494
+[182/227 8301s] 43_WDBC seed=1 n_train=220 d=30 20s KNN=0.998 IForest=0.997 JEPAOD[combined]=0.995 JEPAOD-untrained[combined]=0.995 TJEPAOD[combined]=0.979 TJEPAOD-untrained[embed]=0.972
+[183/227 8301s] 43_WDBC seed=2 n_train=220 d=30 19s KNN=0.998 IForest=0.995 JEPAOD[combined]=0.995 JEPAOD-untrained[combined]=0.997 TJEPAOD[combined]=0.993 TJEPAOD-untrained[embed]=0.997
+[184/227 8301s] 46_WPBC seed=4 n_train=118 d=33 9s KNN=0.519 IForest=0.435 JEPAOD[combined]=0.400 JEPAOD-untrained[combined]=0.408 TJEPAOD[combined]=0.404 TJEPAOD-untrained[embed]=0.456
+[185/227 8304s] 43_WDBC seed=3 n_train=220 d=30 20s KNN=0.995 IForest=0.983 JEPAOD[combined]=0.974 JEPAOD-untrained[combined]=0.976 TJEPAOD[combined]=0.969 TJEPAOD-untrained[embed]=0.969
+[186/227 8305s] 43_WDBC seed=4 n_train=220 d=30 19s KNN=0.997 IForest=0.993 JEPAOD[combined]=0.977 JEPAOD-untrained[combined]=0.981 TJEPAOD[combined]=0.977 TJEPAOD-untrained[embed]=0.977
+[187/227 8306s] 4_breastw seed=0 n_train=409 d=9 14s KNN=0.978 IForest=0.988 JEPAOD[combined]=0.959 JEPAOD-untrained[combined]=0.981 TJEPAOD[combined]=0.987 TJEPAOD-untrained[embed]=0.986
+[188/227 8308s] 37_Stamps seed=0 n_train=204 d=9 7s KNN=0.817 IForest=0.899 JEPAOD[combined]=0.835 JEPAOD-untrained[combined]=0.803 TJEPAOD[combined]=0.910 TJEPAOD-untrained[embed]=0.907
+[189/227 8309s] 4_breastw seed=2 n_train=409 d=9 13s KNN=0.985 IForest=0.994 JEPAOD[combined]=0.946 JEPAOD-untrained[combined]=0.993 TJEPAOD[combined]=0.983 TJEPAOD-untrained[embed]=0.990
+[190/227 8310s] 4_breastw seed=3 n_train=409 d=9 13s KNN=0.981 IForest=0.992 JEPAOD[combined]=0.974 JEPAOD-untrained[combined]=0.994 TJEPAOD[combined]=0.976 TJEPAOD-untrained[embed]=0.988
+[191/227 8311s] 37_Stamps seed=1 n_train=204 d=9 7s KNN=0.814 IForest=0.891 JEPAOD[combined]=0.841 JEPAOD-untrained[combined]=0.817 TJEPAOD[combined]=0.931 TJEPAOD-untrained[embed]=0.910
+[192/227 8311s] 4_breastw seed=1 n_train=409 d=9 15s KNN=0.975 IForest=0.981 JEPAOD[combined]=0.928 JEPAOD-untrained[combined]=0.980 TJEPAOD[combined]=0.965 TJEPAOD-untrained[embed]=0.984
+[193/227 8312s] 37_Stamps seed=2 n_train=204 d=9 7s KNN=0.905 IForest=0.925 JEPAOD[combined]=0.850 JEPAOD-untrained[combined]=0.888 TJEPAOD[combined]=0.945 TJEPAOD-untrained[embed]=0.936
+[194/227 8313s] 29_Pima seed=1 n_train=460 d=8 13s KNN=0.591 IForest=0.603 JEPAOD[combined]=0.637 JEPAOD-untrained[combined]=0.599 TJEPAOD[combined]=0.594 TJEPAOD-untrained[embed]=0.614
+[195/227 8313s] 37_Stamps seed=3 n_train=204 d=9 7s KNN=0.848 IForest=0.852 JEPAOD[combined]=0.815 JEPAOD-untrained[combined]=0.826 TJEPAOD[combined]=0.921 TJEPAOD-untrained[embed]=0.904
+[196/227 8313s] 4_breastw seed=4 n_train=409 d=9 15s KNN=0.958 IForest=0.974 JEPAOD[combined]=0.920 JEPAOD-untrained[combined]=0.982 TJEPAOD[combined]=0.973 TJEPAOD-untrained[embed]=0.971
+[197/227 8314s] 29_Pima seed=2 n_train=460 d=8 13s KNN=0.667 IForest=0.699 JEPAOD[combined]=0.699 JEPAOD-untrained[combined]=0.688 TJEPAOD[combined]=0.686 TJEPAOD-untrained[embed]=0.714
+[198/227 8314s] 21_Lymphography seed=0 n_train=88 d=18 5s KNN=1.000 IForest=1.000 JEPAOD[combined]=0.991 JEPAOD-untrained[combined]=0.991 TJEPAOD[combined]=0.991 TJEPAOD-untrained[embed]=0.974
+[199/227 8314s] 29_Pima seed=4 n_train=460 d=8 13s KNN=0.639 IForest=0.699 JEPAOD[combined]=0.655 JEPAOD-untrained[combined]=0.655 TJEPAOD[combined]=0.713 TJEPAOD-untrained[embed]=0.693
+[200/227 8314s] 29_Pima seed=0 n_train=460 d=8 15s KNN=0.628 IForest=0.675 JEPAOD[combined]=0.638 JEPAOD-untrained[combined]=0.648 TJEPAOD[combined]=0.679 TJEPAOD-untrained[embed]=0.685
+[201/227 8315s] 37_Stamps seed=4 n_train=204 d=9 7s KNN=0.853 IForest=0.879 JEPAOD[combined]=0.885 JEPAOD-untrained[combined]=0.897 TJEPAOD[combined]=0.911 TJEPAOD-untrained[embed]=0.903
+[202/227 8315s] 21_Lymphography seed=1 n_train=88 d=18 5s KNN=1.000 IForest=1.000 JEPAOD[combined]=1.000 JEPAOD-untrained[combined]=1.000 TJEPAOD[combined]=0.991 TJEPAOD-untrained[embed]=0.983
+[203/227 8316s] 21_Lymphography seed=2 n_train=88 d=18 5s KNN=0.991 IForest=1.000 JEPAOD[combined]=1.000 JEPAOD-untrained[combined]=1.000 TJEPAOD[combined]=1.000 TJEPAOD-untrained[embed]=1.000
+[204/227 8317s] 29_Pima seed=3 n_train=460 d=8 16s KNN=0.636 IForest=0.704 JEPAOD[combined]=0.675 JEPAOD-untrained[combined]=0.710 TJEPAOD[combined]=0.680 TJEPAOD-untrained[embed]=0.695
+[205/227 8317s] 21_Lymphography seed=4 n_train=88 d=18 5s KNN=1.000 IForest=1.000 JEPAOD[combined]=1.000 JEPAOD-untrained[combined]=1.000 TJEPAOD[combined]=1.000 TJEPAOD-untrained[embed]=1.000
+[206/227 8317s] 21_Lymphography seed=3 n_train=88 d=18 6s KNN=1.000 IForest=1.000 JEPAOD[combined]=0.991 JEPAOD-untrained[combined]=1.000 TJEPAOD[combined]=0.991 TJEPAOD-untrained[embed]=0.983
+[207/227 8318s] 45_wine seed=2 n_train=77 d=13 4s KNN=1.000 IForest=0.875 JEPAOD[combined]=0.906 JEPAOD-untrained[combined]=0.880 TJEPAOD[combined]=0.875 TJEPAOD-untrained[embed]=0.938
+[208/227 8318s] 42_WBC seed=0 n_train=133 d=9 5s KNN=1.000 IForest=1.000 JEPAOD[combined]=1.000 JEPAOD-untrained[combined]=1.000 TJEPAOD[combined]=0.977 TJEPAOD-untrained[embed]=0.977
+[209/227 8318s] 42_WBC seed=1 n_train=133 d=9 5s KNN=0.985 IForest=0.988 JEPAOD[combined]=0.985 JEPAOD-untrained[combined]=0.983 TJEPAOD[combined]=0.985 TJEPAOD-untrained[embed]=0.985
+[210/227 8319s] 45_wine seed=3 n_train=77 d=13 4s KNN=0.990 IForest=0.677 JEPAOD[combined]=0.510 JEPAOD-untrained[combined]=0.573 TJEPAOD[combined]=0.656 TJEPAOD-untrained[embed]=0.557
+[211/227 8319s] 45_wine seed=4 n_train=77 d=13 4s KNN=1.000 IForest=0.646 JEPAOD[combined]=0.651 JEPAOD-untrained[combined]=0.615 TJEPAOD[combined]=0.635 TJEPAOD-untrained[embed]=0.526
+[212/227 8319s] 42_WBC seed=3 n_train=133 d=9 5s KNN=1.000 IForest=1.000 JEPAOD[combined]=0.997 JEPAOD-untrained[combined]=0.997 TJEPAOD[combined]=0.983 TJEPAOD-untrained[embed]=0.980
+[213/227 8319s] 15_Hepatitis seed=2 n_train=48 d=19 4s KNN=0.533 IForest=0.622 JEPAOD[combined]=0.570 JEPAOD-untrained[combined]=0.630 TJEPAOD[combined]=0.689 TJEPAOD-untrained[embed]=0.711
+[214/227 8319s] 42_WBC seed=2 n_train=133 d=9 6s KNN=1.000 IForest=0.997 JEPAOD[combined]=1.000 JEPAOD-untrained[combined]=1.000 TJEPAOD[combined]=1.000 TJEPAOD-untrained[embed]=0.980
+[215/227 8319s] 42_WBC seed=4 n_train=133 d=9 5s KNN=0.983 IForest=0.985 JEPAOD[combined]=0.977 JEPAOD-untrained[combined]=0.980 TJEPAOD[combined]=0.959 TJEPAOD-untrained[embed]=0.942
+[216/227 8320s] 15_Hepatitis seed=3 n_train=48 d=19 4s KNN=0.593 IForest=0.704 JEPAOD[combined]=0.726 JEPAOD-untrained[combined]=0.689 TJEPAOD[combined]=0.800 TJEPAOD-untrained[embed]=0.748
+[217/227 8321s] 15_Hepatitis seed=4 n_train=48 d=19 4s KNN=0.526 IForest=0.793 JEPAOD[combined]=0.719 JEPAOD-untrained[combined]=0.800 TJEPAOD[combined]=0.756 TJEPAOD-untrained[embed]=0.800
+[218/227 8321s] 14_glass seed=0 n_train=128 d=7 4s KNN=0.851 IForest=0.747 JEPAOD[combined]=0.677 JEPAOD-untrained[combined]=0.677 TJEPAOD[combined]=0.729 TJEPAOD-untrained[embed]=0.777
+[219/227 8321s] 14_glass seed=1 n_train=128 d=7 4s KNN=0.887 IForest=0.817 JEPAOD[combined]=0.796 JEPAOD-untrained[combined]=0.820 TJEPAOD[combined]=0.817 TJEPAOD-untrained[embed]=0.869
+[220/227 8322s] 14_glass seed=4 n_train=128 d=7 4s KNN=0.887 IForest=0.832 JEPAOD[combined]=0.756 JEPAOD-untrained[combined]=0.793 TJEPAOD[combined]=0.787 TJEPAOD-untrained[embed]=0.829
+[221/227 8322s] 14_glass seed=2 n_train=128 d=7 4s KNN=0.884 IForest=0.756 JEPAOD[combined]=0.832 JEPAOD-untrained[combined]=0.845 TJEPAOD[combined]=0.710 TJEPAOD-untrained[embed]=0.838
+[222/227 8322s] 14_glass seed=3 n_train=128 d=7 4s KNN=0.832 IForest=0.732 JEPAOD[combined]=0.683 JEPAOD-untrained[combined]=0.686 TJEPAOD[combined]=0.777 TJEPAOD-untrained[embed]=0.811
+[223/227 8322s] 39_vertebral seed=2 n_train=144 d=6 3s KNN=0.241 IForest=0.277 JEPAOD[combined]=0.237 JEPAOD-untrained[combined]=0.234 TJEPAOD[combined]=0.332 TJEPAOD-untrained[embed]=0.175
+[224/227 8322s] 39_vertebral seed=1 n_train=144 d=6 4s KNN=0.348 IForest=0.318 JEPAOD[combined]=0.425 JEPAOD-untrained[combined]=0.355 TJEPAOD[combined]=0.482 TJEPAOD-untrained[embed]=0.421
+[225/227 8322s] 39_vertebral seed=0 n_train=144 d=6 4s KNN=0.354 IForest=0.382 JEPAOD[combined]=0.313 JEPAOD-untrained[combined]=0.378 TJEPAOD[combined]=0.404 TJEPAOD-untrained[embed]=0.365
+[226/227 8323s] 39_vertebral seed=3 n_train=144 d=6 4s KNN=0.320 IForest=0.313 JEPAOD[combined]=0.357 JEPAOD-untrained[combined]=0.359 TJEPAOD[combined]=0.535 TJEPAOD-untrained[embed]=0.373
+[227/227 8323s] 39_vertebral seed=4 n_train=144 d=6 4s KNN=0.259 IForest=0.397 JEPAOD[combined]=0.260 JEPAOD-untrained[combined]=0.287 TJEPAOD[combined]=0.376 TJEPAOD-untrained[embed]=0.320
+ALL DONE

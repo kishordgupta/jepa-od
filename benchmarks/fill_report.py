@@ -24,6 +24,7 @@ ts_narr = """
 * **Score choice.** `pred` is the most robust single score across the three protocols (0.95 / 0.83 / 0.63); `embed` wins only in-distribution (synthetic, NAB with LayerNorm) and is fragile under shift; `combined` is rarely the best of the three and never the worst. `pred` stays the default.
 * **Masking.** `forecast` (causal) is slightly better than `block` on SKAB and synthetic (0.86 vs 0.83, 0.96 vs 0.95) but worse on NAB (0.59 vs 0.63); `block` stays the default for offline detection, `forecast` is the online option.
 * **Training budget.** The shipped defaults (10 epochs, <= 5 000 windows) match the 20-epoch run within 0.01 AUC on all three groups at about half the fit time (`results/budget_experiment.csv`).
+* **Read with Section 7.6.** A zero-epoch control with 5 seeds shows what training contributes: it is what makes `pred` work on the synthetic series (0.941 trained against 0.798 untrained), and it adds nothing measurable on SKAB or NAB. The parity with `LSTMAD` on SKAB is reached by an untrained network as well (0.831 and 0.859), and the untrained `embed` score already reaches 0.932 on the synthetic series.
 """
 
 abl_narr = """

@@ -13,3 +13,6 @@ data/
 
 # local reference copies of third-party files
 downloads/
+
+# per-task files of benchmarks/bench_extended.py; results/extended_results.csv is their merge
+results/extended_parts/

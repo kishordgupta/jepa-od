@@ -44,23 +44,42 @@ implemented, because its text could not be read (login required).
 
 ## What the benchmarks show
 
-16 ADBench datasets, 3 seeds, mean ROC-AUC / average precision (`REPORT.md`, sections 7.1 and 7.5):
+All 47 datasets of the ADBench classical suite, 5 seeds, mean ROC-AUC / average precision
+(`REPORT.md`, section 7.6; fit times on one thread):
 
 | detector | ROC-AUC | AP | fit time |
 |---|---|---|---|
-| `KNN` (PyOD) | 0.786 | 0.449 | under 1 s |
-| `TJEPAOD` | 0.782 | 0.412 | 69 s |
-| untrained T-JEPA network, `embed` score | 0.770 | 0.435 | 4 s |
-| `IForest` (PyOD) | 0.767 | 0.477 | under 1 s |
-| `JEPAOD` | 0.760 | 0.438 | 28 s |
-| untrained `JEPAOD` network, `combined` score | 0.750 | 0.435 | 2 s |
-| `AutoEncoder` (PyOD) | 0.746 | 0.375 | 2 s |
+| untrained T-JEPA network, `embed` score | 0.768 | 0.371 | 16 s |
+| `IForest` (PyOD) | 0.763 | 0.384 | 0.1 s |
+| untrained `JEPAOD` network, `combined` score | 0.751 | 0.379 | 11 s |
+| `AutoEncoder` (PyOD) | 0.748 | 0.333 | 3 s |
+| `JEPAOD` | 0.736 | 0.353 | 119 s |
+| `TJEPAOD` | 0.732 | 0.318 | 240 s |
+| `KNN` (PyOD) | 0.732 | 0.360 | 0.2 s |
 
-Read these numbers with two cautions. The difference between `TJEPAOD` and `JEPAOD` is not
-statistically significant (p = 0.30 over the 16 datasets). And a network with **zero training
-epochs** scores about as well as the trained ones: the per-token Mahalanobis score works on random
-features, and training is needed only for the prediction-error score. The benchmark therefore does
-not show that JEPA training is what makes these detectors work on tabular data.
+- The trained tabular detectors are mid-table: 9th and 11th of the 16 columns compared.
+  `JEPAOD` is significantly behind `IForest` (`IForest` is better on 35 of 47 datasets, corrected
+  p = 0.010) and is not ahead of `AutoEncoder`. `TJEPAOD` and `JEPAOD` cannot be separated.
+- A network with **zero training epochs** scores at least as well as the trained ones (for
+  `JEPAOD` the untrained network is better on 32 of 47 datasets; not significant after correction).
+  The benchmark gives no evidence that JEPA training helps on tabular data.
+- The untrained score is level with `IForest` and more than a hundred times slower, so it is an
+  observation, not a detector to recommend.
+- An earlier sweep on 16 of these datasets with 3 seeds (sections 7.1 and 7.5) had `JEPAOD` as the
+  best deep detector (0.760) and `TJEPAOD` at 0.782. Those rankings did not carry over to the other
+  31 datasets.
+
+Time series, `TSJEPAOD` at its defaults against the same zero-epoch control (5 seeds, ROC-AUC of
+the default `pred` score):
+
+| benchmark | trained | untrained |
+|---|---|---|
+| synthetic series (15) | 0.941 | 0.798 |
+| SKAB (16 files) | 0.825 | 0.831 |
+| NAB (7 series) | 0.628 | 0.671 |
+
+Training is what makes the prediction-error score work on the synthetic series, where the
+anomalies break temporal structure. On the two real benchmarks it adds nothing measurable.
 
 ## Install
 
@@ -117,6 +136,8 @@ jepa_od/          package (detectors + shared network / regulariser)
 tests/            PyOD-style unittest suites
 benchmarks/       bench_tabular.py (ADBench), bench_ts.py (synthetic, NAB, SKAB),
                   bench_tjepa.py (T-JEPA family and untrained controls), toy_two_features.py
+                  bench_extended.py (47 ADBench datasets, 5 seeds, untrained controls),
+                  bench_ts_jepa_final.py (TSJEPAOD defaults; --epochs 0 is the untrained control)
 results/          CSV results + logs produced by the benchmarks
 integration/      PyOD port: patches, hand-off notes, drafted knowledge-base entries
 examples/         runnable example
@@ -141,10 +162,21 @@ python benchmarks/bench_tjepa.py        # T-JEPA family and controls, writes res
 python benchmarks/toy_two_features.py   # writes results/toy_two_features.*
 ```
 
-Result tables for the committed runs are in `results/report_tables.md` and `results/tjepa_tables.md`
+The extended benchmark of section 7.6 (about 2.5 hours on 13 cores; it resumes if interrupted):
+
+```bash
+python benchmarks/download_data.py --all-adbench     # the other 31 ADBench datasets, 75 MB
+python benchmarks/bench_extended.py --workers 13     # writes results/extended_parts/
+python benchmarks/bench_ts_jepa_final.py --seeds 5 --threads 2 --out results/ts_control_trained.csv
+python benchmarks/bench_ts_jepa_final.py --seeds 5 --threads 2 --epochs 0 --tag TSJEPAOD-untrained --out results/ts_control_untrained.csv
+python benchmarks/make_extended_tables.py            # tables and REPORT.md section 7.6
+```
+
+Result tables for the committed runs are in `results/report_tables.md`, `results/tjepa_tables.md`,
+`results/extended_tables.md` and `results/ts_control_tables.md`
 (`benchmarks/make_tjepa_tables.py` builds the latter; the committed run was five parallel jobs with
 3 threads each, see the header of `bench_tjepa.py`). Runs are deterministic for a fixed seed and thread count; a different thread count
-changes single results on the largest datasets by up to 0.02 ROC-AUC.
+changes single results (by up to 0.08 ROC-AUC between one and three threads) and leaves the means over datasets within 0.002.
 
 ## Status
 
@@ -153,6 +185,10 @@ Research prototype. `JEPAOD` and `TSJEPAOD` are ported to PyOD as `pyod.models.j
 [`feature/jepa-od`](https://github.com/kishordgupta/pyod/tree/feature/jepa-od) of the PyOD fork and
 as patches in `integration/pyod-patches/`. `integration/PYOD_PR_CHECKLIST.md` has the file map, the checks that
 ran and the steps to a pull request. `TJEPAOD` is in this repository only and is not part of the port.
+
+The port was written before the extended benchmark. On the full ADBench suite the tabular detector is
+not better than detectors PyOD already has, and `REPORT.md` (verdict in section 1) no longer argues for
+adding it on performance grounds.
 
 ## License
 

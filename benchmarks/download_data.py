@@ -6,7 +6,10 @@ The datasets are third-party and are not stored in this repository:
 * NAB realKnownCause (Numenta Anomaly Benchmark): https://github.com/numenta/NAB
 * SKAB valve1 (Skoltech Anomaly Benchmark): https://github.com/waico/SKAB
 
-Usage: python benchmarks/download_data.py [--dest data]
+Usage: python benchmarks/download_data.py [--dest data] [--all-adbench]
+
+--all-adbench also fetches the other 31 ADBench classical datasets into
+data/adbench_extra/ (about 72 MB) for benchmarks/bench_extended.py.
 """
 import argparse
 import os
@@ -19,6 +22,15 @@ ADBENCH_FILES = [
     '6_cardio', '12_fault', '17_InternetAds', '18_Ionosphere', '22_magic.gamma',
     '25_musk', '29_Pima', '31_satimage-2', '33_skin', '36_speech', '38_thyroid',
     '40_vowels', '41_Waveform', '42_WBC', '44_Wilt', '45_wine',
+]
+
+# the remaining ADBench classical datasets, used by bench_extended.py only
+ADBENCH_EXTRA_FILES = [
+    '1_ALOI', '2_annthyroid', '3_backdoor', '4_breastw', '5_campaign', '7_Cardiotocography',
+    '8_celeba', '9_census', '10_cover', '11_donors', '13_fraud', '14_glass', '15_Hepatitis',
+    '16_http', '19_landsat', '20_letter', '21_Lymphography', '23_mammography', '24_mnist',
+    '26_optdigits', '27_PageBlocks', '28_pendigits', '30_satellite', '32_shuttle', '34_smtp',
+    '35_SpamBase', '37_Stamps', '39_vertebral', '43_WDBC', '46_WPBC', '47_yeast',
 ]
 
 NAB = 'https://raw.githubusercontent.com/numenta/NAB/master/data/realKnownCause/{}.csv'
@@ -47,11 +59,18 @@ def fetch(url, path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--dest', default=os.path.join(ROOT, 'data'))
-    dest = ap.parse_args().dest
+    ap.add_argument('--all-adbench', action='store_true',
+                    help='also fetch the other 31 ADBench datasets into <dest>/adbench_extra')
+    args = ap.parse_args()
+    dest = args.dest
 
     print('ADBench')
     for name in ADBENCH_FILES:
         fetch(ADBENCH.format(name), os.path.join(dest, 'adbench', f'{name}.npz'))
+    if args.all_adbench:
+        print('ADBench (remaining datasets)')
+        for name in ADBENCH_EXTRA_FILES:
+            fetch(ADBENCH.format(name), os.path.join(dest, 'adbench_extra', f'{name}.npz'))
     print('NAB')
     fetch(NAB_LABELS, os.path.join(dest, 'nab', 'combined_windows.json'))
     for name in NAB_FILES:

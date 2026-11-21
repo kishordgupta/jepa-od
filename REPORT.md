@@ -1,7 +1,7 @@
 # JEPA-OD: Can Joint-Embedding Predictive Architectures Detect Outliers?
 
 *Research study, design and prototype for a PyOD-compatible JEPA outlier detector (tabular and time series).*
-*Date: 2026-11-20; updated 2026-11-21 with the T-JEPA family and an untrained control (Section 7.5). Code: `jepa_od/`, benchmarks: `benchmarks/`, raw results: `results/`.*
+*Date: 2026-11-20; updated 2026-11-21 with the T-JEPA family and an untrained control (Section 7.5), and with the full ADBench suite and the time-series control (Section 7.6), which revise the headline results. Code: `jepa_od/`, benchmarks: `benchmarks/`, raw results: `results/`.*
 
 ---
 
@@ -9,15 +9,16 @@
 
 **Question.** JEPA (Joint-Embedding Predictive Architecture) models learn by predicting the *representation* of a hidden part of the input from the visible part. Can that mechanism be turned into an unsupervised outlier detector that fits the PyOD API, for tabular rows and for time series?
 
-**Answer.** Yes. The natural score is the **latent prediction error**: a normal sample has internal structure (feature dependencies, temporal continuity) that the predictor has learned, so its hidden parts are predictable in representation space; an outlier breaks that structure. Four 2026 papers already use exactly this signal in narrow domains (medical images, SAR satellite stacks, automotive telemetry, multivariate telemetry), but none provides a generic, library-ready detector. We built one:
+**Answer.** It can be built and it works, but the full benchmark does not show that it is better than what PyOD already has, or that JEPA training is what makes it work (see the last bullets and the verdict). The natural score is the **latent prediction error**: a normal sample has internal structure (feature dependencies, temporal continuity) that the predictor has learned, so its hidden parts are predictable in representation space; an outlier breaks that structure. Four 2026 papers already use exactly this signal in narrow domains (medical images, SAR satellite stacks, automotive telemetry, multivariate telemetry), but none provides a generic, library-ready detector. We built one:
 
 * **`JEPAOD`** (tabular) subclasses PyOD's `BaseDeepLearningDetector`; **`TSJEPAOD`** (time series) follows PyOD 3.6's time-series detector pattern (`LSTMAD`, `TimeSeriesOD`). A third class, **`TJEPAOD`**, trains the recipe of T-JEPA (Thimonier et al., ICLR 2025), the closest prior tabular JEPA, and scores rows with the same scores (Section 7.5). All three pass PyOD-style unit tests (53 tests), are deterministic, picklable and `sklearn.clone`-able.
 * The architecture is a small *token transformer* (features or time patches are tokens) with an I-JEPA style predictor. Representation collapse is prevented with **SIGReg** from LeJEPA (Balestriero & LeCun, 2025) instead of an EMA teacher: one loss weight, no stop-gradient tricks, and, crucially for outlier detection, the embedding distribution of normal data becomes a *known isotropic Gaussian*. That gives a second score for free, the **Mahalanobis distance of each token embedding** to the training Gaussian, which can be fused with the prediction error. Section 7.5 qualifies this last point: on the tabular benchmark that score is just as good on an untrained network, so the Gaussian shaping is not what makes it work there.
 * Two design lessons were found empirically and are, to our knowledge, not reported in the JEPA anomaly literature: (i) the SIGReg-trained encoder must **not** end in a LayerNorm, otherwise extreme inputs saturate to a direction that is *trivially predictable* and outliers score as *more normal* than inliers (on a 2-feature toy problem with the final defaults: mean ROC-AUC 0.29 with the LayerNorm, 0.87 without it; KNN, IForest and AutoEncoder reach 0.98 to 1.00 there); (ii) a pooled (mean) row embedding is a poor density score because an outlier's token embeddings are incoherent and *average out to the origin*; per-token Mahalanobis fixes this. Lesson (i) is specific to this network: the T-JEPA recipe normalises its encoder output and does not show the failure (Section 7.5).
-* **Results (Section 7).** Tabular, 16 ADBench datasets, 3 seeds: `JEPAOD` has the highest mean of the deep PyOD detectors (ROC-AUC 0.760 / AP 0.438 vs AutoEncoder 0.746 / 0.375, DeepSVDD 0.737 / 0.358, DIF 0.733, LUNAR 0.729) and is behind KNN (0.786) and IForest (0.767). Time series: best of all detectors on PyOD's synthetic series (0.95 vs LSTMAD 0.87), level with LSTMAD on SKAB under a strong train/test regime shift (0.83-0.86), but behind windowed IForest / AutoEncoder on NAB's sustained level shifts (0.63 vs 0.83) where a prediction error only fires at the transition and transductive training absorbs the anomalous regime. Inside the `JEPAOD` network SIGReg beats the EMA teacher in every setting.
-* **T-JEPA comparison and untrained control (Section 7.5, added 2026-11-21).** T-JEPA publishes no outlier scores, so its recipe was re-implemented and scored like `JEPAOD`. `TJEPAOD` reaches ROC-AUC 0.782 / AP 0.412: a higher mean ROC-AUC than `JEPAOD` (ahead on 10 of 16 datasets), a lower AP, about 2.5 times the fit time, and neither difference is statistically significant (p = 0.30 and 0.94). A zero-epoch control changes how all the tabular numbers should be read: with **no training** the `embed` score reaches 0.746 on the `JEPAOD` network and 0.770 on the T-JEPA network, level with the trained models. Training is needed only for the prediction-error score (T-JEPA network: 0.466 untrained, 0.762 trained), and on 16 datasets the trained `combined` scores cannot be told apart from the untrained controls. τ-JEPA, a working paper on fraud detection, could not be read (login required); it is cited and not implemented.
+* **Results (Section 7).** Tabular, all 47 ADBench datasets, 5 seeds (Section 7.6): `JEPAOD` is mid-table at ROC-AUC 0.736 / AP 0.353, significantly behind IForest (0.763 / 0.384) and not ahead of AutoEncoder (0.748 / 0.333). The first sweep, on 16 of those datasets with 3 seeds (Section 7.1), had `JEPAOD` as the best deep detector (0.760 / 0.438 vs AutoEncoder 0.746 / 0.375) behind KNN (0.786) and IForest (0.767); that ranking did not carry over to the other 31 datasets. Time series: best of all detectors on PyOD's synthetic series (0.95 vs LSTMAD 0.87), level with LSTMAD on SKAB under a strong train/test regime shift (0.83-0.86), but behind windowed IForest / AutoEncoder on NAB's sustained level shifts (0.63 vs 0.83) where a prediction error only fires at the transition and transductive training absorbs the anomalous regime. Inside the `JEPAOD` network SIGReg beats the EMA teacher in every setting.
+* **T-JEPA comparison and untrained control (Section 7.5, added 2026-11-21).** T-JEPA publishes no outlier scores, so its recipe was re-implemented and scored like `JEPAOD`. On the 16 datasets of Section 7.1 `TJEPAOD` reaches ROC-AUC 0.782 / AP 0.412: a higher mean ROC-AUC than `JEPAOD` (ahead on 10 of 16 datasets), a lower AP, about 2.5 times the fit time, and neither difference is statistically significant (p = 0.30 and 0.94). A zero-epoch control changes how all the tabular numbers should be read: with **no training** the `embed` score reaches 0.746 on the `JEPAOD` network and 0.770 on the T-JEPA network, level with the trained models. Training is needed only for the prediction-error score (T-JEPA network: 0.466 untrained, 0.762 trained), and on 16 datasets the trained `combined` scores cannot be told apart from the untrained controls. τ-JEPA, a working paper on fraud detection, could not be read (login required); it is cited and not implemented.
+* **Full suite and time-series control (Section 7.6, added 2026-11-21).** On all 47 ADBench datasets with 5 seeds the zero-epoch controls score at least as high as the trained models: `JEPAOD` 0.751 untrained against 0.736 trained (the control is better on 32 of 47 datasets; p = 0.055 before and 0.66 after correction for the 17 planned comparisons), and the untrained `embed` score of the T-JEPA network reaches 0.768 against 0.732 for trained `TJEPAOD`, which cannot be separated from `JEPAOD`. That untrained score is level with IForest (0.763) and more than a hundred times slower. For time series, training is what makes the default prediction-error score work on synthetic series (0.941 trained against 0.798 untrained, better on all 15 series), and it adds nothing measurable on SKAB (0.825 against 0.831) or NAB (0.628 against 0.671).
 
-**Verdict for the library goal.** JEPA-OD is competitive with, not dominant over, PyOD's existing detectors: a new *deep* detector family with the highest mean among the deep models on the tabular sweep, a niche in anomalies that break joint feature or temporal structure, and known weak spots (local outliers in low dimension, sustained level shifts). The tabular sweep does not show that JEPA *training* is what earns that position: most of the score is available from an untrained network (Section 7.5). That control has not been run for the time-series detector. The code in this repo is structured to drop into `pyod/models/jepa.py` and `pyod/models/ts_jepa.py` (Section 6). PyOD's inclusion policy requires an accepted issue first and, for a new method, a two-year maintenance commitment.
+**Verdict for the library goal (revised after Section 7.6).** The evidence does not support adding the tabular detector to PyOD on performance grounds: on the full ADBench suite it is a mid-table detector, significantly behind IForest, not ahead of AutoEncoder and about 40 times slower than it, and a network with no training scores at least as well. The time-series detector has one supported strength, anomalies that break temporal structure, where training is what makes its default score work. On the two real benchmarks training adds nothing, and the known weak spots remain (sustained level shifts, large raw-space deviations that a windowed KNN already finds). The earlier verdict, "the highest mean among the deep models on the tabular sweep", described the 16-dataset subset and is withdrawn. The code in this repo is structured to drop into `pyod/models/jepa.py` and `pyod/models/ts_jepa.py` (Section 6). PyOD's inclusion policy requires an accepted issue first and, for a new method, a two-year maintenance commitment.
 
 ---
 
@@ -169,7 +170,7 @@ Setup, datasets and full numbers: `benchmarks/bench_tabular.py`, `benchmarks/ben
 * **Weak spots.** `thyroid` (0.89 vs 0.98 for `IForest`), `vowels` (0.79 vs 0.98 for `KNN`), `Ionosphere` (0.80 vs 0.92); these are small, low-dimensional sets where one or two marginal features carry the anomaly and a transformer over feature tokens brings no benefit. `speech` (400-d, 1.7 % outliers) is at chance for every detector.
 * **Score components.** `combined` > `pred` ~ `embed` (0.760 / 0.750 / 0.749 AUC; 0.438 / 0.423 / 0.432 AP); the two components are complementary (e.g. `wine`: `pred` 0.85, `embed` 0.61; `thyroid`: `embed` 0.91, `pred` 0.83). `combined` is therefore the tabular default. Under distribution shift `pred` alone is safer (Section 7.2).
 * **Collapse prevention.** SIGReg (0.760) edges the I-JEPA EMA teacher (0.750 AUC, 0.422 AP) and needs no momentum schedule; the EMA variant is however ~1.8x faster because the per-token Epps-Pulley statistic (128 projections x 17 knots per token) dominates the step time. Fewer projections or sub-sampling tokens for SIGReg is the obvious optimisation. The reconstruction anchor (`recon_weight=0.1`) changes nothing (0.760).
-* **Read with Section 7.5.** A zero-epoch control added later shows that the `embed` score is as good on an untrained network (0.746 against 0.750), and `combined` 0.750 against 0.760. The lead over the other deep detectors should therefore not be attributed to JEPA training.
+* **Read with Sections 7.5 and 7.6.** A zero-epoch control added later shows that the `embed` score is as good on an untrained network (0.746 against 0.750), and `combined` 0.750 against 0.760. The lead over the other deep detectors should therefore not be attributed to JEPA training. Section 7.6 repeats the sweep on all 47 ADBench datasets with 5 seeds: there `JEPAOD[combined]` (0.736) is below `AutoEncoder` (0.748) and significantly below `IForest` (0.763), so the ranking of this section holds for these 16 datasets only.
 
 #### ADBench, 16 datasets, 60/40 split, mean of 3 seeds: ROC-AUC
 
@@ -245,6 +246,7 @@ Setup, datasets and full numbers: `benchmarks/bench_tabular.py`, `benchmarks/ben
 * **Score choice.** `pred` is the most robust single score across the three protocols (0.95 / 0.83 / 0.63); `embed` wins only in-distribution (synthetic, NAB with LayerNorm) and is fragile under shift; `combined` is rarely the best of the three and never the worst. `pred` stays the default.
 * **Masking.** `forecast` (causal) is slightly better than `block` on SKAB and synthetic (0.86 vs 0.83, 0.96 vs 0.95) but worse on NAB (0.59 vs 0.63); `block` stays the default for offline detection, `forecast` is the online option.
 * **Training budget.** The shipped defaults (10 epochs, <= 5 000 windows) match the 20-epoch run within 0.01 AUC on all three groups at about half the fit time (`results/budget_experiment.csv`).
+* **Read with Section 7.6.** A zero-epoch control with 5 seeds shows what training contributes: it is what makes `pred` work on the synthetic series (0.941 trained against 0.798 untrained), and it adds nothing measurable on SKAB or NAB. The parity with `LSTMAD` on SKAB is reached by an untrained network as well (0.831 and 0.859), and the untrained `embed` score already reaches 0.932 on the synthetic series.
 
 #### ROC-AUC per dataset group
 
@@ -433,8 +435,8 @@ Laptop CPU (4 threads per run). `JEPAOD` (30 epochs, 8 inference masks, 3 scorin
 
 * `TJEPAOD` is a usable second tabular member of the family, with the numerically highest mean ROC-AUC of the deep detectors here. It is not a demonstrated improvement over `JEPAOD`, which is about 2.5 times faster and has the higher AP. The benchmark does not separate the two.
 * The benchmark does not support the claim that JEPA *training* is why these detectors work on tabular data. What it supports is narrower: (a) a per-token Mahalanobis score on the features of a random token transformer is a strong and cheap detector; (b) training adds a prediction-error score that is clearly better than its untrained counterpart on the T-JEPA network, and adding it raises the mean by about 0.01, which is within the noise of 16 datasets.
-* The untrained control was not run for `TSJEPAOD`, so the time-series results of Section 7.2 carry the same open question.
-* A mean difference of 0.02 ROC-AUC is not detectable with 16 datasets and 3 seeds. Separating the family members, or showing a benefit of training, needs the full ADBench sweep and more seeds.
+* The untrained control was not run for `TSJEPAOD` in this section. Section 7.6 runs it.
+* A mean difference of 0.02 ROC-AUC is not detectable with 16 datasets and 3 seeds. Separating the family members, or showing a benefit of training, needs the full ADBench sweep and more seeds. Section 7.6 is that sweep: on 47 datasets the two family members are level, both are mid-table, and the controls score at least as high as the trained models. Where this section and Section 7.6 disagree, Section 7.6 is the better evidence.
 
 Reference check: 144 JEPAOD rows of this run against results/tabular_results.csv: 106 identical, 125 within 0.001, largest absolute ROC-AUC difference 0.021. Datasets with a difference of 0.001 or more: 22_magic.gamma (0.021), 33_skin (0.019), 31_satimage-2 (0.003).
 
@@ -535,13 +537,211 @@ Reference check: 144 JEPAOD rows of this run against results/tabular_results.csv
 
 <!-- TJEPA:END -->
 
+<!-- EXTENDED:BEGIN -->
+
+### 7.6 Extended benchmark: all 47 ADBench datasets with 5 seeds, and the untrained control for time series
+
+*Added 2026-11-21. Code: `benchmarks/bench_extended.py`, the `--epochs 0` option of `benchmarks/bench_ts_jepa_final.py`, tables by `benchmarks/make_extended_tables.py`. Raw results: `results/extended_results.csv`, `results/ts_control_trained.csv`, `results/ts_control_untrained.csv`.*
+
+**Why.** Section 7.5 left two questions open: whether 16 datasets and 3 seeds were too few to see a benefit of training, and whether the untrained control changes the time-series results. This section answers both. On tabular data more data does not reveal a benefit of training, and it overturns the ranking of Section 7.1. On time series training helps in one setting out of three.
+
+**Setup, tabular.** All 47 datasets of the ADBench classical suite: the 16 of Section 7.1 and the other 31, fetched by `download_data.py --all-adbench`. 5 seeds. Otherwise the protocol of Section 7.1: at most 20 000 rows (a seeded subsample), a stratified 60/40 split per seed, detectors fitted without labels on the contaminated training split, ROC-AUC and AP on the test split, default parameters, no tuning. Columns: the 12 PyOD baselines of Section 7.1, `JEPAOD`, `TJEPAOD` and their zero-epoch controls, each fit scored as `pred`, `embed`, `combined` and `emb+KNN`. Every fit ran on one thread, with 13 dataset-seed tasks in parallel, so the times include contention and are comparable within this section only. All 235 dataset-seed pairs produced results. Eight of them (seeds 0 and 1 of `wine`, `Hepatitis`, `smtp` and `cardio`) come from a first test of the script with the same settings and 8 parallel tasks; `results/bench_extended.log` covers the other 227. PyOD's `PCA` raised an error ("Input contains infinity or a value too large") in 33 of them: on every seed of `backdoor`, `campaign`, `census`, `mnist` and `optdigits`, and on some seeds of `Cardiotocography`, `fault` and `cardio`. Its mean is over 42 datasets and is not comparable with the other columns. We did not investigate the cause. No other fit failed.
+
+**Statistics.** The 17 comparisons of the third table were written into `make_extended_tables.py` before the results were looked at. Each is a two-sided Wilcoxon signed-rank test on the per-dataset means, with a Holm correction over the 17 tests and a bootstrap 95 % interval for the mean difference. The size analysis in the fifth table was added after seeing the results and is labelled post hoc.
+
+**Consistency with the earlier runs.** On the 16 datasets and 3 seeds shared with Sections 7.1 and 7.5, every row of the two zero-epoch controls and of `KNN`, `IForest`, `ECOD`, `DeepSVDD` and `DIF` is identical to the stored one. The trained rows differ, because this run uses one thread and the earlier ones three or four: `JEPAOD[combined]` on 12 of 48 rows (largest difference 0.015) and `TJEPAOD[combined]` on 35 of 48 (largest 0.076). The means agree: 0.760 against 0.760 and 0.780 against 0.782.
+
+**Findings, tabular.**
+
+1. **On the full suite the trained JEPA detectors are mid-table.** `JEPAOD[combined]` reaches 0.736 ROC-AUC / 0.353 AP and `TJEPAOD[combined]` 0.732 / 0.318. Of the 16 columns of the first table they are 9th and 11th by mean ROC-AUC and 13th and 10th by average rank. `JEPAOD[combined]` is not the best column on any of the 47 datasets.
+2. **`JEPAOD` is significantly behind `IForest` and is not ahead of the other deep detectors.** `IForest` reaches 0.763 and is the better of the two on 35 of 47 datasets (difference -0.027, interval -0.045 to -0.009, corrected p = 0.010). This is the only comparison with a baseline that survives the correction. `AutoEncoder` (0.748 / 0.333) has the higher mean ROC-AUC and `JEPAOD` the higher AP, neither significantly (p = 0.33 and 0.70). `KNN` has the same mean (0.732) and is the better of the two on 31 datasets; its mean is pulled down by a few datasets where it fails (`http` 0.036, `optdigits` 0.432, `musk` 0.504). The statement of Sections 1 and 7.1 that `JEPAOD` has the highest mean of the deep detectors does not hold on the full suite: `AutoEncoder` 0.748, `JEPAOD` 0.736, `DIF` 0.734, `DeepSVDD` 0.729, `LUNAR` 0.696.
+3. **The 16 datasets of Section 7.1 flattered the JEPA detectors.** On those 16, now with 5 seeds, `JEPAOD` (0.753) and `TJEPAOD` (0.773) are above `AutoEncoder` (0.736). On the 31 added datasets they are below it (0.728 and 0.711 against 0.754), while `IForest` is the same on both parts (0.764 and 0.763). The 16 were a convenience subset and not a random sample of the 47, and the rankings drawn from them do not generalise.
+4. **The zero-epoch controls score at least as high as the trained detectors.** `JEPAOD-untrained[combined]` reaches 0.751 / 0.379 against 0.736 / 0.353 for the trained model. The control is better on 32 of 47 datasets and in each of the five seeds (difference -0.015, interval -0.033 to +0.003, p = 0.055 before and 0.66 after correction). `TJEPAOD-untrained[embed]` reaches 0.768 / 0.371 against 0.732 / 0.318 for `TJEPAOD[combined]` (control better on 29 datasets, p = 0.057 before correction) and against 0.726 for `TJEPAOD[embed]` (34 datasets, difference -0.041, interval -0.073 to -0.012, p = 0.004 before and 0.062 after correction). With three times the datasets of Section 7.5 the sign is against training in all three comparisons, and none is significant after correction. What the data support: at this budget training gives no benefit on the default scores, and probably costs a little.
+5. **Training makes the embeddings worse for a nearest-neighbour detector.** `JEPAOD[emb+KNN]` is 0.664 trained and 0.726 untrained; the control is better on 40 of 47 datasets (difference -0.062, interval -0.093 to -0.035, corrected p < 0.001 for ROC-AUC and for AP). This is the clearest effect of training in the table, and it is negative.
+6. **Only the T-JEPA prediction error needs training.** `TJEPAOD[pred]` is 0.702 trained and 0.479 untrained (41 of 47 datasets, corrected p < 0.001). For `JEPAOD[pred]` training changes nothing: 0.719 against 0.722 (p = 0.61), with a lower AP after training (0.338 against 0.374, p = 0.031 before and 0.44 after correction). The gain reported for `JEPAOD[pred]` in Section 7.5 (0.696 to 0.749 on 16 datasets, p = 0.09) does not hold on 47.
+7. **`TJEPAOD` and `JEPAOD` cannot be separated.** 0.732 against 0.736 ROC-AUC (`TJEPAOD` ahead on 29 of 47 datasets, interval of the difference -0.033 to +0.024, p = 0.32) and 0.318 against 0.353 AP (p = 0.34), at twice the fit time. The ROC-AUC lead of Section 7.5 belonged to the 16-dataset subset.
+8. **The untrained per-token Mahalanobis score is level with `IForest`, not better.** `TJEPAOD-untrained[embed]` 0.768 / 0.371 against `IForest` 0.763 / 0.384: better on 20 datasets and worse on 27, p = 0.95. Against `PCA` on its 42 datasets it is 0.770 against 0.738 (p = 0.008 before and 0.10 after correction). It takes 15.5 s per fit here against 0.1 s for `IForest`, so it is an observation about random token transformers and not a detector to recommend. Section 7.5 called it "strong and cheap"; it is as strong as `IForest` and more than a hundred times slower.
+9. **Post hoc: for `TJEPAOD` the loss from training grows with the size of the training split** (fifth table). The difference between `TJEPAOD[embed]` and its control correlates with the number of training rows at rho = -0.56 (p < 0.001). In the larger half of the datasets `TJEPAOD[combined]` is 0.074 below the control, in the smaller half level with it. The largest losses are on `cover` (-0.37), `mammography` (-0.28), `shuttle` (-0.25) and `celeba` (-0.24). `JEPAOD` shows no such dependence (rho = -0.11). With a fixed number of epochs a larger split means more gradient steps, so this is consistent with the T-JEPA network losing outlier signal as training goes on, the effect seen for time series in Section 7.2. Size is confounded with everything else that separates large datasets from small ones, and the analysis was not planned; a sweep over epochs on the large datasets would test it.
+
+**Setup, time series.** `TSJEPAOD` at its class defaults (10 epochs, at most 5 000 training windows) against the same class with `epochs=0`, 5 seeds, the three protocols of Section 7.2, six variants (two maskings, three scores). Synthetic: 3 configurations and 5 seeds give 15 different series. NAB: 7 series, 5 initialisations each. SKAB: 16 files, 5 initialisations each. Tests are Wilcoxon signed-rank over series with a Holm correction over the 18 rows of the last table. The seed-0 trained rows agree with `results/ts_results_jepa_final.csv` to within 0.002 ROC-AUC (that run used three threads and this one two).
+
+**Findings, time series.**
+
+10. **Synthetic series: training is what makes the prediction error work.** The default `block[pred]` reaches 0.941 trained and 0.798 untrained, better on all 15 series (difference +0.144, interval +0.088 to +0.199, corrected p < 0.001); `forecast[pred]` 0.946 against 0.786. An untrained `pred` would be below `LSTMAD` (0.866 in Section 7.2). This is the one result in this report that the JEPA training objective demonstrably produces. It comes with a qualification: on the same series the untrained network's `embed` score reaches 0.932, above every baseline mean of Section 7.2, and the trained default is ahead of it by 0.010 (13 of 15 series, p = 0.015; post hoc, uncorrected). The lead over the baselines does not depend on training. The last 0.01 does.
+11. **SKAB: training adds nothing to the default.** `block[pred]` 0.825 trained against 0.831 untrained, `forecast[pred]` 0.857 against 0.859. The parity with `LSTMAD` (0.853) reported in Section 7.2 is therefore not a result of training. Only `forecast[combined]` gains (0.819 against 0.795, on all 16 files). The 16 files are scored by the same five fitted models per masking, so they are not independent, and the p-values of the SKAB rows overstate the evidence; the "significant" difference of -0.006 for `block[pred]` has no practical meaning.
+12. **NAB: no detectable effect.** `block[pred]` 0.628 against 0.671 and `forecast[pred]` 0.585 against 0.664, with 7 series, wide intervals and every p above 0.29 before correction. The untrained `pred` is numerically higher, which fits the diagnosis of Section 7.2 that transductive training absorbs the anomalous regime.
+13. **`embed` needs no training on any group**: 0.928 against 0.932 (synthetic), 0.825 against 0.828 (SKAB), 0.627 against 0.619 (NAB) for `block`.
+
+**What this changes.**
+
+* The rankings of Sections 1, 7.1 and 7.5 were measured on 16 datasets and do not survive the full suite. On 47 datasets `JEPAOD` and `TJEPAOD` are ordinary mid-table detectors. `JEPAOD` is significantly worse than `IForest`, neither is ahead of `AutoEncoder`, and they take about 40 and 80 times as long to fit as `AutoEncoder` and one to two thousand times as long as `IForest`.
+* On tabular data there is no evidence that JEPA training helps outlier detection, and consistent evidence, not significant after correction, that it costs a little at this budget. The one score that needs training, the T-JEPA prediction error, is no better than the untrained `embed` score.
+* On time series the training objective earns the default score on synthetic anomalies that break temporal structure, and nothing measurable on SKAB and NAB.
+* What remains as positive results: the prediction-error score for time series with structure-breaking anomalies; the two failure modes of Section 4.6; and the observation that per-token Mahalanobis distances on random token-transformer features match `IForest`.
+* Not tested, so not ruled out: other training budgets (finding 9 suggests fewer steps on large tables), early stopping, tuned hyper-parameters, training on clean data only, and the TSB-AD benchmark. A claim that training helps under any of these needs the same zero-epoch control.
+
+Coverage: 47 datasets, 5 seeds, 235 dataset-seed pairs with results. Fits that raised an error: PCA 33.
+
+#### Extended benchmark: 47 ADBench datasets, mean of 5 seeds, ranked by mean ROC-AUC (16 columns; time is fit plus scoring with one thread)
+
+| detector | mean ROC-AUC | mean AP | avg rank | wins | datasets | mean time (s) |
+|---|---|---|---|---|---|---|
+| TJEPAOD-untrained[embed] | 0.768 | 0.371 | 6.46 | 1 | 47 | 15.5 |
+| IForest | 0.763 | 0.384 | 6.46 | 5 | 47 | 0.1 |
+| JEPAOD-untrained[combined] | 0.751 | 0.379 | 7.73 | 2 | 47 | 10.7 |
+| AutoEncoder | 0.748 | 0.333 | 8.48 | 0 | 47 | 2.9 |
+| COPOD | 0.746 | 0.346 | 7.89 | 4 | 47 | 0.1 |
+| ECOD | 0.742 | 0.359 | 8.15 | 3 | 47 | 0.1 |
+| PCA | 0.738 | 0.393 | 8.40 | 2 | 42 | 0.2 |
+| HBOS | 0.737 | 0.341 | 8.39 | 4 | 47 | 0.1 |
+| JEPAOD[combined] | 0.736 | 0.353 | 9.39 | 0 | 47 | 118.6 |
+| DIF | 0.734 | 0.317 | 8.64 | 5 | 47 | 7.2 |
+| TJEPAOD[combined] | 0.732 | 0.318 | 8.55 | 3 | 47 | 239.7 |
+| KNN | 0.732 | 0.360 | 6.98 | 6 | 47 | 0.2 |
+| DeepSVDD | 0.729 | 0.317 | 9.19 | 3 | 47 | 1.0 |
+| LUNAR | 0.696 | 0.289 | 9.47 | 3 | 47 | 9.7 |
+| OCSVM | 0.685 | 0.293 | 10.39 | 1 | 47 | 4.7 |
+| LOF | 0.666 | 0.281 | 10.61 | 3 | 47 | 0.2 |
+
+#### JEPA family and untrained controls: mean ROC-AUC / AP per score (47 datasets)
+
+| variant | pred | embed | combined | emb+KNN | combined ROC-AUC by seed | fit time (s) |
+|---|---|---|---|---|---|---|
+| JEPAOD | 0.719 / 0.338 | 0.737 / 0.360 | 0.736 / 0.353 | 0.664 / 0.283 | 0.739 / 0.744 / 0.743 / 0.735 / 0.721 | 118.6 |
+| JEPAOD-untrained | 0.722 / 0.374 | 0.741 / 0.357 | 0.751 / 0.379 | 0.726 / 0.330 | 0.748 / 0.757 / 0.757 / 0.746 / 0.746 | 10.7 |
+| TJEPAOD | 0.702 / 0.308 | 0.726 / 0.317 | 0.732 / 0.318 | 0.640 / 0.274 | 0.740 / 0.745 / 0.723 / 0.740 / 0.715 | 239.7 |
+| TJEPAOD-untrained | 0.479 / 0.183 | 0.768 / 0.371 | 0.645 / 0.282 | 0.660 / 0.284 | 0.626 / 0.629 / 0.653 / 0.701 / 0.618 | 15.5 |
+
+#### Paired comparisons over the datasets (two-sided Wilcoxon signed-rank on per-dataset means; Holm correction over the 17 comparisons, which were fixed in advance; CI: bootstrap over datasets)
+
+|  | A | B | datasets | ROC-AUC A / B | A − B [95 % CI] | A / B better | p | p (Holm) | AP A / B | p AP | p AP (Holm) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | JEPAOD[combined] | JEPAOD-untrained[combined] | 47 | 0.736 / 0.751 | -0.015 [-0.033, +0.003] | 14 / 32 | 0.055 | 0.662 | 0.353 / 0.379 | 0.050 | 0.603 |
+| 2 | JEPAOD[embed] | JEPAOD-untrained[embed] | 47 | 0.737 / 0.741 | -0.004 [-0.018, +0.010] | 17 / 29 | 0.249 | 1.000 | 0.360 / 0.357 | 0.516 | 1.000 |
+| 3 | JEPAOD[pred] | JEPAOD-untrained[pred] | 47 | 0.719 / 0.722 | -0.004 [-0.030, +0.024] | 20 / 27 | 0.611 | 1.000 | 0.338 / 0.374 | 0.031 | 0.437 |
+| 4 | JEPAOD[emb+KNN] | JEPAOD-untrained[emb+KNN] | 47 | 0.664 / 0.726 | -0.062 [-0.093, -0.035] | 6 / 40 | <0.001 | <0.001 | 0.283 / 0.330 | <0.001 | <0.001 |
+| 5 | TJEPAOD[combined] | TJEPAOD-untrained[embed] | 47 | 0.732 / 0.768 | -0.035 [-0.066, -0.006] | 18 / 29 | 0.057 | 0.662 | 0.318 / 0.371 | 0.074 | 0.670 |
+| 6 | TJEPAOD[embed] | TJEPAOD-untrained[embed] | 47 | 0.726 / 0.768 | -0.041 [-0.073, -0.012] | 12 / 34 | 0.004 | 0.062 | 0.317 / 0.371 | 0.011 | 0.171 |
+| 7 | TJEPAOD[pred] | TJEPAOD-untrained[pred] | 47 | 0.702 / 0.479 | +0.223 [+0.168, +0.282] | 41 / 6 | <0.001 | <0.001 | 0.308 / 0.183 | <0.001 | 0.001 |
+| 8 | TJEPAOD[combined] | JEPAOD[combined] | 47 | 0.732 / 0.736 | -0.004 [-0.033, +0.024] | 29 / 18 | 0.320 | 1.000 | 0.318 / 0.353 | 0.341 | 1.000 |
+| 9 | JEPAOD[combined] | AutoEncoder | 47 | 0.736 / 0.748 | -0.011 [-0.035, +0.011] | 21 / 26 | 0.326 | 1.000 | 0.353 / 0.333 | 0.702 | 1.000 |
+| 10 | JEPAOD[combined] | KNN | 47 | 0.736 / 0.732 | +0.005 [-0.046, +0.064] | 16 / 31 | 0.166 | 1.000 | 0.353 / 0.360 | 0.058 | 0.627 |
+| 11 | JEPAOD[combined] | IForest | 47 | 0.736 / 0.763 | -0.027 [-0.045, -0.009] | 12 / 35 | <0.001 | 0.010 | 0.353 / 0.384 | 0.035 | 0.453 |
+| 12 | TJEPAOD[combined] | KNN | 47 | 0.732 / 0.732 | +0.001 [-0.052, +0.059] | 17 / 30 | 0.326 | 1.000 | 0.318 / 0.360 | 0.057 | 0.627 |
+| 13 | TJEPAOD[combined] | IForest | 47 | 0.732 / 0.763 | -0.031 [-0.062, -0.000] | 15 / 32 | 0.061 | 0.662 | 0.318 / 0.384 | 0.076 | 0.670 |
+| 14 | TJEPAOD-untrained[embed] | KNN | 47 | 0.768 / 0.732 | +0.036 [-0.017, +0.096] | 27 / 20 | 0.434 | 1.000 | 0.371 / 0.360 | 0.912 | 1.000 |
+| 15 | TJEPAOD-untrained[embed] | IForest | 47 | 0.768 / 0.763 | +0.004 [-0.011, +0.020] | 20 / 27 | 0.946 | 1.000 | 0.371 / 0.384 | 0.197 | 1.000 |
+| 16 | TJEPAOD-untrained[embed] | PCA | 42 | 0.770 / 0.738 | +0.032 [+0.011, +0.057] | 27 / 15 | 0.008 | 0.100 | 0.382 / 0.393 | 0.872 | 1.000 |
+| 17 | JEPAOD-untrained[combined] | AutoEncoder | 47 | 0.751 / 0.748 | +0.003 [-0.021, +0.026] | 28 / 19 | 0.453 | 1.000 | 0.379 / 0.333 | 0.088 | 0.670 |
+
+#### Mean ROC-AUC on the 16 datasets of Section 7.1 and on the datasets added here
+
+| detector | original 16 (n=16) | added (n=31) | all (n=47) |
+|---|---|---|---|
+| KNN | 0.783 | 0.705 | 0.732 |
+| IForest | 0.764 | 0.763 | 0.763 |
+| AutoEncoder | 0.736 | 0.754 | 0.748 |
+| JEPAOD[combined] | 0.753 | 0.728 | 0.736 |
+| JEPAOD-untrained[combined] | 0.748 | 0.752 | 0.751 |
+| TJEPAOD[combined] | 0.773 | 0.711 | 0.732 |
+| TJEPAOD-untrained[embed] | 0.764 | 0.769 | 0.768 |
+
+#### Post hoc: trained minus control ROC-AUC against the size of the training split (mean difference, with datasets where the trained model / the control is better in brackets; not corrected, not fixed in advance)
+
+| trained | control | Spearman rho with n_train | smaller half (n_train <= 2524, 24 datasets) | larger half (23 datasets) |
+|---|---|---|---|---|
+| JEPAOD[combined] | JEPAOD-untrained[combined] | -0.11 (p = 0.476) | -0.010 (4 / 19) | -0.019 (10 / 13) |
+| JEPAOD[embed] | JEPAOD-untrained[embed] | +0.01 (p = 0.928) | -0.006 (8 / 15) | -0.002 (9 / 14) |
+| JEPAOD[pred] | JEPAOD-untrained[pred] | -0.25 (p = 0.096) | +0.008 (10 / 14) | -0.016 (10 / 13) |
+| TJEPAOD[combined] | TJEPAOD-untrained[embed] | -0.36 (p = 0.013) | +0.003 (11 / 13) | -0.074 (7 / 16) |
+| TJEPAOD[embed] | TJEPAOD-untrained[embed] | -0.56 (p < 0.001) | +0.004 (7 / 16) | -0.088 (5 / 18) |
+| TJEPAOD[pred] | TJEPAOD-untrained[pred] | -0.17 (p = 0.241) | +0.254 (19 / 5) | +0.190 (22 / 1) |
+
+#### Per-dataset ROC-AUC (mean of seeds; best of the row in bold)
+
+| dataset | KNN | IForest | AutoEncoder | JEPAOD[combined] | JEPAOD-untrained[combined] | TJEPAOD[combined] | TJEPAOD-untrained[embed] |
+|---|---|---|---|---|---|---|---|
+| ALOI | **0.636** | 0.548 | 0.566 | 0.561 | 0.549 | 0.585 | 0.550 |
+| annthyroid | 0.732 | 0.816 | 0.734 | 0.637 | **0.827** | 0.681 | 0.812 |
+| backdoor | 0.754 | 0.727 | 0.870 | 0.843 | 0.818 | 0.878 | **0.898** |
+| breastw | 0.975 | 0.986 | 0.955 | 0.945 | **0.986** | 0.977 | 0.984 |
+| campaign | 0.721 | 0.707 | **0.763** | 0.666 | 0.734 | 0.701 | 0.711 |
+| cardio | 0.740 | 0.929 | 0.811 | 0.887 | 0.936 | 0.942 | **0.943** |
+| Cardiotocography | 0.619 | 0.681 | 0.559 | 0.610 | 0.714 | **0.757** | 0.675 |
+| celeba | 0.617 | 0.681 | 0.707 | 0.657 | 0.731 | 0.539 | **0.779** |
+| census | 0.647 | 0.626 | **0.673** | 0.606 | 0.671 | 0.641 | 0.654 |
+| cover | 0.828 | 0.867 | 0.906 | 0.911 | 0.911 | 0.570 | **0.940** |
+| donors | 0.800 | 0.773 | 0.824 | 0.664 | 0.816 | 0.708 | **0.838** |
+| fault | **0.730** | 0.570 | 0.668 | 0.601 | 0.467 | 0.465 | 0.477 |
+| fraud | 0.935 | 0.933 | 0.928 | 0.933 | **0.935** | 0.795 | 0.931 |
+| glass | **0.868** | 0.777 | 0.790 | 0.749 | 0.764 | 0.764 | 0.825 |
+| Hepatitis | 0.613 | 0.745 | 0.750 | 0.739 | 0.757 | 0.785 | **0.794** |
+| http | 0.036 | **1.000** | 0.996 | 0.997 | 0.995 | 0.966 | 0.995 |
+| InternetAds | **0.685** | 0.664 | 0.545 | 0.592 | 0.597 | 0.639 | 0.642 |
+| Ionosphere | 0.914 | 0.822 | **0.919** | 0.799 | 0.809 | 0.770 | 0.804 |
+| landsat | **0.586** | 0.473 | 0.470 | 0.442 | 0.357 | 0.487 | 0.387 |
+| letter | **0.875** | 0.640 | 0.840 | 0.608 | 0.577 | 0.554 | 0.588 |
+| Lymphography | 0.998 | **1.000** | 0.988 | 0.997 | 0.998 | 0.995 | 0.988 |
+| magic.gamma | **0.811** | 0.721 | 0.736 | 0.682 | 0.704 | 0.671 | 0.718 |
+| mammography | 0.845 | 0.864 | 0.870 | 0.823 | **0.880** | 0.570 | 0.851 |
+| mnist | 0.813 | 0.790 | **0.856** | 0.763 | 0.809 | 0.732 | 0.854 |
+| musk | 0.504 | 0.999 | 0.928 | 1.000 | **1.000** | 0.845 | 0.993 |
+| optdigits | 0.432 | **0.737** | 0.499 | 0.630 | 0.506 | 0.597 | 0.599 |
+| PageBlocks | 0.578 | 0.904 | 0.900 | 0.911 | 0.871 | **0.937** | 0.914 |
+| pendigits | 0.721 | **0.953** | 0.794 | 0.791 | 0.922 | 0.793 | 0.924 |
+| Pima | 0.632 | 0.676 | 0.648 | 0.661 | 0.660 | 0.670 | **0.680** |
+| satellite | 0.687 | **0.714** | 0.633 | 0.642 | 0.600 | 0.644 | 0.624 |
+| satimage-2 | 0.946 | 0.988 | 0.968 | **0.994** | 0.976 | 0.979 | 0.968 |
+| shuttle | 0.749 | **0.998** | 0.993 | 0.873 | 0.996 | 0.749 | 0.995 |
+| skin | 0.719 | 0.669 | 0.607 | 0.760 | 0.620 | **0.827** | 0.788 |
+| smtp | 0.972 | 0.946 | 0.955 | 0.961 | **0.978** | 0.781 | 0.975 |
+| SpamBase | **0.702** | 0.624 | 0.551 | 0.544 | 0.564 | 0.610 | 0.589 |
+| speech | 0.485 | **0.494** | 0.476 | 0.470 | 0.471 | 0.483 | 0.486 |
+| Stamps | 0.847 | 0.889 | 0.788 | 0.845 | 0.846 | **0.924** | 0.912 |
+| thyroid | 0.955 | **0.979** | 0.930 | 0.885 | 0.935 | 0.933 | 0.970 |
+| vertebral | 0.305 | 0.338 | 0.422 | 0.318 | 0.323 | **0.426** | 0.331 |
+| vowels | **0.967** | 0.762 | 0.920 | 0.784 | 0.795 | 0.834 | 0.822 |
+| Waveform | 0.758 | 0.725 | 0.638 | 0.614 | 0.687 | **0.885** | 0.701 |
+| WBC | 0.994 | **0.994** | 0.965 | 0.992 | 0.992 | 0.981 | 0.973 |
+| WDBC | **0.998** | 0.991 | 0.901 | 0.984 | 0.985 | 0.979 | 0.978 |
+| Wilt | **0.699** | 0.463 | 0.529 | 0.646 | 0.624 | 0.695 | 0.533 |
+| wine | **0.995** | 0.773 | 0.481 | 0.688 | 0.696 | 0.753 | 0.720 |
+| WPBC | **0.568** | 0.516 | 0.484 | 0.493 | 0.508 | 0.508 | 0.544 |
+| yeast | 0.406 | 0.401 | **0.421** | 0.415 | 0.397 | 0.419 | 0.415 |
+| **mean** | 0.732 | 0.763 | 0.748 | 0.736 | 0.751 | 0.732 | 0.768 |
+
+#### Time series: trained `TSJEPAOD` (class defaults) against the zero-epoch control, 5 seeds (Wilcoxon signed-rank over series; Holm correction over the 18 rows; default variant: `block[pred]`)
+
+|  | group | variant | series | ROC-AUC trained / untrained | difference [95 % CI] | trained / untrained better | p | p (Holm) | AP trained / untrained |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | synthetic | block[pred] | 15 | 0.941 / 0.798 | +0.144 [+0.088, +0.199] | 15 / 0 | <0.001 | <0.001 | 0.560 / 0.345 |
+| 2 | synthetic | block[embed] | 15 | 0.928 / 0.932 | -0.003 [-0.007, -0.001] | 2 / 13 | 0.018 | 0.181 | 0.540 / 0.547 |
+| 3 | synthetic | block[combined] | 15 | 0.936 / 0.877 | +0.059 [+0.031, +0.091] | 15 / 0 | <0.001 | <0.001 | 0.551 / 0.474 |
+| 4 | synthetic | forecast[pred] | 15 | 0.946 / 0.786 | +0.159 [+0.095, +0.225] | 15 / 0 | <0.001 | <0.001 | 0.572 / 0.339 |
+| 5 | synthetic | forecast[embed] | 15 | 0.928 / 0.932 | -0.004 [-0.007, -0.002] | 1 / 14 | <0.001 | 0.007 | 0.538 / 0.547 |
+| 6 | synthetic | forecast[combined] | 15 | 0.945 / 0.876 | +0.069 [+0.033, +0.110] | 15 / 0 | <0.001 | <0.001 | 0.564 / 0.472 |
+| 7 | SKAB | block[pred] | 16 | 0.825 / 0.831 | -0.006 [-0.008, -0.004] | 0 / 16 | <0.001 | <0.001 | 0.626 / 0.637 |
+| 8 | SKAB | block[embed] | 16 | 0.825 / 0.828 | -0.003 [-0.007, +0.001] | 4 / 12 | 0.065 | 0.589 | 0.618 / 0.643 |
+| 9 | SKAB | block[combined] | 16 | 0.825 / 0.829 | -0.004 [-0.006, -0.002] | 1 / 15 | 0.004 | 0.046 | 0.621 / 0.642 |
+| 10 | SKAB | forecast[pred] | 16 | 0.857 / 0.859 | -0.002 [-0.006, +0.000] | 7 / 9 | 0.298 | 1.000 | 0.732 / 0.730 |
+| 11 | SKAB | forecast[embed] | 16 | 0.829 / 0.828 | +0.001 [-0.001, +0.003] | 10 / 6 | 0.495 | 1.000 | 0.650 / 0.643 |
+| 12 | SKAB | forecast[combined] | 16 | 0.819 / 0.795 | +0.024 [+0.021, +0.028] | 16 / 0 | <0.001 | <0.001 | 0.634 / 0.570 |
+| 13 | NAB | block[pred] | 7 | 0.628 / 0.671 | -0.043 [-0.144, +0.041] | 4 / 3 | 0.938 | 1.000 | 0.283 / 0.322 |
+| 14 | NAB | block[embed] | 7 | 0.627 / 0.619 | +0.009 [-0.014, +0.035] | 5 / 2 | 0.375 | 1.000 | 0.281 / 0.250 |
+| 15 | NAB | block[combined] | 7 | 0.629 / 0.658 | -0.029 [-0.085, +0.011] | 5 / 2 | 0.938 | 1.000 | 0.284 / 0.309 |
+| 16 | NAB | forecast[pred] | 7 | 0.585 / 0.664 | -0.080 [-0.239, +0.071] | 4 / 3 | 0.688 | 1.000 | 0.243 / 0.315 |
+| 17 | NAB | forecast[embed] | 7 | 0.625 / 0.619 | +0.006 [-0.009, +0.020] | 5 / 2 | 0.297 | 1.000 | 0.281 / 0.250 |
+| 18 | NAB | forecast[combined] | 7 | 0.607 / 0.654 | -0.047 [-0.143, +0.042] | 4 / 3 | 0.688 | 1.000 | 0.273 / 0.306 |
+
+<!-- EXTENDED:END -->
+
 ---
 
 ## 8. Limitations and next steps
 
-* **What training contributes on tabular data is not established.** In Section 7.5 the `embed` score of an untrained network matches the trained one, and the trained `combined` scores cannot be told apart from the untrained controls on 16 datasets. The control has not been run for time series. Any claim that JEPA training helps outlier detection needs this control on a larger benchmark.
+* **Training has no demonstrated benefit on tabular data.** On all 47 ADBench datasets the zero-epoch controls score at least as high as the trained detectors (Section 7.6). For time series, training helps the default score on synthetic series only. One training budget was tested; a claim that JEPA training helps outlier detection under another budget needs the same control.
 * **The T-JEPA comparison is a re-implementation at a small budget.** `TJEPAOD` uses the released code's default architecture and `JEPAOD`'s training budget, not the authors' code or their per-dataset tuned configurations, and T-JEPA itself has no outlier score. τ-JEPA was not read and is not implemented.
-* **Benchmarks are modest** (16 ADBench datasets, 7 NAB series, SKAB valve1, synthetic). A PyOD PR should add the full ADBench-47 sweep and TSB-AD with VUS-PR, which is the primary metric there.
+* **The time-series benchmarks are modest** (7 NAB series, SKAB valve1, synthetic series). The tabular side now covers the 47 ADBench classical datasets (Section 7.6). TSB-AD with VUS-PR, the primary metric there, has not been run. The ablations of Section 7.3, including the SIGReg-against-EMA comparison, were run on small subsets only.
 * **Transductive contamination.** Like every unsupervised deep detector, training outliers are Gaussianised along with inliers by SIGReg. The `embed` score is more sensitive to this than `pred`.
 * **Hyper-parameters** were fixed at LeJEPA / I-JEPA defaults; LeJEPA's observation that the training loss tracks downstream quality could give label-free model selection for OD and deserves a test.
 * **Categorical features** are treated as numeric; a per-token embedding table would be the natural extension.

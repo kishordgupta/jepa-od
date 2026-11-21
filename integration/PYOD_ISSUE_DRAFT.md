@@ -21,17 +21,23 @@ and `results/ts_results_jepa_final.csv`, or taken from the bundled-data table in
 
 ## Found after posting (2026-11-21)
 
-Two things in `REPORT.md` section 7.5 are not in the posted text. Nothing has been added to the issue;
-whether to tell the maintainer in a comment is the author's decision.
+Three things in `REPORT.md` sections 7.5 and 7.6 are not in the posted text, and the second and third
+weaken its case. Nothing has been added to the issue. A comment for the author to post is drafted in
+`integration/PYOD_ISSUE_COMMENT_DRAFT.md`; whether to post it is the author's decision.
 
 1. **Prior work.** T-JEPA (Thimonier et al., ICLR 2025, arXiv 2410.05016) already applies JEPA to tabular
    data, as representation learning for supervised tasks. The issue does not cite it. This repository now
-   has `TJEPAOD`, a re-implementation of its recipe scored like `JEPAOD`: mean ROC-AUC 0.782 / AP 0.412
-   against 0.760 / 0.438, not a significant difference on the 16 datasets.
-2. **Untrained control.** With zero training epochs the proposed detector's network scores ROC-AUC 0.750 /
-   AP 0.435 on the same benchmark (`combined`), against 0.760 / 0.438 trained (9 against 7 datasets,
-   p = 0.86). The benchmark table in the issue is correct, but it does not show that training is what
-   produces the result.
+   has `TJEPAOD`, a re-implementation of its recipe scored like `JEPAOD`. On the full ADBench suite the two
+   cannot be separated: ROC-AUC 0.732 / AP 0.318 against 0.736 / 0.353.
+2. **Full ADBench suite.** The table in the issue covers 16 of the 47 classical ADBench datasets with
+   3 seeds. On all 47 with 5 seeds the proposed tabular detector reaches 0.736 / 0.353: below AutoEncoder
+   (0.748 / 0.333, not significant) and significantly below IForest (0.763 / 0.384; IForest is better on 35
+   of 47 datasets, corrected p = 0.010). The table in the issue is correct for its 16 datasets. The ranking
+   it suggests does not hold on the other 31.
+3. **Untrained control.** With zero training epochs the tabular network scores 0.751 / 0.379 on the 47
+   datasets and is better than the trained detector on 32 of them (not significant after correction). For
+   `TSJEPA`, training produces the result on synthetic series (0.941 against 0.798 untrained) and adds
+   nothing measurable on SKAB (0.825 against 0.831) or NAB (0.628 against 0.671).
 
 ## Title
 

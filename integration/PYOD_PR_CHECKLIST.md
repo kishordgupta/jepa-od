@@ -105,7 +105,9 @@ seed 42, default parameters):
 PyOD's process (`CONTRIBUTING.md` on `development`):
 
 1. Open an issue first. For a new detector it must state the inclusion criterion or a commitment to
-   maintain the detector for at least two years. JEPA-OD is new, so it needs that commitment.
+   maintain the detector for at least two years. JEPA-OD is new, so it needs that commitment. A
+   draft of the issue, with notes on what to settle before posting, is in
+   `integration/PYOD_ISSUE_DRAFT.md`.
 2. Wait until the maintainer labels the issue `accepted` and assigns it. A pull request without
    such an issue may be closed without review.
 3. Open one pull request against `development` and link the issue. "One change per pull request":

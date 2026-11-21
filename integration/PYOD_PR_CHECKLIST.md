@@ -30,9 +30,12 @@ git am --keep-cr /path/to/jepa-od/integration/pyod-patches/*.patch
 `--keep-cr` is needed because `README.rst` and `docs/index.rst` use CRLF line endings in PyOD.
 
 PyOD's test workflow runs on pushes to `master` and `development` and on pull requests against
-them, so the push of `feature/jepa-od` did not start CI. A pull request inside the fork, from
-`feature/jepa-od` into the fork's own `development`, would run the full matrix (Python 3.9 to 3.13)
-without involving upstream.
+them, so the push of `feature/jepa-od` did not start CI. To run it without involving upstream, a
+draft pull request was opened inside the fork, from `feature/jepa-od` into the fork's own
+`development`: https://github.com/kishordgupta/pyod/pull/1. It exists only to run the matrix:
+Ubuntu and Windows on Python 3.9 to 3.13, where the 44 new tests run, plus one macOS job that
+installs no torch and skips them. Its Checks tab has the result. Do not merge it, because that
+would make the fork's `development` diverge from upstream.
 
 ## File map
 

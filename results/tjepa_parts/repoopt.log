@@ -1,0 +1,54 @@
+12_fault seed=0 n=(1164, 27) TJEPAOD-repoopt[pred]=0.453 TJEPAOD-repoopt[embed]=0.499 TJEPAOD-repoopt[combined]=0.466 TJEPAOD-repoopt[emb+KNN]=0.724
+12_fault seed=1 n=(1164, 27) TJEPAOD-repoopt[pred]=0.377 TJEPAOD-repoopt[embed]=0.447 TJEPAOD-repoopt[combined]=0.403 TJEPAOD-repoopt[emb+KNN]=0.732
+12_fault seed=2 n=(1164, 27) TJEPAOD-repoopt[pred]=0.411 TJEPAOD-repoopt[embed]=0.448 TJEPAOD-repoopt[combined]=0.421 TJEPAOD-repoopt[emb+KNN]=0.706
+17_InternetAds seed=0 n=(1179, 1555) TJEPAOD-repoopt[pred]=0.646 TJEPAOD-repoopt[embed]=0.667 TJEPAOD-repoopt[combined]=0.658 TJEPAOD-repoopt[emb+KNN]=0.635
+17_InternetAds seed=1 n=(1179, 1555) TJEPAOD-repoopt[pred]=0.600 TJEPAOD-repoopt[embed]=0.593 TJEPAOD-repoopt[combined]=0.597 TJEPAOD-repoopt[emb+KNN]=0.598
+17_InternetAds seed=2 n=(1179, 1555) TJEPAOD-repoopt[pred]=0.667 TJEPAOD-repoopt[embed]=0.658 TJEPAOD-repoopt[combined]=0.663 TJEPAOD-repoopt[emb+KNN]=0.659
+18_Ionosphere seed=0 n=(210, 32) TJEPAOD-repoopt[pred]=0.748 TJEPAOD-repoopt[embed]=0.836 TJEPAOD-repoopt[combined]=0.799 TJEPAOD-repoopt[emb+KNN]=0.926
+18_Ionosphere seed=1 n=(210, 32) TJEPAOD-repoopt[pred]=0.693 TJEPAOD-repoopt[embed]=0.775 TJEPAOD-repoopt[combined]=0.738 TJEPAOD-repoopt[emb+KNN]=0.931
+18_Ionosphere seed=2 n=(210, 32) TJEPAOD-repoopt[pred]=0.663 TJEPAOD-repoopt[embed]=0.801 TJEPAOD-repoopt[combined]=0.741 TJEPAOD-repoopt[emb+KNN]=0.920
+22_magic.gamma seed=0 n=(11412, 10) TJEPAOD-repoopt[pred]=0.758 TJEPAOD-repoopt[embed]=0.694 TJEPAOD-repoopt[combined]=0.736 TJEPAOD-repoopt[emb+KNN]=0.844
+22_magic.gamma seed=1 n=(11412, 10) TJEPAOD-repoopt[pred]=0.725 TJEPAOD-repoopt[embed]=0.696 TJEPAOD-repoopt[combined]=0.721 TJEPAOD-repoopt[emb+KNN]=0.822
+22_magic.gamma seed=2 n=(11412, 10) TJEPAOD-repoopt[pred]=0.750 TJEPAOD-repoopt[embed]=0.719 TJEPAOD-repoopt[combined]=0.754 TJEPAOD-repoopt[emb+KNN]=0.829
+25_musk seed=0 n=(1837, 166) TJEPAOD-repoopt[pred]=0.696 TJEPAOD-repoopt[embed]=0.988 TJEPAOD-repoopt[combined]=0.905 TJEPAOD-repoopt[emb+KNN]=0.597
+25_musk seed=1 n=(1837, 166) TJEPAOD-repoopt[pred]=0.835 TJEPAOD-repoopt[embed]=0.995 TJEPAOD-repoopt[combined]=0.955 TJEPAOD-repoopt[emb+KNN]=0.593
+25_musk seed=2 n=(1837, 166) TJEPAOD-repoopt[pred]=0.842 TJEPAOD-repoopt[embed]=0.989 TJEPAOD-repoopt[combined]=0.942 TJEPAOD-repoopt[emb+KNN]=0.600
+29_Pima seed=0 n=(460, 8) TJEPAOD-repoopt[pred]=0.626 TJEPAOD-repoopt[embed]=0.686 TJEPAOD-repoopt[combined]=0.643 TJEPAOD-repoopt[emb+KNN]=0.693
+29_Pima seed=1 n=(460, 8) TJEPAOD-repoopt[pred]=0.525 TJEPAOD-repoopt[embed]=0.612 TJEPAOD-repoopt[combined]=0.546 TJEPAOD-repoopt[emb+KNN]=0.530
+29_Pima seed=2 n=(460, 8) TJEPAOD-repoopt[pred]=0.633 TJEPAOD-repoopt[embed]=0.710 TJEPAOD-repoopt[combined]=0.665 TJEPAOD-repoopt[emb+KNN]=0.667
+31_satimage-2 seed=0 n=(3481, 36) TJEPAOD-repoopt[pred]=0.954 TJEPAOD-repoopt[embed]=0.963 TJEPAOD-repoopt[combined]=0.963 TJEPAOD-repoopt[emb+KNN]=0.571
+31_satimage-2 seed=1 n=(3481, 36) TJEPAOD-repoopt[pred]=0.973 TJEPAOD-repoopt[embed]=0.971 TJEPAOD-repoopt[combined]=0.973 TJEPAOD-repoopt[emb+KNN]=0.615
+31_satimage-2 seed=2 n=(3481, 36) TJEPAOD-repoopt[pred]=0.984 TJEPAOD-repoopt[embed]=0.986 TJEPAOD-repoopt[combined]=0.987 TJEPAOD-repoopt[emb+KNN]=0.543
+33_skin seed=0 n=(12000, 3) TJEPAOD-repoopt[pred]=0.877 TJEPAOD-repoopt[embed]=0.740 TJEPAOD-repoopt[combined]=0.858 TJEPAOD-repoopt[emb+KNN]=0.725
+33_skin seed=1 n=(12000, 3) TJEPAOD-repoopt[pred]=0.863 TJEPAOD-repoopt[embed]=0.740 TJEPAOD-repoopt[combined]=0.839 TJEPAOD-repoopt[emb+KNN]=0.673
+33_skin seed=2 n=(12000, 3) TJEPAOD-repoopt[pred]=0.885 TJEPAOD-repoopt[embed]=0.725 TJEPAOD-repoopt[combined]=0.863 TJEPAOD-repoopt[emb+KNN]=0.734
+36_speech seed=0 n=(2211, 400) TJEPAOD-repoopt[pred]=0.525 TJEPAOD-repoopt[embed]=0.523 TJEPAOD-repoopt[combined]=0.525 TJEPAOD-repoopt[emb+KNN]=0.558
+36_speech seed=1 n=(2211, 400) TJEPAOD-repoopt[pred]=0.443 TJEPAOD-repoopt[embed]=0.433 TJEPAOD-repoopt[combined]=0.436 TJEPAOD-repoopt[emb+KNN]=0.461
+36_speech seed=2 n=(2211, 400) TJEPAOD-repoopt[pred]=0.540 TJEPAOD-repoopt[embed]=0.555 TJEPAOD-repoopt[combined]=0.547 TJEPAOD-repoopt[emb+KNN]=0.547
+38_thyroid seed=0 n=(2263, 6) TJEPAOD-repoopt[pred]=0.983 TJEPAOD-repoopt[embed]=0.969 TJEPAOD-repoopt[combined]=0.977 TJEPAOD-repoopt[emb+KNN]=0.882
+38_thyroid seed=1 n=(2263, 6) TJEPAOD-repoopt[pred]=0.988 TJEPAOD-repoopt[embed]=0.969 TJEPAOD-repoopt[combined]=0.980 TJEPAOD-repoopt[emb+KNN]=0.858
+38_thyroid seed=2 n=(2263, 6) TJEPAOD-repoopt[pred]=0.987 TJEPAOD-repoopt[embed]=0.976 TJEPAOD-repoopt[combined]=0.984 TJEPAOD-repoopt[emb+KNN]=0.922
+40_vowels seed=0 n=(873, 12) TJEPAOD-repoopt[pred]=0.389 TJEPAOD-repoopt[embed]=0.788 TJEPAOD-repoopt[combined]=0.552 TJEPAOD-repoopt[emb+KNN]=0.982
+40_vowels seed=1 n=(873, 12) TJEPAOD-repoopt[pred]=0.566 TJEPAOD-repoopt[embed]=0.842 TJEPAOD-repoopt[combined]=0.721 TJEPAOD-repoopt[emb+KNN]=0.964
+40_vowels seed=2 n=(873, 12) TJEPAOD-repoopt[pred]=0.585 TJEPAOD-repoopt[embed]=0.839 TJEPAOD-repoopt[combined]=0.730 TJEPAOD-repoopt[emb+KNN]=0.985
+41_Waveform seed=0 n=(2065, 21) TJEPAOD-repoopt[pred]=0.745 TJEPAOD-repoopt[embed]=0.752 TJEPAOD-repoopt[combined]=0.762 TJEPAOD-repoopt[emb+KNN]=0.559
+41_Waveform seed=1 n=(2065, 21) TJEPAOD-repoopt[pred]=0.687 TJEPAOD-repoopt[embed]=0.731 TJEPAOD-repoopt[combined]=0.719 TJEPAOD-repoopt[emb+KNN]=0.610
+41_Waveform seed=2 n=(2065, 21) TJEPAOD-repoopt[pred]=0.664 TJEPAOD-repoopt[embed]=0.731 TJEPAOD-repoopt[combined]=0.710 TJEPAOD-repoopt[emb+KNN]=0.617
+42_WBC seed=0 n=(133, 9) TJEPAOD-repoopt[pred]=0.991 TJEPAOD-repoopt[embed]=0.977 TJEPAOD-repoopt[combined]=0.977 TJEPAOD-repoopt[emb+KNN]=0.823
+42_WBC seed=1 n=(133, 9) TJEPAOD-repoopt[pred]=0.983 TJEPAOD-repoopt[embed]=0.985 TJEPAOD-repoopt[combined]=0.985 TJEPAOD-repoopt[emb+KNN]=0.840
+42_WBC seed=2 n=(133, 9) TJEPAOD-repoopt[pred]=0.988 TJEPAOD-repoopt[embed]=0.980 TJEPAOD-repoopt[combined]=0.997 TJEPAOD-repoopt[emb+KNN]=0.936
+44_Wilt seed=0 n=(2891, 5) TJEPAOD-repoopt[pred]=0.390 TJEPAOD-repoopt[embed]=0.517 TJEPAOD-repoopt[combined]=0.404 TJEPAOD-repoopt[emb+KNN]=0.731
+44_Wilt seed=1 n=(2891, 5) TJEPAOD-repoopt[pred]=0.455 TJEPAOD-repoopt[embed]=0.529 TJEPAOD-repoopt[combined]=0.454 TJEPAOD-repoopt[emb+KNN]=0.849
+44_Wilt seed=2 n=(2891, 5) TJEPAOD-repoopt[pred]=0.408 TJEPAOD-repoopt[embed]=0.570 TJEPAOD-repoopt[combined]=0.428 TJEPAOD-repoopt[emb+KNN]=0.713
+45_wine seed=0 n=(77, 13) TJEPAOD-repoopt[pred]=0.927 TJEPAOD-repoopt[embed]=0.870 TJEPAOD-repoopt[combined]=0.901 TJEPAOD-repoopt[emb+KNN]=0.276
+45_wine seed=1 n=(77, 13) TJEPAOD-repoopt[pred]=0.703 TJEPAOD-repoopt[embed]=0.714 TJEPAOD-repoopt[combined]=0.698 TJEPAOD-repoopt[emb+KNN]=0.271
+45_wine seed=2 n=(77, 13) TJEPAOD-repoopt[pred]=0.823 TJEPAOD-repoopt[embed]=0.922 TJEPAOD-repoopt[combined]=0.891 TJEPAOD-repoopt[emb+KNN]=0.141
+6_cardio seed=0 n=(1098, 21) TJEPAOD-repoopt[pred]=0.957 TJEPAOD-repoopt[embed]=0.932 TJEPAOD-repoopt[combined]=0.952 TJEPAOD-repoopt[emb+KNN]=0.495
+6_cardio seed=1 n=(1098, 21) TJEPAOD-repoopt[pred]=0.948 TJEPAOD-repoopt[embed]=0.965 TJEPAOD-repoopt[combined]=0.963 TJEPAOD-repoopt[emb+KNN]=0.482
+6_cardio seed=2 n=(1098, 21) TJEPAOD-repoopt[pred]=0.947 TJEPAOD-repoopt[embed]=0.950 TJEPAOD-repoopt[combined]=0.954 TJEPAOD-repoopt[emb+KNN]=0.518
+                             auc     ap     time
+model                                           
+TJEPAOD-repoopt[combined]  0.752  0.428  143.816
+TJEPAOD-repoopt[emb+KNN]   0.685  0.352  144.196
+TJEPAOD-repoopt[embed]     0.770  0.429  143.816
+TJEPAOD-repoopt[pred]      0.725  0.411  143.816

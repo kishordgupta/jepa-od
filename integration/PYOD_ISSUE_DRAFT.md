@@ -19,6 +19,20 @@ Every number in the body was recomputed from `results/tabular_results.csv`, `res
 and `results/ts_results_jepa_final.csv`, or taken from the bundled-data table in
 `integration/PYOD_PR_CHECKLIST.md` and the CI logs of the run linked in the body.
 
+## Found after posting (2026-11-21)
+
+Two things in `REPORT.md` section 7.5 are not in the posted text. Nothing has been added to the issue;
+whether to tell the maintainer in a comment is the author's decision.
+
+1. **Prior work.** T-JEPA (Thimonier et al., ICLR 2025, arXiv 2410.05016) already applies JEPA to tabular
+   data, as representation learning for supervised tasks. The issue does not cite it. This repository now
+   has `TJEPAOD`, a re-implementation of its recipe scored like `JEPAOD`: mean ROC-AUC 0.782 / AP 0.412
+   against 0.760 / 0.438, not a significant difference on the 16 datasets.
+2. **Untrained control.** With zero training epochs the proposed detector's network scores ROC-AUC 0.750 /
+   AP 0.435 on the same benchmark (`combined`), against 0.760 / 0.438 trained (9 against 7 datasets,
+   p = 0.86). The benchmark table in the issue is correct, but it does not show that training is what
+   produces the result.
+
 ## Title
 
 New detector proposal: JEPA (masked latent prediction) for tabular data and time series

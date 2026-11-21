@@ -1,0 +1,54 @@
+12_fault seed=0 n=(1164, 27) TJEPAOD-nonorm[pred]=0.653 TJEPAOD-nonorm[embed]=0.510 TJEPAOD-nonorm[combined]=0.634 TJEPAOD-nonorm[emb+KNN]=0.729
+12_fault seed=1 n=(1164, 27) TJEPAOD-nonorm[pred]=0.515 TJEPAOD-nonorm[embed]=0.432 TJEPAOD-nonorm[combined]=0.470 TJEPAOD-nonorm[emb+KNN]=0.723
+12_fault seed=2 n=(1164, 27) TJEPAOD-nonorm[pred]=0.620 TJEPAOD-nonorm[embed]=0.445 TJEPAOD-nonorm[combined]=0.588 TJEPAOD-nonorm[emb+KNN]=0.709
+17_InternetAds seed=0 n=(1179, 1555) TJEPAOD-nonorm[pred]=0.587 TJEPAOD-nonorm[embed]=0.591 TJEPAOD-nonorm[combined]=0.589 TJEPAOD-nonorm[emb+KNN]=0.587
+17_InternetAds seed=1 n=(1179, 1555) TJEPAOD-nonorm[pred]=0.559 TJEPAOD-nonorm[embed]=0.548 TJEPAOD-nonorm[combined]=0.553 TJEPAOD-nonorm[emb+KNN]=0.570
+17_InternetAds seed=2 n=(1179, 1555) TJEPAOD-nonorm[pred]=0.651 TJEPAOD-nonorm[embed]=0.634 TJEPAOD-nonorm[combined]=0.643 TJEPAOD-nonorm[emb+KNN]=0.655
+18_Ionosphere seed=0 n=(210, 32) TJEPAOD-nonorm[pred]=0.798 TJEPAOD-nonorm[embed]=0.836 TJEPAOD-nonorm[combined]=0.816 TJEPAOD-nonorm[emb+KNN]=0.936
+18_Ionosphere seed=1 n=(210, 32) TJEPAOD-nonorm[pred]=0.693 TJEPAOD-nonorm[embed]=0.756 TJEPAOD-nonorm[combined]=0.727 TJEPAOD-nonorm[emb+KNN]=0.914
+18_Ionosphere seed=2 n=(210, 32) TJEPAOD-nonorm[pred]=0.751 TJEPAOD-nonorm[embed]=0.791 TJEPAOD-nonorm[combined]=0.774 TJEPAOD-nonorm[emb+KNN]=0.917
+22_magic.gamma seed=0 n=(11412, 10) TJEPAOD-nonorm[pred]=0.788 TJEPAOD-nonorm[embed]=0.696 TJEPAOD-nonorm[combined]=0.762 TJEPAOD-nonorm[emb+KNN]=0.797
+22_magic.gamma seed=1 n=(11412, 10) TJEPAOD-nonorm[pred]=0.731 TJEPAOD-nonorm[embed]=0.694 TJEPAOD-nonorm[combined]=0.727 TJEPAOD-nonorm[emb+KNN]=0.783
+22_magic.gamma seed=2 n=(11412, 10) TJEPAOD-nonorm[pred]=0.759 TJEPAOD-nonorm[embed]=0.700 TJEPAOD-nonorm[combined]=0.755 TJEPAOD-nonorm[emb+KNN]=0.817
+25_musk seed=0 n=(1837, 166) TJEPAOD-nonorm[pred]=0.975 TJEPAOD-nonorm[embed]=1.000 TJEPAOD-nonorm[combined]=0.998 TJEPAOD-nonorm[emb+KNN]=0.794
+25_musk seed=1 n=(1837, 166) TJEPAOD-nonorm[pred]=0.987 TJEPAOD-nonorm[embed]=1.000 TJEPAOD-nonorm[combined]=1.000 TJEPAOD-nonorm[emb+KNN]=0.809
+25_musk seed=2 n=(1837, 166) TJEPAOD-nonorm[pred]=0.977 TJEPAOD-nonorm[embed]=1.000 TJEPAOD-nonorm[combined]=1.000 TJEPAOD-nonorm[emb+KNN]=0.849
+29_Pima seed=0 n=(460, 8) TJEPAOD-nonorm[pred]=0.670 TJEPAOD-nonorm[embed]=0.694 TJEPAOD-nonorm[combined]=0.690 TJEPAOD-nonorm[emb+KNN]=0.727
+29_Pima seed=1 n=(460, 8) TJEPAOD-nonorm[pred]=0.621 TJEPAOD-nonorm[embed]=0.598 TJEPAOD-nonorm[combined]=0.621 TJEPAOD-nonorm[emb+KNN]=0.645
+29_Pima seed=2 n=(460, 8) TJEPAOD-nonorm[pred]=0.665 TJEPAOD-nonorm[embed]=0.711 TJEPAOD-nonorm[combined]=0.695 TJEPAOD-nonorm[emb+KNN]=0.712
+31_satimage-2 seed=0 n=(3481, 36) TJEPAOD-nonorm[pred]=0.955 TJEPAOD-nonorm[embed]=0.949 TJEPAOD-nonorm[combined]=0.967 TJEPAOD-nonorm[emb+KNN]=0.759
+31_satimage-2 seed=1 n=(3481, 36) TJEPAOD-nonorm[pred]=0.957 TJEPAOD-nonorm[embed]=0.961 TJEPAOD-nonorm[combined]=0.980 TJEPAOD-nonorm[emb+KNN]=0.801
+31_satimage-2 seed=2 n=(3481, 36) TJEPAOD-nonorm[pred]=0.941 TJEPAOD-nonorm[embed]=0.979 TJEPAOD-nonorm[combined]=0.990 TJEPAOD-nonorm[emb+KNN]=0.760
+33_skin seed=0 n=(12000, 3) TJEPAOD-nonorm[pred]=0.809 TJEPAOD-nonorm[embed]=0.723 TJEPAOD-nonorm[combined]=0.759 TJEPAOD-nonorm[emb+KNN]=0.715
+33_skin seed=1 n=(12000, 3) TJEPAOD-nonorm[pred]=0.788 TJEPAOD-nonorm[embed]=0.685 TJEPAOD-nonorm[combined]=0.729 TJEPAOD-nonorm[emb+KNN]=0.646
+33_skin seed=2 n=(12000, 3) TJEPAOD-nonorm[pred]=0.855 TJEPAOD-nonorm[embed]=0.762 TJEPAOD-nonorm[combined]=0.815 TJEPAOD-nonorm[emb+KNN]=0.698
+36_speech seed=0 n=(2211, 400) TJEPAOD-nonorm[pred]=0.549 TJEPAOD-nonorm[embed]=0.518 TJEPAOD-nonorm[combined]=0.532 TJEPAOD-nonorm[emb+KNN]=0.557
+36_speech seed=1 n=(2211, 400) TJEPAOD-nonorm[pred]=0.469 TJEPAOD-nonorm[embed]=0.433 TJEPAOD-nonorm[combined]=0.444 TJEPAOD-nonorm[emb+KNN]=0.432
+36_speech seed=2 n=(2211, 400) TJEPAOD-nonorm[pred]=0.505 TJEPAOD-nonorm[embed]=0.520 TJEPAOD-nonorm[combined]=0.513 TJEPAOD-nonorm[emb+KNN]=0.524
+38_thyroid seed=0 n=(2263, 6) TJEPAOD-nonorm[pred]=0.879 TJEPAOD-nonorm[embed]=0.973 TJEPAOD-nonorm[combined]=0.946 TJEPAOD-nonorm[emb+KNN]=0.955
+38_thyroid seed=1 n=(2263, 6) TJEPAOD-nonorm[pred]=0.878 TJEPAOD-nonorm[embed]=0.974 TJEPAOD-nonorm[combined]=0.948 TJEPAOD-nonorm[emb+KNN]=0.937
+38_thyroid seed=2 n=(2263, 6) TJEPAOD-nonorm[pred]=0.942 TJEPAOD-nonorm[embed]=0.989 TJEPAOD-nonorm[combined]=0.977 TJEPAOD-nonorm[emb+KNN]=0.973
+40_vowels seed=0 n=(873, 12) TJEPAOD-nonorm[pred]=0.851 TJEPAOD-nonorm[embed]=0.773 TJEPAOD-nonorm[combined]=0.843 TJEPAOD-nonorm[emb+KNN]=0.978
+40_vowels seed=1 n=(873, 12) TJEPAOD-nonorm[pred]=0.743 TJEPAOD-nonorm[embed]=0.799 TJEPAOD-nonorm[combined]=0.780 TJEPAOD-nonorm[emb+KNN]=0.978
+40_vowels seed=2 n=(873, 12) TJEPAOD-nonorm[pred]=0.899 TJEPAOD-nonorm[embed]=0.773 TJEPAOD-nonorm[combined]=0.856 TJEPAOD-nonorm[emb+KNN]=0.976
+41_Waveform seed=0 n=(2065, 21) TJEPAOD-nonorm[pred]=0.717 TJEPAOD-nonorm[embed]=0.738 TJEPAOD-nonorm[combined]=0.799 TJEPAOD-nonorm[emb+KNN]=0.769
+41_Waveform seed=1 n=(2065, 21) TJEPAOD-nonorm[pred]=0.785 TJEPAOD-nonorm[embed]=0.722 TJEPAOD-nonorm[combined]=0.843 TJEPAOD-nonorm[emb+KNN]=0.839
+41_Waveform seed=2 n=(2065, 21) TJEPAOD-nonorm[pred]=0.758 TJEPAOD-nonorm[embed]=0.697 TJEPAOD-nonorm[combined]=0.844 TJEPAOD-nonorm[emb+KNN]=0.794
+42_WBC seed=0 n=(133, 9) TJEPAOD-nonorm[pred]=1.000 TJEPAOD-nonorm[embed]=0.997 TJEPAOD-nonorm[combined]=1.000 TJEPAOD-nonorm[emb+KNN]=0.983
+42_WBC seed=1 n=(133, 9) TJEPAOD-nonorm[pred]=0.985 TJEPAOD-nonorm[embed]=0.985 TJEPAOD-nonorm[combined]=0.985 TJEPAOD-nonorm[emb+KNN]=0.985
+42_WBC seed=2 n=(133, 9) TJEPAOD-nonorm[pred]=1.000 TJEPAOD-nonorm[embed]=1.000 TJEPAOD-nonorm[combined]=1.000 TJEPAOD-nonorm[emb+KNN]=0.991
+44_Wilt seed=0 n=(2891, 5) TJEPAOD-nonorm[pred]=0.431 TJEPAOD-nonorm[embed]=0.521 TJEPAOD-nonorm[combined]=0.453 TJEPAOD-nonorm[emb+KNN]=0.642
+44_Wilt seed=1 n=(2891, 5) TJEPAOD-nonorm[pred]=0.429 TJEPAOD-nonorm[embed]=0.465 TJEPAOD-nonorm[combined]=0.438 TJEPAOD-nonorm[emb+KNN]=0.659
+44_Wilt seed=2 n=(2891, 5) TJEPAOD-nonorm[pred]=0.554 TJEPAOD-nonorm[embed]=0.609 TJEPAOD-nonorm[combined]=0.586 TJEPAOD-nonorm[emb+KNN]=0.674
+45_wine seed=0 n=(77, 13) TJEPAOD-nonorm[pred]=0.781 TJEPAOD-nonorm[embed]=0.818 TJEPAOD-nonorm[combined]=0.818 TJEPAOD-nonorm[emb+KNN]=0.505
+45_wine seed=1 n=(77, 13) TJEPAOD-nonorm[pred]=0.766 TJEPAOD-nonorm[embed]=0.792 TJEPAOD-nonorm[combined]=0.792 TJEPAOD-nonorm[emb+KNN]=0.568
+45_wine seed=2 n=(77, 13) TJEPAOD-nonorm[pred]=0.844 TJEPAOD-nonorm[embed]=0.865 TJEPAOD-nonorm[combined]=0.859 TJEPAOD-nonorm[emb+KNN]=0.682
+6_cardio seed=0 n=(1098, 21) TJEPAOD-nonorm[pred]=0.870 TJEPAOD-nonorm[embed]=0.940 TJEPAOD-nonorm[combined]=0.913 TJEPAOD-nonorm[emb+KNN]=0.700
+6_cardio seed=1 n=(1098, 21) TJEPAOD-nonorm[pred]=0.910 TJEPAOD-nonorm[embed]=0.965 TJEPAOD-nonorm[combined]=0.943 TJEPAOD-nonorm[emb+KNN]=0.716
+6_cardio seed=2 n=(1098, 21) TJEPAOD-nonorm[pred]=0.887 TJEPAOD-nonorm[embed]=0.952 TJEPAOD-nonorm[combined]=0.926 TJEPAOD-nonorm[emb+KNN]=0.652
+                            auc     ap    time
+model                                         
+TJEPAOD-nonorm[combined]  0.777  0.444  68.365
+TJEPAOD-nonorm[emb+KNN]   0.761  0.386  68.804
+TJEPAOD-nonorm[embed]     0.761  0.452  68.365
+TJEPAOD-nonorm[pred]      0.765  0.381  68.365

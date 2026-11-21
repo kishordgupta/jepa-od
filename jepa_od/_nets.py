@@ -249,6 +249,11 @@ class JEPACore(nn.Module):
                 return F.layer_norm(h, (h.size(-1),))
         return self.encoder(tokens)
 
+    @torch.no_grad()
+    def token_embeddings(self, x):
+        """Target embeddings of all tokens of raw tokens ``x``, (B, T, D)."""
+        return self.encode_target(self.embed(x))
+
     def predict(self, h_ctx, ctx_idx, tgt_idx):
         """Predict target-token representations from encoded context."""
         c = self.pred_in(h_ctx) + self.pred_pos[ctx_idx]

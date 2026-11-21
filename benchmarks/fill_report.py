@@ -29,7 +29,7 @@ ts_narr = """
 abl_narr = """
 `results/ablation_results.csv` (block masking, `combined`-trained models scored three ways; tabular: 8 small ADBench sets, seed 0; time series: 3 synthetic + 7 NAB series):
 
-* **SIGReg vs EMA teacher.** SIGReg wins everywhere: tabular mean AUC 0.77-0.81 vs 0.67-0.75 (EMA), time series 0.72-0.77 vs 0.69-0.71. The EMA variant is also the one whose `embed` score is weakest, consistent with target-scale drift.
+* **SIGReg vs EMA teacher.** Inside the `JEPAOD` network SIGReg wins everywhere (the EMA-based T-JEPA recipe of Section 7.5 is a different network and is not worse than SIGReg): tabular mean AUC 0.77-0.81 vs 0.67-0.75 (EMA), time series 0.72-0.77 vs 0.69-0.71. The EMA variant is also the one whose `embed` score is weakest, consistent with target-scale drift.
 * **Encoder final LayerNorm.** Off is better for tabular data (0.804 vs 0.762 `combined`), on is better *in-distribution* for time series (0.767 vs 0.725) but catastrophic under shift (SKAB above). Both detectors ship with it off; the switch (`encoder_norm`) is kept for reproducibility.
 * **Reconstruction anchor** (`recon_weight=0.1`, tabular bulk run): no gain over plain SIGReg (see 7.2), so it stays off.
 """

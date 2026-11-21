@@ -31,7 +31,10 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+from sklearn.utils import check_array
+
 from pyod.models.base_dl import BaseDeepLearningDetector
+from pyod.utils.torch_utility import TorchDataset
 
 from ._nets import JEPACore, sample_masks, eval_masks, _MASK_MODES
 from ._sigreg import sigreg_loss, ema_update
@@ -315,6 +318,38 @@ class JEPAOD(BaseDeepLearningDetector):
         x = batch_data.to(self.device)
         s_pred, s_emb = self._component_scores(x)
         return self._combine(s_pred, s_emb)
+
+    @torch.no_grad()
+    def token_embeddings(self, X, batch_size=None):
+        """Embeddings of the fitted encoder, for use by another detector.
+
+        Parameters
+        ----------
+        X : numpy array of shape (n_samples, n_features)
+
+        batch_size : int, optional (default=None)
+
+        Returns
+        -------
+        embeddings : numpy array of shape (n_samples, n_tokens, d_model)
+            The target embeddings of every token of the full row, i.e. the
+            quantities the ``'embed'`` score is computed from.
+        """
+        X = check_array(X)
+        if self.preprocessing:
+            dataset = TorchDataset(X=X, y=None, mean=self.X_mean,
+                                   std=self.X_std)
+        else:
+            dataset = TorchDataset(X=X, y=None)
+        loader = torch.utils.data.DataLoader(
+            dataset=dataset,
+            batch_size=self.batch_size if batch_size is None else batch_size,
+            shuffle=False, drop_last=False)
+        self.model.eval()
+        out = [self.model.token_embeddings(
+            self._to_tokens(batch.to(self.device))).cpu().numpy()
+            for batch in loader]
+        return np.concatenate(out)
 
     # ------------------------------------------------------------------
     # scoring internals

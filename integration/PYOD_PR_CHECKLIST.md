@@ -33,9 +33,15 @@ PyOD's test workflow runs on pushes to `master` and `development` and on pull re
 them, so the push of `feature/jepa-od` did not start CI. To run it without involving upstream, a
 draft pull request was opened inside the fork, from `feature/jepa-od` into the fork's own
 `development`: https://github.com/kishordgupta/pyod/pull/1. It exists only to run the matrix:
-Ubuntu and Windows on Python 3.9 to 3.13, where the 44 new tests run, plus one macOS job that
-installs no torch and skips them. Its Checks tab has the result. Do not merge it, because that
-would make the fork's `development` diverge from upstream.
+Ubuntu and Windows on Python 3.9 to 3.13, plus one macOS job on Python 3.9. The 44 new tests run
+in all of them. The workflow means to leave torch out on macOS, but the job log shows torch being
+installed, so the torch-dependent tests ran there as well. Do not merge the pull request, because
+that would make the fork's `development` diverge from upstream.
+
+First run, 2026-11-21: 11 of the 12 jobs had passed when this was written, and
+`build (windows-latest, 3.12)` was still running. The five test-job logs that were read (Ubuntu
+3.9 and 3.12, Windows 3.9 and 3.13, macOS 3.9) each show 1714 passed, 18 skipped, with every test
+in `test_jepa.py` and `test_ts_jepa.py` passing. The pull request's Checks tab has the final state.
 
 ## File map
 

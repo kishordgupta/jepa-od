@@ -11,9 +11,9 @@ everything below the "Body" line.
    its age and citation rule of thumb. Remove the proposal rather than the sentence if you cannot
    commit to it.
 2. **Fill in the diff-review line** under "AI disclosure". It is the only bracketed placeholder.
-3. **Links.** The fork branch and the CI pull request are public. The jepa-od repository is
-   private, so the body does not link it. If you make it public, add its link under "Evidence" for
-   the full tables.
+3. **Links.** The fork branch, the CI pull request and the jepa-od repository are public, and the
+   body links all three. The repository was made public on 2026-11-21, after a scan of every file
+   version in its history found no keys, credentials or personal data.
 4. **Duplicates.** A search of PyOD's issues and pull requests for "JEPA", "joint embedding" and
    "predictive architecture" on 2026-11-21 found nothing. Search once more on the day you post.
 
@@ -56,7 +56,7 @@ I am not claiming the rule-of-thumb criterion. I-JEPA [2] is from 2023, but SIGR
 
 ### Evidence
 
-All detectors use default parameters and are fitted without labels. Values are ROC-AUC / average precision.
+All detectors use default parameters and are fitted without labels. Values are ROC-AUC / average precision. The benchmark scripts, raw results and a full report are in https://github.com/kishordgupta/jepa-od.
 
 **PyOD bundled data** (`notebooks/data/`, one stratified 60/40 split, seed 42, run with the code on the branch):
 
@@ -66,7 +66,7 @@ All detectors use default parameters and are fitted without labels. Values are R
 | pima | 0.657 / 0.489 | 0.575 / 0.434 | 0.638 / 0.462 | 0.579 / 0.419 |
 | shuttle | 0.887 / 0.485 | 0.991 / 0.843 | 0.997 / 0.980 | 0.740 / 0.205 |
 
-**ADBench, 16 datasets, stratified 60/40 split, 3 seeds, mean over datasets.** These runs used a standalone prototype. The PyOD port produced identical scores in the five configurations I compared.
+**ADBench, 16 datasets, stratified 60/40 split, 3 seeds, mean over datasets.** These runs used the standalone prototype in that repository. The PyOD port produced identical scores in the five configurations I compared.
 
 | detector | ROC-AUC | AP |
 |---|---|---|

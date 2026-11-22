@@ -20,7 +20,8 @@ def ts_eval(tag, Xtr, Xte, yte):
         for tm in ('sigreg', 'ema'):
             t0 = time.time()
             clf = TSJEPAOD(window_size=100 if Xte is None else 60, patch_len=10 if Xte is None else 5, epochs=20,
-                           mask_mode='block', score='combined', encoder_norm=en, target_mode=tm, verbose=0)
+                           mask_mode='block', score='combined', encoder_norm=en,
+                           variant={'sigreg': 'lejepa', 'ema': 'ijepa'}[tm], verbose=0)
             clf.fit(Xtr)
             for sc in ('pred', 'embed', 'combined'):
                 clf.score = sc

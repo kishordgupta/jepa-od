@@ -13,10 +13,13 @@ masked-score workflow (timestamps never scored get ``threshold_``).
 
 Compared with raw-space forecasting (LSTMAD) or reconstruction, the error
 lives in representation space: unpredictable high-frequency noise is not
-penalised and the detector focuses on breaks of temporal structure. Normal
-embeddings are kept isotropic-Gaussian with SIGReg (LeJEPA), which gives a
-second, localisation-friendly score: the Mahalanobis distance of every
-patch embedding to the training Gaussian (``score='embed'``).
+penalised and the detector focuses on breaks of temporal structure. A
+second score is the Mahalanobis distance of every patch embedding to the
+training embeddings (``score='embed'``).
+
+The detector is a family: ``variant`` selects which JEPA trains the
+network (LeJEPA, I-JEPA, TS-JEPA or T-JEPA). Masking, scores, training
+budget and the PyOD interface are the same for all of them.
 """
 # License: BSD 2 clause
 
@@ -32,13 +35,53 @@ from pyod.models._ts_utils import validate_ts_input
 
 from ._nets import JEPACore, sample_masks, eval_masks, _MASK_MODES
 from ._sigreg import sigreg_loss, ema_update
+from ._tjepa_nets import TJEPACore
+from ._tsjepa_nets import TSJEPACore
 
 _SCORES = ('pred', 'embed', 'combined')
+_VARIANTS = ('lejepa', 'ijepa', 'tsjepa', 'tjepa')
+# what ``None`` means for the two parameters whose published value differs
+# between the versions: (encoder_norm, ema_momentum)
+_VARIANT_DEFAULTS = {'lejepa': (False, None), 'ijepa': (False, 0.996),
+                     'tsjepa': (True, 0.998), 'tjepa': (True, 0.996)}
 
 
 class TSJEPAOD(BaseDetector):
     """Joint-Embedding Predictive Architecture for time-series anomaly
     detection.
+
+    ``variant`` selects the JEPA that trains the network:
+
+    ============  ===========================  =========================
+    ``variant``   network                      collapse prevention, loss
+    ============  ===========================  =========================
+    ``'lejepa'``  per-patch linear tokenizer,  SIGReg on one shared
+                  learned positions, pre-norm  encoder (LeJEPA), squared
+                  encoder, narrow predictor    error
+    ``'ijepa'``   the same network             EMA target encoder with
+                                               normalised targets
+                                               (I-JEPA), squared error
+    ``'tsjepa'``  convolutional patch          EMA copy of the whole
+                  tokenizer, sinusoidal        encoder with normalised
+                  positions, encoder with a    targets (TS-JEPA),
+                  final LayerNorm, predictor   absolute error
+                  as wide as the encoder
+    ``'tjepa'``   per-patch linear tokenizer,  EMA copy of the whole
+                  sinusoidal positions, a      encoder (T-JEPA), squared
+                  [REG] token, post-norm       error
+                  encoder with a normalised
+                  output
+    ============  ===========================  =========================
+
+    TS-JEPA and T-JEPA are re-implemented from their papers and the
+    defaults of their released code; T-JEPA is a tabular method and is
+    applied to patch tokens here. From each version this class takes the
+    network, the target mechanism and the loss. The masking
+    (``mask_mode``, ``mask_ratio``), the model sizes, the optimiser and
+    the training budget are this detector's own and are the same for all
+    versions, and the anomaly scores are not part of any of the four
+    papers. The masking of TS-JEPA's paper is ``mask_mode='random',
+    mask_ratio=0.7``.
 
     Parameters
     ----------
@@ -76,10 +119,22 @@ class TSJEPAOD(BaseDetector):
         Masks per window at inference. ``None`` enumerates every block
         position (deterministic, complete coverage).
 
-    target_mode : {'sigreg', 'ema'}, optional (default='sigreg')
+    variant : {'lejepa', 'ijepa', 'tsjepa', 'tjepa'}, default 'lejepa'
+        The JEPA version, see the table above.
 
-    sigreg_weight, sigreg_slices, ema_momentum, recon_weight
-        See :class:`jepa_od.JEPAOD`.
+    sigreg_weight, sigreg_slices
+        SIGReg settings of ``variant='lejepa'``, see
+        :class:`jepa_od.JEPAOD`. Ignored by the other versions.
+
+    ema_momentum : float or None, optional (default=None)
+        Start value of the target-encoder momentum of the EMA versions; it
+        rises linearly to 1 during training. ``None`` is the published
+        value: 0.996 for ``'ijepa'`` and ``'tjepa'``, 0.998 for
+        ``'tsjepa'``. Ignored by ``'lejepa'``.
+
+    recon_weight : float, optional (default=0.0)
+        Weight of the reconstruction anchor, see :class:`jepa_od.JEPAOD`.
+        Only for ``'lejepa'`` and ``'ijepa'``.
 
     score : {'pred', 'embed', 'combined'}, optional (default='pred')
 
@@ -97,12 +152,14 @@ class TSJEPAOD(BaseDetector):
 
     grad_clip : float or None, optional (default=1.0)
 
-    encoder_norm : bool, optional (default=False)
-        Final LayerNorm on the encoder. Keep False: it gains ~0.04 ROC-AUC
-        when test data follow the training distribution (synthetic, NAB)
-        but saturates shifted inputs and loses ~0.3 ROC-AUC when the test
-        series has a different operating regime (SKAB), where it also
-        inverts the ``'embed'`` score.
+    encoder_norm : bool or None, optional (default=None)
+        Normalised encoder output. ``None`` is False for ``'lejepa'`` and
+        ``'ijepa'`` and True, the published form, for ``'tsjepa'`` and
+        ``'tjepa'``. For ``'lejepa'`` keep it off: a final LayerNorm gains
+        ~0.04 ROC-AUC when test data follow the training distribution
+        (synthetic, NAB) but saturates shifted inputs and loses ~0.3
+        ROC-AUC when the test series has a different operating regime
+        (SKAB), where it also inverts the ``'embed'`` score.
 
     device : str, optional (default='auto')
         'auto' -> CUDA if available else CPU; 'mps' for Apple silicon.
@@ -126,11 +183,11 @@ class TSJEPAOD(BaseDetector):
                  d_model=64, n_heads=4, n_layers=2, pred_layers=1,
                  dropout=0.0,
                  mask_mode='block', mask_ratio=0.3, n_mask_samples=None,
-                 target_mode='sigreg', sigreg_weight=0.05,
-                 sigreg_slices=128, ema_momentum=0.996, recon_weight=0.0,
+                 variant='lejepa', sigreg_weight=0.05,
+                 sigreg_slices=128, ema_momentum=None, recon_weight=0.0,
                  score='pred', score_aggregation='mean',
                  epochs=10, lr=1e-3, weight_decay=1e-4, batch_size=64,
-                 grad_clip=1.0, encoder_norm=False, device='auto',
+                 grad_clip=1.0, encoder_norm=None, device='auto',
                  random_state=42, verbose=0, contamination=0.1):
         super(TSJEPAOD, self).__init__(contamination=contamination)
         self.window_size = window_size
@@ -146,7 +203,7 @@ class TSJEPAOD(BaseDetector):
         self.mask_mode = mask_mode
         self.mask_ratio = mask_ratio
         self.n_mask_samples = n_mask_samples
-        self.target_mode = target_mode
+        self.variant = variant
         self.sigreg_weight = sigreg_weight
         self.sigreg_slices = sigreg_slices
         self.ema_momentum = ema_momentum
@@ -179,6 +236,11 @@ class TSJEPAOD(BaseDetector):
                                                   self.patch_len))
         if self.window_size // self.patch_len < 2:
             raise ValueError("window_size must hold at least 2 patches")
+        if self.variant not in _VARIANTS:
+            raise ValueError("variant must be one of %s" % (_VARIANTS,))
+        if self.recon_weight > 0 and self.variant not in ('lejepa', 'ijepa'):
+            raise ValueError("recon_weight is only available for the "
+                             "'lejepa' and 'ijepa' variants")
         if self.mask_mode not in _MASK_MODES:
             raise ValueError("mask_mode must be one of %s" % (_MASK_MODES,))
         if self.score not in _SCORES:
@@ -201,6 +263,26 @@ class TSJEPAOD(BaseDetector):
         n_w, L, C = W.shape
         P = L // self.patch_len
         return W.reshape(n_w, P, self.patch_len * C)
+
+    def _build_model(self, n_tokens, n_channels):
+        """The network of ``variant`` (all share one scoring interface)."""
+        token_dim = self.patch_len * n_channels
+        size = dict(d_model=self.d_model, n_heads=self.n_heads,
+                    n_layers=self.n_layers, pred_layers=self.pred_layers,
+                    dropout=self.dropout, encoder_norm=self.encoder_norm_)
+        if self.variant == 'tsjepa':
+            return TSJEPACore(n_tokens=n_tokens, patch_len=self.patch_len,
+                              n_channels=n_channels, **size)
+        if self.variant == 'tjepa':
+            return TJEPACore(n_tokens=n_tokens, in_dim=token_dim,
+                             dim_feedforward=4 * self.d_model,
+                             pred_dim=self.d_model, pred_heads=self.n_heads,
+                             pred_feedforward=4 * self.d_model,
+                             n_reg_tokens=1, **size)
+        return JEPACore(
+            n_tokens=n_tokens, in_dim=token_dim,
+            target_mode='sigreg' if self.variant == 'lejepa' else 'ema',
+            recon_dim=token_dim if self.recon_weight > 0 else None, **size)
 
     # ------------------------------------------------------------------
     def fit(self, X, y=None):
@@ -237,7 +319,11 @@ class TSJEPAOD(BaseDetector):
         P = self.window_size // self.patch_len
         self.n_tokens_ = P
         self.n_mask_ = int(np.clip(round(self.mask_ratio * P), 1, P - 1))
-        token_dim = self.patch_len * C
+        norm, momentum = _VARIANT_DEFAULTS[self.variant]
+        self.encoder_norm_ = (norm if self.encoder_norm is None
+                              else bool(self.encoder_norm))
+        self.ema_momentum_ = (momentum if self.ema_momentum is None
+                              else self.ema_momentum)
 
         tstep = self.train_step or max(1, self.patch_len // 2)
         W = self._windows(Xs, self.window_size, tstep)
@@ -246,14 +332,7 @@ class TSJEPAOD(BaseDetector):
             W = W[np.sort(keep)]
         train_patches = torch.from_numpy(self._to_patches(W))
 
-        self.model_ = JEPACore(
-            n_tokens=P, in_dim=token_dim, d_model=self.d_model,
-            n_heads=self.n_heads, n_layers=self.n_layers,
-            pred_layers=self.pred_layers, dropout=self.dropout,
-            target_mode=self.target_mode,
-            recon_dim=token_dim if self.recon_weight > 0 else None,
-            encoder_norm=self.encoder_norm
-        ).to(device)
+        self.model_ = self._build_model(P, C).to(device)
         self._train(train_patches, device)
         self._calibrate(train_patches, device)
 
@@ -303,10 +382,16 @@ class TSJEPAOD(BaseDetector):
                                         self.n_mask_, self.mask_mode, gen)
                 ctx, tgt = ctx.to(device), tgt.to(device)
                 opt.zero_grad()
-                pred, h_tgt, h_all = model(xb, ctx, tgt)
-                loss_pred = F.mse_loss(pred, h_tgt.detach())
+                if self.variant == 'tjepa':   # one target set per window
+                    pred, h_tgt, h_all = model(xb, ctx, tgt.unsqueeze(1))
+                else:
+                    pred, h_tgt, h_all = model(xb, ctx, tgt)
+                if self.variant == 'tsjepa':
+                    loss_pred = F.l1_loss(pred, h_tgt.detach())
+                else:
+                    loss_pred = F.mse_loss(pred, h_tgt.detach())
                 loss = loss_pred
-                if self.target_mode == 'sigreg':
+                if self.variant == 'lejepa':
                     reg = sigreg_loss(h_all.transpose(0, 1),
                                       num_slices=self.sigreg_slices,
                                       generator=gen)
@@ -320,9 +405,10 @@ class TSJEPAOD(BaseDetector):
                     torch.nn.utils.clip_grad_norm_(model.parameters(),
                                                    self.grad_clip)
                 opt.step()
-                if self.target_mode == 'ema':
+                if self.variant != 'lejepa':
                     frac = min(1.0, step / total_steps)
-                    m = self.ema_momentum + (1 - self.ema_momentum) * frac
+                    m = self.ema_momentum_ \
+                        + (1 - self.ema_momentum_) * frac
                     ema_update(model.target_encoder, model.encoder, m)
                 step += 1
                 run.append(loss_pred.item())

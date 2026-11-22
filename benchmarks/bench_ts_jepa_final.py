@@ -7,6 +7,15 @@ The untrained control of REPORT.md section 7.6 uses the options:
     python benchmarks/bench_ts_jepa_final.py --seeds 5 --threads 2 --out results/ts_control_trained.csv
     python benchmarks/bench_ts_jepa_final.py --seeds 5 --threads 2 --epochs 0 --tag TSJEPAOD-untrained \
         --out results/ts_control_untrained.csv
+
+The JEPA versions of REPORT.md section 7.7 (V = ijepa, tsjepa, tjepa; the two files above are V = lejepa):
+
+    python benchmarks/bench_ts_jepa_final.py --seeds 5 --threads 2 --variant V --out results/ts_variants/V_trained.csv
+    python benchmarks/bench_ts_jepa_final.py --seeds 5 --threads 2 --variant V --epochs 0 \
+        --out results/ts_variants/V_untrained.csv
+
+and, for the masking of the TS-JEPA paper, the same two commands with
+``--variant tsjepa --mask random:0.7`` and the output files ``tsjepa-paper_trained.csv`` / ``tsjepa-paper_untrained.csv``.
 """
 import os, sys, json, glob, time, warnings, argparse
 warnings.filterwarnings('ignore')
@@ -20,11 +29,20 @@ ap.add_argument('--epochs', type=int, default=None, help='default: the class def
 ap.add_argument('--seeds', type=int, default=None,
                 help='default: the committed run, 2 synthetic seeds and seed 0 for NAB and SKAB')
 ap.add_argument('--tag', default='TSJEPAOD', help='model name prefix in the output')
+ap.add_argument('--variant', default='lejepa', help='JEPA version: lejepa (class default), ijepa, tsjepa, tjepa')
+ap.add_argument('--mask', default=None, help="MODE:RATIO, e.g. random:0.7; default: block and forecast at the "
+                                             "class-default ratio")
 ap.add_argument('--threads', type=int, default=3)
 ap.add_argument('--out', default=os.path.join(ROOT, 'results', 'ts_results_jepa_final.csv'))
 args = ap.parse_args()
+os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
 torch.set_num_threads(args.threads)
 KW = {} if args.epochs is None else {'epochs': args.epochs}
+if args.variant != 'lejepa':
+    KW['variant'] = args.variant
+MODES = ('block', 'forecast')
+if args.mask:
+    MODES, KW['mask_ratio'] = (args.mask.split(':')[0],), float(args.mask.split(':')[1])
 SYN_SEEDS = range(2 if args.seeds is None else args.seeds)
 REAL_SEEDS = range(1 if args.seeds is None else args.seeds)
 TAG = args.tag
@@ -32,7 +50,7 @@ out = args.out
 rows = []
 
 def run(tag, Xtr, Xte, yte, window, patch, seed, protocol):
-    for mode in ('block', 'forecast'):
+    for mode in MODES:
         t0 = time.time()
         clf = TSJEPAOD(window_size=window, patch_len=patch, mask_mode=mode, score='combined',
                        random_state=seed, verbose=0, **KW).fit(Xtr)
@@ -66,7 +84,7 @@ feat = [c for c in free.columns if c not in ('datetime', 'anomaly', 'changepoint
 Xtr = free[feat].values.astype(float)
 fitted = {}
 for seed in REAL_SEEDS:
-    for mode in ('block', 'forecast'):
+    for mode in MODES:
         t0 = time.time()
         fitted[mode, seed] = (TSJEPAOD(window_size=60, patch_len=5, mask_mode=mode, score='combined',
                                        random_state=seed, verbose=0, **KW).fit(Xtr), time.time() - t0)

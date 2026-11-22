@@ -39,6 +39,9 @@ weaken its case. Nothing has been added to the issue. A comment for the author t
    `TSJEPA`, training produces the result on synthetic series (0.941 against 0.798 untrained) and adds
    nothing measurable on SKAB (0.825 against 0.831) or NAB (0.628 against 0.671).
 
+Since then the prototype's `TSJEPAOD` has a `variant` option that selects the JEPA version (`REPORT.md`
+sections 4.8 and 7.7). The issue and the port branch describe the detector without it.
+
 ## Title
 
 New detector proposal: JEPA (masked latent prediction) for tabular data and time series

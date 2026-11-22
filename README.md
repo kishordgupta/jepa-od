@@ -240,6 +240,9 @@ A second branch, [`feature/ts-jepa`](https://github.com/kishordgupta/pyod/tree/f
 narrowed proposal: `TSJEPA` alone, with the `variant` option, as one commit on top of PyOD 3.6.9 (patch in
 `integration/pyod-patches-ts-jepa/`). It is ready for a pull request if the maintainer accepts.
 
+`JEPA_VERSIONS_SURVEY.md` lists the further JEPA recipes that could join the `variant` family (four that
+reuse the current networks, four that need a new one) and the ones that cannot. None of them is implemented yet.
+
 The port was written before the extended benchmark. On the full ADBench suite the tabular detector is
 not better than detectors PyOD already has, and `REPORT.md` (verdict in section 1) no longer argues for
 adding it on performance grounds.

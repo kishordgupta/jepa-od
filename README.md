@@ -140,6 +140,36 @@ recording; `tjepa` with `encoder_norm=False` recovers there (0.836, checked on S
 of `tjepa` on NAB is not significant. The EMA versions fit about two to four times faster than
 `lejepa` on the synthetic series (indicative timings).
 
+The twelve further versions on the same benchmarks (`REPORT.md`, section 7.8; 72 paired tests fixed before
+the runs):
+
+| `variant` | synthetic series | SKAB | NAB |
+|---|---|---|---|
+| `'kerjepa'` | 0.950 / 0.798 | 0.829 / 0.831 | 0.633 / 0.671 |
+| `'vicreg'` | 0.935 / 0.798 | 0.829 / 0.831 | 0.576 / 0.671 |
+| `'lambdajepa'` | 0.932 / 0.798 | 0.828 / 0.831 | 0.592 / 0.671 |
+| `'lpjepa'` | 0.898 / 0.792 | 0.828 / 0.825 | 0.600 / 0.678 |
+| `'lewm'` | 0.933 / 0.799 | 0.726 / 0.810 | 0.622 / 0.661 |
+| `'salt'` | 0.919 / 0.531 | 0.605 / 0.421 | 0.676 / 0.488 |
+| `'vjepa21'` | 0.860 / 0.455 | 0.619 / 0.458 | 0.600 / 0.479 |
+| `'cjepa'` | 0.888 / 0.519 | 0.419 / 0.422 | 0.612 / 0.521 |
+| `'sjepa'` | 0.885 / 0.493 | 0.436 / 0.396 | 0.612 / 0.547 |
+| `'vjepa'` | 0.874 / 0.519 | 0.459 / 0.422 | 0.614 / 0.521 |
+| `'cfjepa'` | 0.816 / 0.602 | 0.206 / 0.475 | 0.689 / 0.503 |
+| `'lenepa'` | 0.758 / 0.809 | 0.496 / 0.467 | 0.434 / 0.589 |
+
+* `kerjepa` is level with the default in all three groups (ahead by 0.005 to 0.008; only the SKAB
+  difference is significant after correction) and fits in about half the time. No other version is
+  ahead of the default with significance anywhere.
+* On SKAB the split follows the normalisation of the prediction target, not the regulariser: the
+  four versions that swap SIGReg for another term on a shared, un-normalised encoder score 0.828 to
+  0.829; every version that normalises its targets scores 0.21 to 0.62.
+* `cjepa`, `sjepa` and `vjepa` behave like `ijepa`. `salt` and `cfjepa` are numerically ahead on NAB
+  (not significant). The `embed` score of the `cfjepa` network has the highest NAB score of any
+  version, 0.797 trained and 0.792 untrained.
+* The prediction-error score of `lenepa` and `cfjepa` does not work in this detector; their `embed`
+  score does (0.939 / 0.849 / 0.657 and 0.853 / 0.853 / 0.797).
+
 ## Install
 
 ```bash
@@ -254,10 +284,12 @@ The twelve further versions of section 7.8 (24 runs, six at a time, two threads 
 ```bash
 sh benchmarks/run_ts_versions.sh 6                   # writes results/ts_variants/V_{trained,untrained}.csv
 python benchmarks/make_ts_versions_tables.py         # tables and REPORT.md section 7.8
+python benchmarks/time_ts_versions.py                # fit time of all sixteen versions on one series
 ```
 
 Result tables for the committed runs are in `results/report_tables.md`, `results/tjepa_tables.md`,
-`results/extended_tables.md`, `results/ts_control_tables.md` and `results/ts_variant_tables.md`
+`results/extended_tables.md`, `results/ts_control_tables.md`, `results/ts_variant_tables.md` and
+`results/ts_versions_tables.md`
 (`benchmarks/make_tjepa_tables.py` builds the latter; the committed run was five parallel jobs with
 3 threads each, see the header of `bench_tjepa.py`). Runs are deterministic for a fixed seed and thread count; a different thread count
 changes single results (by up to 0.08 ROC-AUC between one and three threads) and leaves the means over datasets within 0.002.
@@ -274,8 +306,9 @@ A second branch, [`feature/ts-jepa`](https://github.com/kishordgupta/pyod/tree/f
 narrowed proposal: `TSJEPA` alone, with the `variant` option, as one commit on top of PyOD 3.6.9 (patch in
 `integration/pyod-patches-ts-jepa/`). It is ready for a pull request if the maintainer accepts.
 
-`JEPA_VERSIONS_SURVEY.md` lists the further JEPA recipes that could join the `variant` family (four that
-reuse the current networks, four that need a new one) and the ones that cannot. None of them is implemented yet.
+`JEPA_VERSIONS_SURVEY.md` lists the further JEPA recipes that fit the `variant` family and the ones
+that do not. Twelve of them are implemented in this repository (version 0.4.0, 16 versions in all). The
+PyOD branch `feature/ts-jepa` still has the first four, and the comment on the PyOD issue describes four.
 
 The port was written before the extended benchmark. On the full ADBench suite the tabular detector is
 not better than detectors PyOD already has, and `REPORT.md` (verdict in section 1) no longer argues for

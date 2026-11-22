@@ -11,13 +11,14 @@
 
 **Answer.** It can be built and it works, but the full benchmark does not show that it is better than what PyOD already has, or that JEPA training is what makes it work (see the last bullets and the verdict). The natural score is the **latent prediction error**: a normal sample has internal structure (feature dependencies, temporal continuity) that the predictor has learned, so its hidden parts are predictable in representation space; an outlier breaks that structure. Four 2026 papers already use exactly this signal in narrow domains (medical images, SAR satellite stacks, automotive telemetry, multivariate telemetry), but none provides a generic, library-ready detector. We built one:
 
-* **`JEPAOD`** (tabular) subclasses PyOD's `BaseDeepLearningDetector`; **`TSJEPAOD`** (time series) follows PyOD 3.6's time-series detector pattern (`LSTMAD`, `TimeSeriesOD`). A third class, **`TJEPAOD`**, trains the recipe of T-JEPA (Thimonier et al., ICLR 2025), the closest prior tabular JEPA, and scores rows with the same scores (Section 7.5). All three pass PyOD-style unit tests (65 tests), are deterministic, picklable and `sklearn.clone`-able.
+* **`JEPAOD`** (tabular) subclasses PyOD's `BaseDeepLearningDetector`; **`TSJEPAOD`** (time series) follows PyOD 3.6's time-series detector pattern (`LSTMAD`, `TimeSeriesOD`). A third class, **`TJEPAOD`**, trains the recipe of T-JEPA (Thimonier et al., ICLR 2025), the closest prior tabular JEPA, and scores rows with the same scores (Section 7.5). All three pass PyOD-style unit tests (92 tests), are deterministic, picklable and `sklearn.clone`-able.
 * The architecture is a small *token transformer* (features or time patches are tokens) with an I-JEPA style predictor. Representation collapse is prevented with **SIGReg** from LeJEPA (Balestriero & LeCun, 2025) instead of an EMA teacher: one loss weight, no stop-gradient tricks, and, crucially for outlier detection, the embedding distribution of normal data becomes a *known isotropic Gaussian*. That gives a second score for free, the **Mahalanobis distance of each token embedding** to the training Gaussian, which can be fused with the prediction error. Section 7.5 qualifies this last point: on the tabular benchmark that score is just as good on an untrained network, so the Gaussian shaping is not what makes it work there.
 * Two design lessons were found empirically and are, to our knowledge, not reported in the JEPA anomaly literature: (i) the SIGReg-trained encoder must **not** end in a LayerNorm, otherwise extreme inputs saturate to a direction that is *trivially predictable* and outliers score as *more normal* than inliers (on a 2-feature toy problem with the final defaults: mean ROC-AUC 0.29 with the LayerNorm, 0.87 without it; KNN, IForest and AutoEncoder reach 0.98 to 1.00 there); (ii) a pooled (mean) row embedding is a poor density score because an outlier's token embeddings are incoherent and *average out to the origin*; per-token Mahalanobis fixes this. Lesson (i) is specific to this network: the T-JEPA recipe normalises its encoder output and does not show the failure (Section 7.5).
 * **Results (Section 7).** Tabular, all 47 ADBench datasets, 5 seeds (Section 7.6): `JEPAOD` is mid-table at ROC-AUC 0.736 / AP 0.353, significantly behind IForest (0.763 / 0.384) and not ahead of AutoEncoder (0.748 / 0.333). The first sweep, on 16 of those datasets with 3 seeds (Section 7.1), had `JEPAOD` as the best deep detector (0.760 / 0.438 vs AutoEncoder 0.746 / 0.375) behind KNN (0.786) and IForest (0.767); that ranking did not carry over to the other 31 datasets. Time series: best of all detectors on PyOD's synthetic series (0.95 vs LSTMAD 0.87), level with LSTMAD on SKAB under a strong train/test regime shift (0.83-0.86), but behind windowed IForest / AutoEncoder on NAB's sustained level shifts (0.63 vs 0.83) where a prediction error only fires at the transition and transductive training absorbs the anomalous regime. Inside the `JEPAOD` network SIGReg beats the EMA teacher in every setting.
 * **T-JEPA comparison and untrained control (Section 7.5, added 2026-11-21).** T-JEPA publishes no outlier scores, so its recipe was re-implemented and scored like `JEPAOD`. On the 16 datasets of Section 7.1 `TJEPAOD` reaches ROC-AUC 0.782 / AP 0.412: a higher mean ROC-AUC than `JEPAOD` (ahead on 10 of 16 datasets), a lower AP, about 2.5 times the fit time, and neither difference is statistically significant (p = 0.30 and 0.94). A zero-epoch control changes how all the tabular numbers should be read: with **no training** the `embed` score reaches 0.746 on the `JEPAOD` network and 0.770 on the T-JEPA network, level with the trained models. Training is needed only for the prediction-error score (T-JEPA network: 0.466 untrained, 0.762 trained), and on 16 datasets the trained `combined` scores cannot be told apart from the untrained controls. τ-JEPA, a working paper on fraud detection, could not be read (login required); it is cited and not implemented.
 * **Full suite and time-series control (Section 7.6, added 2026-11-21).** On all 47 ADBench datasets with 5 seeds the zero-epoch controls score at least as high as the trained models: `JEPAOD` 0.751 untrained against 0.736 trained (the control is better on 32 of 47 datasets; p = 0.055 before and 0.66 after correction for the 17 planned comparisons), and the untrained `embed` score of the T-JEPA network reaches 0.768 against 0.732 for trained `TJEPAOD`, which cannot be separated from `JEPAOD`. That untrained score is level with IForest (0.763) and more than a hundred times slower. For time series, training is what makes the default prediction-error score work on synthetic series (0.941 trained against 0.798 untrained, better on all 15 series), and it adds nothing measurable on SKAB (0.825 against 0.831) or NAB (0.628 against 0.671).
 * **JEPA versions of the time-series detector (Sections 4.8 and 7.7, added 2026-11-21).** `TSJEPAOD(variant=...)` selects which JEPA trains the network: `'lejepa'` (SIGReg, the default and the detector described above), `'ijepa'` (EMA target), `'tsjepa'` (the recipe of TS-JEPA, Ennadir et al.) or `'tjepa'` (the T-JEPA recipe on patch tokens). No version beats the default: on the synthetic series the `pred` score is 0.941 for `lejepa`, 0.931 for `tsjepa`, 0.928 for `tjepa` and 0.885 for `ijepa`, and on SKAB, where the test data are in another regime, the three EMA versions fall to 0.43 to 0.67 against 0.825. `tjepa` is numerically ahead on NAB (0.684 against 0.628, not significant).
+* **Twelve further versions (Sections 4.9 and 7.8, added 2026-11-22).** `variant` also accepts `'vjepa'`, `'vjepa21'`, `'cjepa'`, `'sjepa'`, `'salt'`, `'vicreg'`, `'kerjepa'`, `'lpjepa'`, `'lambdajepa'`, `'lenepa'`, `'lewm'` and `'cfjepa'`, each written from its paper, with every choice the papers leave open listed in Section 4.9. One of them, `kerjepa` (a closed-form kernel regulariser in place of SIGReg), is level with the default in all three groups (0.950 / 0.829 / 0.633 against 0.941 / 0.825 / 0.628) at about half the fitting time; the margins are under 0.01. Across the sixteen versions the split on SKAB follows the normalisation of the prediction target: the five versions with an un-normalised target from a shared encoder score 0.825 to 0.829 whatever their regulariser, and the seven new versions that normalise their targets score 0.21 to 0.62. Training still pays only on the synthetic series.
 
 **Verdict for the library goal (revised after Section 7.6).** The evidence does not support adding the tabular detector to PyOD on performance grounds: on the full ADBench suite it is a mid-table detector, significantly behind IForest, not ahead of AutoEncoder and about 40 times slower than it, and a network with no training scores at least as well. The time-series detector has one supported strength, anomalies that break temporal structure, where training is what makes its default score work. On the two real benchmarks training adds nothing, and the known weak spots remain (sustained level shifts, large raw-space deviations that a windowed KNN already finds). The earlier verdict, "the highest mean among the deep models on the tabular sweep", described the 16-dataset subset and is withdrawn. The code in this repo is structured to drop into `pyod/models/jepa.py` and `pyod/models/ts_jepa.py` (Section 6). PyOD's inclusion policy requires an accepted issue first and, for a new method, a two-year maintenance commitment.
 
@@ -847,12 +848,188 @@ Coverage: 5 seeds; series per group: synthetic 15, SKAB 16, NAB 7; every version
 
 <!-- TSVAR:END -->
 
+<!-- TSVER:BEGIN -->
+
+### 7.8 Twelve further JEPA versions
+
+*Added 2026-11-22. Code: `jepa_od/_recipes.py`, `jepa_od/_variant_nets.py`, `jepa_od/_regs.py`. Benchmark: `benchmarks/run_ts_versions.sh`, tables by `benchmarks/make_ts_versions_tables.py`, timing by `benchmarks/time_ts_versions.py`. Raw results: `results/ts_variants/`.*
+
+**Setup.** The twelve versions of Section 4.9, with the constants listed there, at the detector's defaults, each trained and with zero epochs, on the protocols and the 5 seeds of Section 7.7 (15 synthetic series, 16 SKAB files, 7 NAB series). The rows of the first four versions are the runs of Sections 7.6 and 7.7. The 72 tests of the third table were fixed, and the table script committed (a8855d7), before any new version was run on these series: on the default score `pred`, each new version against its own zero-epoch control and against the trained default, in each group, with a Holm correction over the 72. No constant was changed after a benchmark result was seen. Two limits of the tests: the 16 SKAB files are scored by the same five fitted models and are not independent, and with 7 NAB series the smallest possible p-value is 0.016, so no NAB test can survive the correction and the NAB results are descriptive. `lenepa`, `lewm` and `cfjepa` do not mask patches and have one `pred` score, filed under block masking. The leading timestamps of a test series have no `pred` score for these three and receive the detector's threshold, PyOD's convention for unscored timestamps: 5 of 1 500 synthetic test timestamps for `lenepa` and `lewm`, 25 for `cfjepa`. On the four series where this was checked it lowers the ROC-AUC by at most 0.001 for `lenepa` and 0.009 for `cfjepa` against scoring the covered timestamps only.
+
+**Findings.**
+
+1. **One new version is level with the default in every group: `kerjepa`.** Its `pred` score is 0.950 on the synthetic series, 0.829 on SKAB and 0.633 on NAB, against 0.941, 0.825 and 0.628 for `lejepa`. It is the better of the two on 12 of 15, 16 of 16 and 5 of 7 series, but by 0.005 to 0.008; only the SKAB difference survives the correction, and the SKAB files are not independent. It has the best mean rank of the sixteen versions on the synthetic series (3.5) and on SKAB (2.6).
+2. **Under a regime shift the un-normalised target matters, not the regulariser.** `vicreg`, `kerjepa`, `lpjepa` and `lambdajepa` put four different regularisers in the place of SIGReg, and all four score 0.828 to 0.829 on SKAB, level with `lejepa` (0.825) and with their own zero-epoch controls (0.825 to 0.831). Every version whose prediction target is normalised falls below `lejepa` on all 16 files (corrected p = 0.002 for each): layer-normalised EMA targets (`vjepa21` 0.619, `vjepa` 0.459, `sjepa` 0.436, `cjepa` 0.419), the layer-normalised output of the frozen teacher (`salt` 0.605), SIGReg computed within each window, which standardises the patches of a window against each other (`lenepa` 0.496), and unit-normalised embeddings (`cfjepa` 0.206). This is the failure of Section 4.6 in seven more forms; the grouping by normalisation was made after the results were seen. `lewm`, which normalises nothing, is in between: 0.726 trained and 0.810 with zero epochs.
+3. **C-JEPA's VICReg term does not repair the EMA version, and three versions behave like `ijepa`.** `cjepa` (0.888 / 0.419 / 0.612 on synthetic / SKAB / NAB), `sjepa` (0.885 / 0.436 / 0.612) and `vjepa` (0.874 / 0.459 / 0.614) are within 0.03 of `ijepa` (0.885 / 0.431 / 0.614) in every group. At this model size a regulariser at weight 0.001, a stochastic latent and an absolute-error loss change nothing that this benchmark can measure.
+4. **Synthetic series.** `vicreg` (0.935), `lewm` (0.933), `lambdajepa` (0.932) and `salt` (0.919) are within 0.022 of the default; of these only the 0.010 deficit of `lambdajepa` is significant after correction (lower on 13 of 15 series). `lpjepa` (0.898), `cfjepa` (0.816) and `lenepa` (0.758) are significantly lower. `vjepa`, `cjepa`, `sjepa` and `vjepa21` are 0.05 to 0.08 lower (p = 0.005 to 0.048 before correction, not significant after it). `salt` has the highest `combined` score of the sixteen (0.959 against 0.936 for `lejepa`; not one of the tests).
+5. **NAB.** `cfjepa` (0.689) and `salt` (0.676) are numerically ahead of `lejepa` (0.628) on the `pred` score, as `tjepa` was (0.684). `salt` is the better of the two on 5 of 7 series (+0.048, CI +0.013 to +0.083). The highest NAB score of any version in this report is the `embed` score of the `cfjepa` network: 0.797 trained and 0.792 with zero epochs, so it comes from the convolutional encoder with one embedding per time step and not from training. It is still below the windowed `IForest` of Section 7.2 (0.825).
+6. **`lenepa` and `cfjepa` give no usable prediction-error score here.** The `pred` score of `lenepa` is below its own zero-epoch control on the synthetic series (0.758 against 0.809) and on NAB (0.434 against 0.589). The paper computes SIGReg over 200 patches per sample; a window here has 10 or 12. The `pred` score of `cfjepa` is inverted on SKAB (0.206, below its control on all 16 files). Both have good `embed` scores (`lenepa` 0.939 / 0.849 / 0.657, `cfjepa` 0.853 / 0.853 / 0.797), with zero epochs too (0.934 / 0.885 / 0.590 and 0.880 / 0.833 / 0.792). CF-JEPA's own anomaly protocol also scores embeddings, not prediction errors.
+7. **Training.** As in Sections 7.6 and 7.7, training earns the `pred` score on the synthetic series: the gain is significant for 9 of the 12 new versions, `vicreg` and `lpjepa` gain 0.11 to 0.14 on 10 of 15 series (not significant after correction), and `lenepa` loses. Off the synthetic series training helps only versions that start at chance (`vjepa21` +0.16 and `salt` +0.18 on SKAB, corrected p ≤ 0.004). For the four shared-encoder versions the trained and untrained scores differ by at most 0.003 on SKAB, and on NAB the trained score is numerically lower by 0.04 to 0.10. Training lowers the SKAB score of `lewm` (0.726 against 0.810, p = 0.051 before correction) and of `cfjepa` (0.206 against 0.475, corrected p = 0.002).
+8. **Cost.** Timed one after the other on one synthetic series with two threads: `lejepa` 5.0 s, the eleven new Transformer versions 2.1 to 3.5 s (`kerjepa` 2.7 s), `cfjepa` 25.1 s (`results/ts_versions_timing.txt`). The fit-time column below comes from benchmark runs under different loads (six runs in parallel for the new versions) and is indicative only.
+
+**What this changes.** The default stays `lejepa`. `kerjepa` is the only one of the fifteen alternatives that is not behind it in any group, and it fits in about half the time; a margin under 0.01, found for the best of twelve new versions, needs a confirmation run on other series before a default is changed. Across the sixteen versions the split on SKAB follows the normalisation of the prediction target and not the choice of regulariser or the presence of an EMA teacher, which sharpens Section 4.6. Of the twelve, three are interchangeable with the default (`vicreg`, `kerjepa`, `lambdajepa`), `lpjepa` is like them except for a lower synthetic score, three duplicate `ijepa` (`vjepa`, `cjepa`, `sjepa`), `salt` and `cfjepa` are numerically better on NAB without significance, `lewm` is close to the default except after training under the regime shift, and `lenepa` and `cfjepa` have to be used with the `embed` score. These are results for each recipe inside this detector's sizes, masking and budget, with the choices of Section 4.9. They do not evaluate the papers' own models.
+
+Coverage: 5 seeds; series per group: synthetic 15, SKAB 16, NAB 7; every version has every series.
+
+#### All sixteen versions of `TSJEPAOD`: mean ROC-AUC, trained / zero-epoch control, 5 seeds (block masking for the versions that mask; the default score is `pred`; the first four rows of each group repeat Section 7.7)
+
+| group | version | pred | embed | combined | forecast[pred] | AP of pred | fit time (s) |
+|---|---|---|---|---|---|---|---|
+| synthetic | lejepa | 0.941 / 0.798 | 0.928 / 0.932 | 0.936 / 0.877 | 0.946 / 0.786 | 0.560 / 0.345 | 14.9 |
+| synthetic | ijepa | 0.885 / 0.519 | 0.904 / 0.891 | 0.901 / 0.879 | 0.878 / 0.509 | 0.431 / 0.050 | 3.6 |
+| synthetic | tsjepa | 0.931 / 0.485 | 0.923 / 0.925 | 0.935 / 0.907 | 0.936 / 0.466 | 0.454 / 0.059 | 7.5 |
+| synthetic | tjepa | 0.928 / 0.488 | 0.925 / 0.938 | 0.935 / 0.928 | 0.926 / 0.558 | 0.516 / 0.058 | 5.0 |
+| synthetic | vjepa | 0.874 / 0.519 | 0.898 / 0.891 | 0.894 / 0.879 | 0.867 / 0.509 | 0.412 / 0.050 | 3.2 |
+| synthetic | vjepa21 | 0.860 / 0.455 | 0.891 / 0.891 | 0.885 / 0.878 | 0.858 / 0.486 | 0.382 / 0.057 | 3.7 |
+| synthetic | cjepa | 0.888 / 0.519 | 0.906 / 0.891 | 0.903 / 0.879 | 0.878 / 0.509 | 0.436 / 0.050 | 5.0 |
+| synthetic | sjepa | 0.885 / 0.493 | 0.905 / 0.891 | 0.902 / 0.880 | 0.878 / 0.496 | 0.433 / 0.048 | 3.5 |
+| synthetic | salt | 0.919 / 0.531 | 0.928 / 0.932 | 0.959 / 0.911 | 0.891 / 0.486 | 0.497 / 0.057 | 3.3 |
+| synthetic | vicreg | 0.935 / 0.798 | 0.928 / 0.932 | 0.933 / 0.877 | 0.925 / 0.786 | 0.520 / 0.345 | 4.1 |
+| synthetic | kerjepa | 0.950 / 0.798 | 0.927 / 0.932 | 0.941 / 0.877 | 0.951 / 0.786 | 0.571 / 0.345 | 4.3 |
+| synthetic | lpjepa | 0.898 / 0.792 | 0.904 / 0.892 | 0.901 / 0.856 | 0.899 / 0.778 | 0.498 / 0.340 | 4.7 |
+| synthetic | lambdajepa | 0.932 / 0.798 | 0.912 / 0.932 | 0.923 / 0.877 | 0.950 / 0.786 | 0.540 / 0.345 | 3.9 |
+| synthetic | lenepa | 0.758 / 0.809 | 0.939 / 0.934 | 0.911 / 0.907 |  | 0.259 / 0.263 | 5.1 |
+| synthetic | lewm | 0.933 / 0.799 | 0.940 / 0.943 | 0.948 / 0.888 |  | 0.482 / 0.321 | 3.4 |
+| synthetic | cfjepa | 0.816 / 0.602 | 0.853 / 0.880 | 0.859 / 0.850 |  | 0.315 / 0.106 | 37.5 |
+| SKAB | lejepa | 0.825 / 0.831 | 0.825 / 0.828 | 0.825 / 0.829 | 0.857 / 0.859 | 0.626 / 0.637 | 50.8 |
+| SKAB | ijepa | 0.431 / 0.422 | 0.530 / 0.749 | 0.472 / 0.710 | 0.588 / 0.444 | 0.339 / 0.323 | 9.9 |
+| SKAB | tsjepa | 0.442 / 0.561 | 0.689 / 0.736 | 0.646 / 0.738 | 0.477 / 0.489 | 0.349 / 0.403 | 32.7 |
+| SKAB | tjepa | 0.671 / 0.426 | 0.659 / 0.617 | 0.677 / 0.566 | 0.557 / 0.484 | 0.485 / 0.316 | 12.5 |
+| SKAB | vjepa | 0.459 / 0.422 | 0.575 / 0.749 | 0.504 / 0.710 | 0.575 / 0.444 | 0.361 / 0.323 | 10.6 |
+| SKAB | vjepa21 | 0.619 / 0.458 | 0.581 / 0.749 | 0.653 / 0.667 | 0.736 / 0.533 | 0.474 / 0.348 | 11.0 |
+| SKAB | cjepa | 0.419 / 0.422 | 0.533 / 0.749 | 0.469 / 0.710 | 0.593 / 0.444 | 0.330 / 0.323 | 15.3 |
+| SKAB | sjepa | 0.436 / 0.396 | 0.545 / 0.749 | 0.483 / 0.686 | 0.595 / 0.450 | 0.336 / 0.309 | 11.4 |
+| SKAB | salt | 0.605 / 0.421 | 0.823 / 0.828 | 0.823 / 0.828 | 0.509 / 0.516 | 0.432 / 0.321 | 10.8 |
+| SKAB | vicreg | 0.829 / 0.831 | 0.830 / 0.828 | 0.829 / 0.829 | 0.856 / 0.859 | 0.639 / 0.637 | 12.9 |
+| SKAB | kerjepa | 0.829 / 0.831 | 0.824 / 0.828 | 0.826 / 0.829 | 0.858 / 0.859 | 0.636 / 0.637 | 13.1 |
+| SKAB | lpjepa | 0.828 / 0.825 | 0.825 / 0.819 | 0.827 / 0.821 | 0.859 / 0.857 | 0.633 / 0.625 | 14.5 |
+| SKAB | lambdajepa | 0.828 / 0.831 | 0.830 / 0.828 | 0.829 / 0.829 | 0.853 / 0.859 | 0.638 / 0.637 | 12.4 |
+| SKAB | lenepa | 0.496 / 0.467 | 0.849 / 0.885 | 0.843 / 0.879 |  | 0.356 / 0.337 | 15.7 |
+| SKAB | lewm | 0.726 / 0.810 | 0.879 / 0.873 | 0.846 / 0.868 |  | 0.581 / 0.724 | 10.6 |
+| SKAB | cfjepa | 0.206 / 0.475 | 0.853 / 0.833 | 0.827 / 0.824 |  | 0.237 / 0.345 | 85.0 |
+| NAB | lejepa | 0.628 / 0.671 | 0.627 / 0.619 | 0.629 / 0.658 | 0.585 / 0.664 | 0.283 / 0.322 | 19.5 |
+| NAB | ijepa | 0.614 / 0.521 | 0.589 / 0.552 | 0.609 / 0.536 | 0.545 / 0.546 | 0.239 / 0.159 | 5.8 |
+| NAB | tsjepa | 0.585 / 0.483 | 0.711 / 0.720 | 0.677 / 0.721 | 0.578 / 0.523 | 0.179 / 0.165 | 11.8 |
+| NAB | tjepa | 0.684 / 0.530 | 0.604 / 0.564 | 0.658 / 0.552 | 0.603 / 0.493 | 0.262 / 0.163 | 6.9 |
+| NAB | vjepa | 0.614 / 0.521 | 0.580 / 0.552 | 0.603 / 0.536 | 0.527 / 0.546 | 0.235 / 0.159 | 5.6 |
+| NAB | vjepa21 | 0.600 / 0.479 | 0.573 / 0.552 | 0.593 / 0.524 | 0.526 / 0.497 | 0.221 / 0.141 | 6.0 |
+| NAB | cjepa | 0.612 / 0.521 | 0.591 / 0.552 | 0.610 / 0.536 | 0.547 / 0.546 | 0.238 / 0.159 | 7.7 |
+| NAB | sjepa | 0.612 / 0.547 | 0.589 / 0.552 | 0.608 / 0.541 | 0.543 / 0.561 | 0.238 / 0.170 | 6.0 |
+| NAB | salt | 0.676 / 0.488 | 0.633 / 0.619 | 0.669 / 0.621 | 0.546 / 0.528 | 0.259 / 0.129 | 5.8 |
+| NAB | vicreg | 0.576 / 0.671 | 0.587 / 0.619 | 0.590 / 0.658 | 0.543 / 0.664 | 0.230 / 0.322 | 6.6 |
+| NAB | kerjepa | 0.633 / 0.671 | 0.630 / 0.619 | 0.632 / 0.658 | 0.583 / 0.664 | 0.286 / 0.322 | 6.8 |
+| NAB | lpjepa | 0.600 / 0.678 | 0.598 / 0.635 | 0.598 / 0.667 | 0.564 / 0.650 | 0.253 / 0.320 | 7.2 |
+| NAB | lambdajepa | 0.592 / 0.671 | 0.620 / 0.619 | 0.603 / 0.658 | 0.584 / 0.664 | 0.275 / 0.322 | 6.6 |
+| NAB | lenepa | 0.434 / 0.589 | 0.657 / 0.590 | 0.554 / 0.606 |  | 0.129 / 0.196 | 6.6 |
+| NAB | lewm | 0.622 / 0.661 | 0.643 / 0.642 | 0.656 / 0.662 |  | 0.198 / 0.329 | 4.6 |
+| NAB | cfjepa | 0.689 / 0.503 | 0.797 / 0.792 | 0.761 / 0.725 |  | 0.338 / 0.181 | 71.2 |
+
+#### Trained versions on the default score `pred`: mean ROC-AUC, mean rank among the sixteen (1 = best) and number of series on which the version is best
+
+| version | synthetic: ROC-AUC | synthetic: mean rank | synthetic: series won | SKAB: ROC-AUC | SKAB: mean rank | SKAB: series won | NAB: ROC-AUC | NAB: mean rank | NAB: series won |
+|---|---|---|---|---|---|---|---|---|---|
+| lejepa | 0.941 | 5.0 | 2 | 0.825 | 4.6 | 0 | 0.628 | 7.6 | 0 |
+| ijepa | 0.885 | 8.7 | 0 | 0.431 | 12.9 | 0 | 0.614 | 7.9 | 0 |
+| tsjepa | 0.931 | 8.3 | 0 | 0.442 | 12.4 | 0 | 0.585 | 10.9 | 0 |
+| tjepa | 0.928 | 5.3 | 5 | 0.671 | 7.7 | 0 | 0.684 | 6.9 | 1 |
+| vjepa | 0.874 | 10.8 | 0 | 0.459 | 11.2 | 0 | 0.614 | 8.7 | 0 |
+| vjepa21 | 0.860 | 12.6 | 0 | 0.619 | 8.6 | 0 | 0.600 | 9.6 | 1 |
+| cjepa | 0.888 | 8.0 | 2 | 0.419 | 13.0 | 0 | 0.612 | 7.4 | 1 |
+| sjepa | 0.885 | 8.9 | 0 | 0.436 | 12.4 | 0 | 0.612 | 7.9 | 0 |
+| salt | 0.919 | 5.3 | 2 | 0.605 | 8.8 | 0 | 0.676 | 5.4 | 0 |
+| vicreg | 0.935 | 8.0 | 0 | 0.829 | 2.8 | 2 | 0.576 | 9.1 | 0 |
+| kerjepa | 0.950 | 3.5 | 3 | 0.829 | 2.6 | 5 | 0.633 | 6.4 | 1 |
+| lpjepa | 0.898 | 10.2 | 0 | 0.828 | 3.1 | 3 | 0.600 | 9.9 | 1 |
+| lambdajepa | 0.932 | 7.2 | 0 | 0.828 | 2.8 | 3 | 0.592 | 9.3 | 0 |
+| lenepa | 0.758 | 14.8 | 0 | 0.496 | 11.5 | 0 | 0.434 | 12.6 | 0 |
+| lewm | 0.933 | 6.1 | 1 | 0.726 | 5.8 | 3 | 0.622 | 10.0 | 0 |
+| cfjepa | 0.816 | 13.3 | 0 | 0.206 | 15.7 | 0 | 0.689 | 6.6 | 2 |
+
+#### Paired tests on the default score `pred` (two-sided Wilcoxon signed-rank over series; Holm correction over the 72 tests, which were fixed in advance; CI: bootstrap over series)
+
+|  | A | B | group | series | ROC-AUC A / B | A − B [95 % CI] | A / B better | p | p (Holm) |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | vjepa, trained | vjepa, untrained | synthetic | 15 | 0.874 / 0.519 | +0.356 [+0.293, +0.417] | 15 / 0 | <0.001 | 0.004 |
+| 2 | vjepa, trained | vjepa, untrained | SKAB | 16 | 0.459 / 0.422 | +0.037 [-0.079, +0.154] | 8 / 8 | 0.632 | 1.000 |
+| 3 | vjepa, trained | vjepa, untrained | NAB | 7 | 0.614 / 0.521 | +0.093 [-0.029, +0.190] | 6 / 1 | 0.219 | 1.000 |
+| 4 | vjepa21, trained | vjepa21, untrained | synthetic | 15 | 0.860 / 0.455 | +0.405 [+0.289, +0.522] | 15 / 0 | <0.001 | 0.004 |
+| 5 | vjepa21, trained | vjepa21, untrained | SKAB | 16 | 0.619 / 0.458 | +0.161 [+0.112, +0.218] | 16 / 0 | <0.001 | 0.002 |
+| 6 | vjepa21, trained | vjepa21, untrained | NAB | 7 | 0.600 / 0.479 | +0.121 [-0.004, +0.241] | 6 / 1 | 0.156 | 1.000 |
+| 7 | cjepa, trained | cjepa, untrained | synthetic | 15 | 0.888 / 0.519 | +0.369 [+0.310, +0.427] | 15 / 0 | <0.001 | 0.004 |
+| 8 | cjepa, trained | cjepa, untrained | SKAB | 16 | 0.419 / 0.422 | -0.004 [-0.138, +0.132] | 7 / 9 | 0.940 | 1.000 |
+| 9 | cjepa, trained | cjepa, untrained | NAB | 7 | 0.612 / 0.521 | +0.091 [-0.035, +0.194] | 6 / 1 | 0.219 | 1.000 |
+| 10 | sjepa, trained | sjepa, untrained | synthetic | 15 | 0.885 / 0.493 | +0.392 [+0.318, +0.477] | 15 / 0 | <0.001 | 0.004 |
+| 11 | sjepa, trained | sjepa, untrained | SKAB | 16 | 0.436 / 0.396 | +0.039 [-0.062, +0.144] | 8 / 8 | 0.669 | 1.000 |
+| 12 | sjepa, trained | sjepa, untrained | NAB | 7 | 0.612 / 0.547 | +0.065 [-0.057, +0.172] | 6 / 1 | 0.219 | 1.000 |
+| 13 | salt, trained | salt, untrained | synthetic | 15 | 0.919 / 0.531 | +0.388 [+0.317, +0.470] | 15 / 0 | <0.001 | 0.004 |
+| 14 | salt, trained | salt, untrained | SKAB | 16 | 0.605 / 0.421 | +0.184 [+0.118, +0.255] | 15 / 1 | <0.001 | 0.004 |
+| 15 | salt, trained | salt, untrained | NAB | 7 | 0.676 / 0.488 | +0.188 [+0.074, +0.350] | 6 / 1 | 0.031 | 1.000 |
+| 16 | vicreg, trained | vicreg, untrained | synthetic | 15 | 0.935 / 0.798 | +0.137 [+0.072, +0.202] | 10 / 5 | 0.008 | 0.368 |
+| 17 | vicreg, trained | vicreg, untrained | SKAB | 16 | 0.829 / 0.831 | -0.002 [-0.006, +0.001] | 6 / 10 | 0.298 | 1.000 |
+| 18 | vicreg, trained | vicreg, untrained | NAB | 7 | 0.576 / 0.671 | -0.095 [-0.282, +0.067] | 4 / 3 | 0.688 | 1.000 |
+| 19 | kerjepa, trained | kerjepa, untrained | synthetic | 15 | 0.950 / 0.798 | +0.152 [+0.093, +0.211] | 15 / 0 | <0.001 | 0.004 |
+| 20 | kerjepa, trained | kerjepa, untrained | SKAB | 16 | 0.829 / 0.831 | -0.002 [-0.004, +0.000] | 6 / 10 | 0.130 | 1.000 |
+| 21 | kerjepa, trained | kerjepa, untrained | NAB | 7 | 0.633 / 0.671 | -0.038 [-0.146, +0.046] | 5 / 2 | 0.938 | 1.000 |
+| 22 | lpjepa, trained | lpjepa, untrained | synthetic | 15 | 0.898 / 0.792 | +0.105 [+0.057, +0.152] | 10 / 5 | 0.008 | 0.368 |
+| 23 | lpjepa, trained | lpjepa, untrained | SKAB | 16 | 0.828 / 0.825 | +0.002 [-0.000, +0.005] | 10 / 6 | 0.159 | 1.000 |
+| 24 | lpjepa, trained | lpjepa, untrained | NAB | 7 | 0.600 / 0.678 | -0.078 [-0.203, +0.032] | 3 / 4 | 0.578 | 1.000 |
+| 25 | lambdajepa, trained | lambdajepa, untrained | synthetic | 15 | 0.932 / 0.798 | +0.134 [+0.081, +0.187] | 14 / 1 | <0.001 | 0.021 |
+| 26 | lambdajepa, trained | lambdajepa, untrained | SKAB | 16 | 0.828 / 0.831 | -0.003 [-0.006, -0.000] | 8 / 8 | 0.298 | 1.000 |
+| 27 | lambdajepa, trained | lambdajepa, untrained | NAB | 7 | 0.592 / 0.671 | -0.078 [-0.178, +0.013] | 3 / 4 | 0.375 | 1.000 |
+| 28 | lenepa, trained | lenepa, untrained | synthetic | 15 | 0.758 / 0.809 | -0.051 [-0.091, -0.009] | 4 / 11 | 0.041 | 1.000 |
+| 29 | lenepa, trained | lenepa, untrained | SKAB | 16 | 0.496 / 0.467 | +0.029 [-0.008, +0.063] | 12 / 4 | 0.117 | 1.000 |
+| 30 | lenepa, trained | lenepa, untrained | NAB | 7 | 0.434 / 0.589 | -0.155 [-0.298, -0.023] | 2 / 5 | 0.156 | 1.000 |
+| 31 | lewm, trained | lewm, untrained | synthetic | 15 | 0.933 / 0.799 | +0.134 [+0.083, +0.189] | 15 / 0 | <0.001 | 0.004 |
+| 32 | lewm, trained | lewm, untrained | SKAB | 16 | 0.726 / 0.810 | -0.084 [-0.151, -0.014] | 5 / 11 | 0.051 | 1.000 |
+| 33 | lewm, trained | lewm, untrained | NAB | 7 | 0.622 / 0.661 | -0.038 [-0.128, +0.056] | 3 / 4 | 0.578 | 1.000 |
+| 34 | cfjepa, trained | cfjepa, untrained | synthetic | 15 | 0.816 / 0.602 | +0.214 [+0.128, +0.301] | 13 / 2 | <0.001 | 0.016 |
+| 35 | cfjepa, trained | cfjepa, untrained | SKAB | 16 | 0.206 / 0.475 | -0.269 [-0.301, -0.235] | 0 / 16 | <0.001 | 0.002 |
+| 36 | cfjepa, trained | cfjepa, untrained | NAB | 7 | 0.689 / 0.503 | +0.186 [+0.062, +0.313] | 6 / 1 | 0.078 | 1.000 |
+| 37 | vjepa, trained | lejepa, trained | synthetic | 15 | 0.874 / 0.941 | -0.067 [-0.124, -0.015] | 3 / 12 | 0.035 | 1.000 |
+| 38 | vjepa, trained | lejepa, trained | SKAB | 16 | 0.459 / 0.825 | -0.366 [-0.453, -0.275] | 0 / 16 | <0.001 | 0.002 |
+| 39 | vjepa, trained | lejepa, trained | NAB | 7 | 0.614 / 0.628 | -0.015 [-0.089, +0.066] | 3 / 4 | 0.812 | 1.000 |
+| 40 | vjepa21, trained | lejepa, trained | synthetic | 15 | 0.860 / 0.941 | -0.081 [-0.138, -0.032] | 2 / 13 | 0.005 | 0.247 |
+| 41 | vjepa21, trained | lejepa, trained | SKAB | 16 | 0.619 / 0.825 | -0.206 [-0.244, -0.168] | 0 / 16 | <0.001 | 0.002 |
+| 42 | vjepa21, trained | lejepa, trained | NAB | 7 | 0.600 / 0.628 | -0.028 [-0.103, +0.048] | 3 / 4 | 0.688 | 1.000 |
+| 43 | cjepa, trained | lejepa, trained | synthetic | 15 | 0.888 / 0.941 | -0.053 [-0.109, -0.003] | 3 / 12 | 0.048 | 1.000 |
+| 44 | cjepa, trained | lejepa, trained | SKAB | 16 | 0.419 / 0.825 | -0.406 [-0.511, -0.300] | 0 / 16 | <0.001 | 0.002 |
+| 45 | cjepa, trained | lejepa, trained | NAB | 7 | 0.612 / 0.628 | -0.016 [-0.097, +0.070] | 3 / 4 | 0.812 | 1.000 |
+| 46 | sjepa, trained | lejepa, trained | synthetic | 15 | 0.885 / 0.941 | -0.057 [-0.111, -0.008] | 3 / 12 | 0.041 | 1.000 |
+| 47 | sjepa, trained | lejepa, trained | SKAB | 16 | 0.436 / 0.825 | -0.389 [-0.486, -0.292] | 0 / 16 | <0.001 | 0.002 |
+| 48 | sjepa, trained | lejepa, trained | NAB | 7 | 0.612 / 0.628 | -0.016 [-0.090, +0.065] | 3 / 4 | 0.812 | 1.000 |
+| 49 | salt, trained | lejepa, trained | synthetic | 15 | 0.919 / 0.941 | -0.022 [-0.056, +0.008] | 8 / 7 | 0.489 | 1.000 |
+| 50 | salt, trained | lejepa, trained | SKAB | 16 | 0.605 / 0.825 | -0.220 [-0.262, -0.177] | 0 / 16 | <0.001 | 0.002 |
+| 51 | salt, trained | lejepa, trained | NAB | 7 | 0.676 / 0.628 | +0.048 [+0.013, +0.083] | 5 / 2 | 0.078 | 1.000 |
+| 52 | vicreg, trained | lejepa, trained | synthetic | 15 | 0.935 / 0.941 | -0.006 [-0.023, +0.010] | 6 / 9 | 0.561 | 1.000 |
+| 53 | vicreg, trained | lejepa, trained | SKAB | 16 | 0.829 / 0.825 | +0.004 [+0.002, +0.006] | 13 / 3 | 0.005 | 0.242 |
+| 54 | vicreg, trained | lejepa, trained | NAB | 7 | 0.576 / 0.628 | -0.052 [-0.177, +0.046] | 2 / 5 | 0.375 | 1.000 |
+| 55 | kerjepa, trained | lejepa, trained | synthetic | 15 | 0.950 / 0.941 | +0.008 [+0.002, +0.016] | 12 / 3 | 0.012 | 0.510 |
+| 56 | kerjepa, trained | lejepa, trained | SKAB | 16 | 0.829 / 0.825 | +0.005 [+0.003, +0.006] | 16 / 0 | <0.001 | 0.002 |
+| 57 | kerjepa, trained | lejepa, trained | NAB | 7 | 0.633 / 0.628 | +0.005 [-0.011, +0.021] | 5 / 2 | 0.688 | 1.000 |
+| 58 | lpjepa, trained | lejepa, trained | synthetic | 15 | 0.898 / 0.941 | -0.044 [-0.071, -0.022] | 1 / 14 | <0.001 | 0.006 |
+| 59 | lpjepa, trained | lejepa, trained | SKAB | 16 | 0.828 / 0.825 | +0.003 [+0.001, +0.004] | 12 / 4 | 0.009 | 0.386 |
+| 60 | lpjepa, trained | lejepa, trained | NAB | 7 | 0.600 / 0.628 | -0.029 [-0.071, +0.008] | 3 / 4 | 0.469 | 1.000 |
+| 61 | lambdajepa, trained | lejepa, trained | synthetic | 15 | 0.932 / 0.941 | -0.010 [-0.015, -0.005] | 2 / 13 | <0.001 | 0.030 |
+| 62 | lambdajepa, trained | lejepa, trained | SKAB | 16 | 0.828 / 0.825 | +0.003 [+0.001, +0.005] | 14 / 2 | 0.008 | 0.343 |
+| 63 | lambdajepa, trained | lejepa, trained | NAB | 7 | 0.592 / 0.628 | -0.036 [-0.082, +0.005] | 2 / 5 | 0.219 | 1.000 |
+| 64 | lenepa, trained | lejepa, trained | synthetic | 15 | 0.758 / 0.941 | -0.184 [-0.232, -0.131] | 1 / 14 | <0.001 | 0.006 |
+| 65 | lenepa, trained | lejepa, trained | SKAB | 16 | 0.496 / 0.825 | -0.329 [-0.383, -0.273] | 0 / 16 | <0.001 | 0.002 |
+| 66 | lenepa, trained | lejepa, trained | NAB | 7 | 0.434 / 0.628 | -0.194 [-0.366, -0.041] | 1 / 6 | 0.047 | 1.000 |
+| 67 | lewm, trained | lejepa, trained | synthetic | 15 | 0.933 / 0.941 | -0.008 [-0.022, +0.005] | 5 / 10 | 0.208 | 1.000 |
+| 68 | lewm, trained | lejepa, trained | SKAB | 16 | 0.726 / 0.825 | -0.099 [-0.144, -0.053] | 3 / 13 | 0.001 | 0.063 |
+| 69 | lewm, trained | lejepa, trained | NAB | 7 | 0.622 / 0.628 | -0.006 [-0.075, +0.061] | 4 / 3 | 0.938 | 1.000 |
+| 70 | cfjepa, trained | lejepa, trained | synthetic | 15 | 0.816 / 0.941 | -0.125 [-0.161, -0.096] | 0 / 15 | <0.001 | 0.004 |
+| 71 | cfjepa, trained | lejepa, trained | SKAB | 16 | 0.206 / 0.825 | -0.619 [-0.686, -0.546] | 0 / 16 | <0.001 | 0.002 |
+| 72 | cfjepa, trained | lejepa, trained | NAB | 7 | 0.689 / 0.628 | +0.061 [-0.038, +0.154] | 4 / 3 | 0.375 | 1.000 |
+
+<!-- TSVER:END -->
+
 ---
 
 ## 8. Limitations and next steps
 
 * **Training has no demonstrated benefit on tabular data.** On all 47 ADBench datasets the zero-epoch controls score at least as high as the trained detectors (Section 7.6). For time series, training helps the default score on synthetic series only. One training budget was tested; a claim that JEPA training helps outlier detection under another budget needs the same control.
-* **The JEPA versions of `TSJEPAOD` share the detector's masking, sizes and budget.** They are re-implementations of each paper's network, target mechanism and loss, not of its full training setup (Section 4.8), so Section 7.7 compares recipes inside this detector and says nothing about the papers' own results. The repair of `tjepa` by `encoder_norm=False` was checked on SKAB only.
+* **The JEPA versions of `TSJEPAOD` share the detector's masking, sizes and budget.** They are re-implementations of each paper's network, target mechanism and loss, not of its full training setup (Section 4.8), so Sections 7.7 and 7.8 compare recipes inside this detector and say nothing about the papers' own results. The repair of `tjepa` by `encoder_norm=False` was checked on SKAB only. For the twelve versions of Section 4.9 some constants and steps are not fixed by the papers and were set here (the pooling of CF-JEPA's predictions, the weights of `sjepa` and `lambdajepa`, the two mask draws of `cjepa`); `lewm` runs LeWorldModel's objective without the action input its paper always uses, and `lenepa` has 10 to 12 patches per window where its paper has 200. Each version was run at one setting, and the best of twelve (`kerjepa`) has not been confirmed on other series.
 * **The T-JEPA comparison is a re-implementation at a small budget.** `TJEPAOD` uses the released code's default architecture and `JEPAOD`'s training budget, not the authors' code or their per-dataset tuned configurations, and T-JEPA itself has no outlier score. τ-JEPA was not read and is not implemented.
 * **The time-series benchmarks are modest** (7 NAB series, SKAB valve1, synthetic series). The tabular side now covers the 47 ADBench classical datasets (Section 7.6). TSB-AD with VUS-PR, the primary metric there, has not been run. The ablations of Section 7.3, including the SIGReg-against-EMA comparison, were run on small subsets only.
 * **Transductive contamination.** Like every unsupervised deep detector, training outliers are Gaussianised along with inliers by SIGReg. The `embed` score is more sensitive to this than `pred`.
@@ -867,7 +1044,17 @@ Coverage: 5 seeds; series per group: synthetic 15, SKAB 16, NAB 7; every version
 
 * LeCun, Y. (2022). *A Path Towards Autonomous Machine Intelligence.* OpenReview.
 * Assran, M. et al. (2023). *Self-Supervised Learning from Images with a Joint-Embedding Predictive Architecture (I-JEPA).* CVPR.
-* Bardes, A. et al. (2024/2025). *V-JEPA / V-JEPA 2.* Meta AI.
+* Bardes, A. et al. (2024/2025). *V-JEPA / V-JEPA 2.* Meta AI. V-JEPA: arXiv:2404.08471. https://arxiv.org/abs/2404.08471
+* *V-JEPA 2.1* (2026). Meta FAIR. arXiv:2603.14482. https://arxiv.org/abs/2603.14482
+* Mo, S., Tong, S. (2024). *Connecting Joint-Embedding Predictive Architecture with Contrastive Self-supervised Learning (C-JEPA).* arXiv:2410.19560. https://arxiv.org/abs/2410.19560
+* Li, X. et al. (2025). *Rethinking JEPA: Compute-Efficient Video SSL with Frozen Teachers (SALT).* arXiv:2509.24317. https://arxiv.org/abs/2509.24317
+* Terver, B. et al. (2026). *A Lightweight Library for Energy-Based Joint-Embedding Predictive Architectures (EB-JEPA).* arXiv:2602.03604. https://arxiv.org/abs/2602.03604
+* Zimmermann, E. et al. (2025). *KerJEPA: Kernel Discrepancies for Euclidean Self-Supervised Learning.* arXiv:2512.19605. https://arxiv.org/abs/2512.19605
+* Kuang, Y. et al. (2026). *Rectified LpJEPA: Joint-Embedding Predictive Architectures with Sparse and Maximum-Entropy Representations.* ICML 2026. arXiv:2602.01456. https://arxiv.org/abs/2602.01456
+* Demirel, B. et al. (2026). *lambda-JEPA: Spectral Anti-Collapse Regularization for Self-Supervised Learning.* arXiv:2609.35288. https://arxiv.org/abs/2609.35288
+* Chemeris, A., Jin, M., Balestriero, R. (2026). *LeNEPA: No-Augmentation Next-Latent Prediction for Time-Series Representation Learning.* MiLeTS workshop at KDD 2026. arXiv:2607.00958. https://arxiv.org/abs/2607.00958
+* Maes, L. et al. (2026). *LeWorldModel: Stable End-to-End Joint-Embedding Predictive Architecture from Pixels.* arXiv:2603.19312. https://arxiv.org/abs/2603.19312
+* Giakoumoglou, N., Giakoumoglou, P., Stathaki, T. (2026). *A Stochastic Latent Variable Generalization of Joint-Embedding Predictive Architectures.* arXiv:2611.09302. https://arxiv.org/abs/2611.09302
 * Balestriero, R., LeCun, Y. (2025). *LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics.* arXiv:2511.08544. https://arxiv.org/abs/2511.08544
 * Ennadir, S., Golkar, S., Sarra, L. (2025). *Joint Embeddings Go Temporal (TS-JEPA).* arXiv:2509.25449. https://arxiv.org/abs/2509.25449
 * Thimonier, H., De Melo Costa, J. L., Popineau, F., Rimmel, A., Doan, B.-L. (2025). *T-JEPA: Augmentation-Free Self-Supervised Learning for Tabular Data.* ICLR 2025. arXiv:2410.05016. https://arxiv.org/abs/2410.05016. Code: https://github.com/jose-melo/t-jepa

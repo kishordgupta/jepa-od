@@ -11,6 +11,13 @@ LeNEPA (`'lewm'`; it differs from `'lenepa'` in where SIGReg is applied and in w
 `REPORT.md` section 4.9 describes each implementation and every choice the papers leave open,
 section 7.8 has the benchmark. The recommendation at the end of this file was written before that.
 
+**Outcome.** `kerjepa` is level with the default in all three benchmark groups at about half the
+fitting time. `vicreg`, `lambdajepa` and `lpjepa` match the default under a regime shift, which
+answers the question put to `vicreg` below: the default's robustness comes from its un-normalised
+shared-encoder target, not from SIGReg. `cjepa` does not repair the EMA version. `salt` and `cfjepa`
+are numerically ahead on NAB only. `lenepa` and `cfjepa` have no usable prediction-error score in
+this detector. Numbers and tests: `REPORT.md` section 7.8.
+
 ## How the candidates were found and judged
 
 * Two curated lists were read in full: [AbdelStark/awesome-jepa](https://github.com/AbdelStark/awesome-jepa)

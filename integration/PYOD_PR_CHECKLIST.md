@@ -11,6 +11,10 @@ the maintainer and offers to narrow the proposal to `TSJEPA`, as a family with a
 
 ## The branch for the narrowed proposal: `feature/ts-jepa` (2026-11-21)
 
+> **2026-11-22.** The prototype has since gained twelve more versions (`jepa_od` 0.4.0, `REPORT.md` sections 4.9
+> and 7.8). They are **not** in this branch, which still has the four versions that the comment on the issue
+> describes. Porting any of them is a separate decision.
+
 Built so that a pull request can be opened as soon as the maintainer accepts the `TSJEPA`-only proposal:
 https://github.com/kishordgupta/pyod/tree/feature/ts-jepa
 

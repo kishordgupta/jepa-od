@@ -1,0 +1,16 @@
+lejepa     fit    5.0s  score   0.3s  finite True
+ijepa      fit    2.1s  score   0.3s  finite True
+tsjepa     fit    6.1s  score   0.7s  finite True
+tjepa      fit    2.9s  score   0.4s  finite True
+vjepa      fit    2.1s  score   0.3s  finite True
+vjepa21    fit    2.3s  score   0.3s  finite True
+cjepa      fit    3.2s  score   0.3s  finite True
+sjepa      fit    2.3s  score   0.3s  finite True
+salt       fit    2.1s  score   0.3s  finite True
+vicreg     fit    2.6s  score   0.3s  finite True
+kerjepa    fit    2.7s  score   0.3s  finite True
+lpjepa     fit    3.0s  score   0.3s  finite True
+lambdajepa fit    2.6s  score   0.3s  finite True
+lenepa     fit    3.5s  score   0.1s  finite True
+lewm       fit    2.2s  score   0.1s  finite True
+cfjepa     fit   25.1s  score   0.6s  finite True

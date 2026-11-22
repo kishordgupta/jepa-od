@@ -1,12 +1,14 @@
 # Second comment for https://github.com/yzhao062/pyod/issues/795
 
-**Status: draft, not posted.** Written on 2026-11-22 after the twelve further versions were ported to the
-branch `feature/ts-jepa`. It names the three versions that match the default (`kerjepa`, `vicreg`,
+**Status: posted on 2026-11-22 as https://github.com/yzhao062/pyod/issues/795#issuecomment-7077175222** at the author's request, from the author's account.
+The body below is the text as posted. It was written after the twelve further versions were ported to the
+branch `feature/ts-jepa` and names the three versions that match the default (`kerjepa`, `vicreg`,
 `lambdajepa`). Every number is from `results/ts_versions_tables.md` and `results/ts_versions_timing.txt`
-(`REPORT.md` section 7.8). Posting it is the author's decision.
+(`REPORT.md` section 7.8).
 
-One sentence says that the branch also holds the nine other versions. It is there because a reader who opens
-the branch sees sixteen `variant` values; take it out if the comment should name the three only.
+The draft had one more paragraph, saying that the branch also holds the nine other versions and that none
+of them showed a benefit. The author had it removed before posting, so the comment does not say that the
+branch has sixteen `variant` values.
 
 ## Body
 
@@ -29,8 +31,6 @@ Since the last comment I re-implemented further published JEPA versions as `vari
 - No version beats the default, so the default stays `lejepa`. The untrained control is unchanged: 0.798 / 0.831 / 0.671, so training still earns the score on the synthetic series only.
 
 What the three add is a finding about the design. They change only the regulariser and keep the default's shared encoder, whose outputs are the prediction targets without a normalisation step. All three hold 0.83 on SKAB, where every version that normalises its targets falls to between 0.21 and 0.67. That points to the un-normalised target, not to SIGReg, as what keeps the score under SKAB's regime shift.
-
-The branch also holds the nine other versions I tested, in the same module (`pyod/models/_jepa_variants.py`). None of them showed a benefit over the default; the full table is in section 7.8 of the report. Which versions belong in a pull request is your call.
 
 Checks on the branch: its 55 detector tests pass, the whole `pyod/test` directory gives 1603 passed and 0 failed on my machine (six modules that need `pythresh`, `combo`, `statsmodels` or `xgboost` could not run there), and the port returns the same scores as the prototype that produced the numbers above. PyOD's CI has not run on it.
 

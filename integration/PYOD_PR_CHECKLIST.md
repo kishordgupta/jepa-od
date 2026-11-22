@@ -19,8 +19,11 @@ https://github.com/kishordgupta/pyod/tree/feature/ts-jepa
   further JEPA versions for `variant`" (next section). No tabular `JEPA`, no workflow file touched.
   Upstream has since added one merge commit without file changes (`e9d8670`), so GitHub shows the branch
   as behind by one. Rebase onto the then-current `development` before opening the pull request.
-* **The comment on the issue describes four versions.** A follow-up that names the three versions level
-  with the default is drafted in `PYOD_ISSUE_COMMENT2_DRAFT.md` and is not posted.
+* **What the issue says about the branch.** The first comment describes four versions. The second, posted
+  on 2026-11-22 (https://github.com/yzhao062/pyod/issues/795#issuecomment-7077175222, text in
+  `PYOD_ISSUE_COMMENT2_DRAFT.md`), links this branch and proposes three more: `kerjepa`, `vicreg` and
+  `lambdajepa`. It does not say that the branch holds the nine other versions too, so the maintainer may
+  ask about them when opening the branch.
 
 The bullets and the table below describe the first commit.
 

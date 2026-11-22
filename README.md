@@ -310,9 +310,9 @@ further ones. It is ready for a pull request if the maintainer accepts.
 `JEPA_VERSIONS_SURVEY.md` lists the further JEPA recipes that fit the `variant` family and the ones
 that do not. Twelve of them are implemented in this repository (version 0.4.0, 16 versions in all) and,
 since 2026-11-22, in the PyOD branch, where `TSJEPA` returns the same scores as `TSJEPAOD` for all sixteen.
-The comment posted on the PyOD issue describes four versions; a follow-up that names the three versions
-level with the default (`kerjepa`, `vicreg`, `lambdajepa`) is drafted in
-`integration/PYOD_ISSUE_COMMENT2_DRAFT.md` and not posted.
+The first comment on the PyOD issue describes four versions. A second one, posted on 2026-11-22, links the
+branch and names the three versions level with the default (`kerjepa`, `vicreg`, `lambdajepa`); its text is
+in `integration/PYOD_ISSUE_COMMENT2_DRAFT.md`. It does not mention the nine other versions in the branch.
 
 The port was written before the extended benchmark. On the full ADBench suite the tabular detector is
 not better than detectors PyOD already has, and `REPORT.md` (verdict in section 1) no longer argues for

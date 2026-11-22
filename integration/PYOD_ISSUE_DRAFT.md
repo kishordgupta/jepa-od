@@ -42,7 +42,9 @@ https://github.com/yzhao062/pyod/issues/795#issuecomment-7072235903
 
 Since then the prototype's `TSJEPAOD` has a `variant` option that selects the JEPA version (`REPORT.md`
 sections 4.8 and 7.7). The issue and the branch it links describe the detector without it; the branch
-`feature/ts-jepa` on the fork has `TSJEPA` alone with `variant` (`integration/PYOD_PR_CHECKLIST.md`).
+`feature/ts-jepa` on the fork has `TSJEPA` alone with `variant` (`integration/PYOD_PR_CHECKLIST.md`),
+since 2026-11-22 with all sixteen versions. A second comment for the issue is drafted in
+`integration/PYOD_ISSUE_COMMENT2_DRAFT.md`.
 
 ## Title
 

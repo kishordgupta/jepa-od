@@ -303,12 +303,16 @@ as patches in `integration/pyod-patches/`. `integration/PYOD_PR_CHECKLIST.md` ha
 ran and the steps to a pull request. `TJEPAOD` is in this repository only.
 
 A second branch, [`feature/ts-jepa`](https://github.com/kishordgupta/pyod/tree/feature/ts-jepa), holds the
-narrowed proposal: `TSJEPA` alone, with the `variant` option, as one commit on top of PyOD 3.6.9 (patch in
-`integration/pyod-patches-ts-jepa/`). It is ready for a pull request if the maintainer accepts.
+narrowed proposal: `TSJEPA` alone, with the `variant` option, as two commits on top of PyOD 3.6.9 (patches in
+`integration/pyod-patches-ts-jepa/`). The first commit has the first four versions, the second the twelve
+further ones. It is ready for a pull request if the maintainer accepts.
 
 `JEPA_VERSIONS_SURVEY.md` lists the further JEPA recipes that fit the `variant` family and the ones
-that do not. Twelve of them are implemented in this repository (version 0.4.0, 16 versions in all). The
-PyOD branch `feature/ts-jepa` still has the first four, and the comment on the PyOD issue describes four.
+that do not. Twelve of them are implemented in this repository (version 0.4.0, 16 versions in all) and,
+since 2026-11-22, in the PyOD branch, where `TSJEPA` returns the same scores as `TSJEPAOD` for all sixteen.
+The comment posted on the PyOD issue describes four versions; a follow-up that names the three versions
+level with the default (`kerjepa`, `vicreg`, `lambdajepa`) is drafted in
+`integration/PYOD_ISSUE_COMMENT2_DRAFT.md` and not posted.
 
 The port was written before the extended benchmark. On the full ADBench suite the tabular detector is
 not better than detectors PyOD already has, and `REPORT.md` (verdict in section 1) no longer argues for

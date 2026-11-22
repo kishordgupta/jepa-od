@@ -146,3 +146,6 @@ choice of term matters at all.
 
 The comment on yzhao062/pyod#795 describes four versions. More versions make a larger pull request to
 review, and so far no version beats the default.
+
+**2026-11-22, later.** All twelve implemented versions were ported to the PyOD branch `feature/ts-jepa` as a
+second commit (`integration/PYOD_PR_CHECKLIST.md`). That commit is about as large as the first one.

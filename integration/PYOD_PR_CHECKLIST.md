@@ -9,27 +9,30 @@ before that result; the comment in `PYOD_ISSUE_COMMENT_DRAFT.md`, posted on the 
 the maintainer and offers to narrow the proposal to `TSJEPA`, as a family with a selectable JEPA version
 (`variant`, `REPORT.md` section 4.8). Wait for the answer before any pull request.
 
-## The branch for the narrowed proposal: `feature/ts-jepa` (2026-11-21)
-
-> **2026-11-22.** The prototype has since gained twelve more versions (`jepa_od` 0.4.0, `REPORT.md` sections 4.9
-> and 7.8). They are **not** in this branch, which still has the four versions that the comment on the issue
-> describes. Porting any of them is a separate decision.
+## The branch for the narrowed proposal: `feature/ts-jepa` (2026-11-21, second commit 2026-11-22)
 
 Built so that a pull request can be opened as soon as the maintainer accepts the `TSJEPA`-only proposal:
 https://github.com/kishordgupta/pyod/tree/feature/ts-jepa
 
-* **One commit** (`455ca3c`, "Add TSJEPA detector for time series (experimental)") on top of
-  `yzhao062/pyod:development` at `f785bc9` (PyOD 3.6.9). No tabular `JEPA`, no workflow file touched.
+* **Two commits** on top of `yzhao062/pyod:development` at `f785bc9` (PyOD 3.6.9): `455ca3c`, "Add TSJEPA
+  detector for time series (experimental)", with the first four versions, and `cb26e0c`, "TSJEPA: twelve
+  further JEPA versions for `variant`" (next section). No tabular `JEPA`, no workflow file touched.
   Upstream has since added one merge commit without file changes (`e9d8670`), so GitHub shows the branch
-  as one ahead and one behind. Rebase onto the then-current `development` before opening the pull request.
+  as behind by one. Rebase onto the then-current `development` before opening the pull request.
+* **The comment on the issue describes four versions.** A follow-up that names the three versions level
+  with the default is drafted in `PYOD_ISSUE_COMMENT2_DRAFT.md` and is not posted.
+
+The bullets and the table below describe the first commit.
+
 * **Content.** `pyod/models/ts_jepa.py` (`TSJEPA` with `variant` = `'lejepa'`, `'ijepa'`, `'tsjepa'`,
   `'tjepa'`; `encoder_norm=None` and `ema_momentum=None` resolve per variant; `target_mode` is gone),
   `pyod/models/_jepa_utils.py` (the networks of the four variants, SIGReg, EMA update, mask samplers),
   `pyod/test/test_ts_jepa.py` (28 tests), `examples/ts_jepa_example.py`, the API page, the model-table
   rows in `README.rst` and `docs/index.rst`, two bibliography entries, the two experimental-detector
   lists, and the `conftest.py` skip-list line.
-* **Same patch here:** `integration/pyod-patches-ts-jepa/`, applied with
-  `git switch -c feature/ts-jepa upstream/development && git am --keep-cr <patch>`.
+* **Same patches here:** `integration/pyod-patches-ts-jepa/` (one per commit), applied with
+  `git switch -c feature/ts-jepa upstream/development && git am --keep-cr <patches>`. Checked: both
+  applied in order to `f785bc9` give the tree of `cb26e0c`.
 * **Parity with this repository.** On two series, four variants and five settings each (block, forecast
   and 70 % random masking, `encoder_norm=False` with another momentum, zero epochs), `TSJEPA` and
   `TSJEPAOD` return identical scores for `'lejepa'`, `'ijepa'` and `'tsjepa'`. For trained `'tjepa'` they
@@ -44,7 +47,7 @@ Checks that ran on `455ca3c` (Python 3.11.18, torch 2.15.0, macOS arm64, CPU):
 | `pytest pyod/test/test_ts_jepa.py` | 28 passed, about 65 s |
 | the time-series suites, `test_base`, `test_readme_rst`, `test_skill_api_refs`, `test_skill_kb_consistency`, `test_utility` | all passed |
 | `python scripts/regen_skill.py --check` | skill files up to date |
-| whole `pyod/test` directory | 1576 passed, 68 skipped, 0 failed. Not run here because optional packages are missing: `test_thresholds.py` (15 errors, `pythresh`) and five modules that need `xgboost`, `combo` or `suod` |
+| whole `pyod/test` directory | 1576 passed, 68 skipped, 0 failed. Not run here because optional packages are missing: `test_thresholds.py` (15 errors, `pythresh`) and five modules that need `combo`, `statsmodels` or `xgboost` |
 | `examples/ts_jepa_example.py` | runs, ROC 0.954 |
 | Sphinx build of the module page | no warnings from the new docstrings |
 | `import pyod.models.ts_jepa` with torch blocked | imports without torch; `fit` raises the install hint |
@@ -55,6 +58,53 @@ build, Coveralls, any GPU.
 
 Left out on purpose, as before: `CHANGES.txt`, the knowledge base and its detector counts, and the
 `_DETECTOR_SHORTCUTS` line.
+
+## Second commit on `feature/ts-jepa`: the twelve further versions (2026-11-22)
+
+`cb26e0c` ports the twelve versions of `REPORT.md` section 4.9 (`vjepa`, `vjepa21`, `cjepa`, `sjepa`, `salt`,
+`vicreg`, `kerjepa`, `lpjepa`, `lambdajepa`, `lenepa`, `lewm`, `cfjepa`), so `TSJEPA(variant=...)` has the same
+sixteen values as `TSJEPAOD`. 2328 lines added, against 2120 in the first commit.
+
+| this repo | PyOD | notes |
+|---|---|---|
+| `jepa_od/_regs.py`, `_variant_nets.py`, `_recipes.py` | `pyod/models/_jepa_variants.py` (new) | one private module in three parts: regularisers, networks, recipes. The networks keep only what the detector calls (no `token_embeddings`) |
+| `jepa_od/ts_jepa.py` | `pyod/models/ts_jepa.py` | parameter `variant_params`, attribute `variant_params_`, `_recipe()`, `_loss()`; the variant names are a static tuple so the module still imports without torch |
+| `momentum_at` in `_recipes.py` | `pyod/models/_jepa_utils.py` | next to `ema_update` |
+| `tests/test_regs.py`, `tests/test_ts_jepa_versions.py` | `pyod/test/test_ts_jepa_variants.py` (new) | 27 tests on a smaller series (1000 timestamps, 2 epochs); listed in `conftest.py` |
+| -- | `examples/ts_jepa_example.py` | one comment |
+
+Differences from the prototype, none of which changes a score:
+
+* SALT's `freeze_teacher` also clears the teacher's gradients, so the second stage does not depend on how
+  the optimizer resets gradients.
+* `Recipe.ema_pairs` is gone: every version with an EMA target updates `target_encoder` from `encoder`.
+* The docstring of `TSJEPA` lists the sixteen versions with their references and names the ten versions
+  whose normalised targets can fail under a regime change.
+* Nothing was added to `README.rst`, `docs/index.rst`, the bibliography or the knowledge base: the detector's
+  row and its two citations are those of the first commit.
+
+**Parity with this repository.** On three settings (block masking with two channels, forecast masking with
+one channel and a window of 100, and seven versions with overridden constants), 39 fits in all, `TSJEPA` and
+`TSJEPAOD` return bit-identical training scores and `pred` / `embed` / `combined` test scores for fifteen
+versions. `tjepa` differs by at most 1.5e-5, as in the first commit. The 72 score arrays of the first four
+versions (three mask modes, with and without the reconstruction loss) are bit-identical before and after
+the commit.
+
+Checks that ran on `cb26e0c` (Python 3.11.18, torch 2.15.0, macOS arm64, CPU):
+
+| check | result |
+|---|---|
+| `pytest pyod/test/test_ts_jepa.py pyod/test/test_ts_jepa_variants.py` | 55 passed (28 + 27), about 110 s |
+| line coverage of `ts_jepa.py`, `_jepa_utils.py` and `_jepa_variants.py` under those two modules | 99.03 % (14 of 1439 lines missed: the torch-missing branch, an explicit device, a 2-D SIGReg input, three error branches, three abstract methods). Measured with a `sys.settrace` script, not with Coveralls |
+| whole `pyod/test` directory | 1603 passed (the 1576 of the first commit plus the 27 new tests), 68 skipped, 0 failed. Not run here, as before, because optional packages are missing: `test_thresholds.py` (15 errors, `pythresh`) and five modules that need `combo`, `statsmodels` or `xgboost` |
+| `python scripts/regen_skill.py --check` | skill files up to date |
+| `examples/ts_jepa_example.py` | runs, ROC 0.954 |
+| Sphinx build of the module page | no warnings from the new docstring |
+| `import pyod.models.ts_jepa` with torch blocked | imports without torch and without `_jepa_variants`; `fit` raises the install hint for a recipe version too |
+| Python 3.9.6 `ast.parse` of the six changed Python files | parses |
+
+Not run: PyOD's CI matrix on this branch (it needs a pull request inside the fork; the author said "not
+now" on 2026-11-21), the full documentation build, Coveralls, any GPU.
 
 ## The first port: `feature/jepa-od`
 

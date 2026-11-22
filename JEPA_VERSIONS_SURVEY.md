@@ -2,8 +2,14 @@
 
 Survey of 2026-11-21. Question: which published JEPA training recipes, beyond the four that
 `TSJEPAOD(variant=...)` already has (`'lejepa'`, `'ijepa'`, `'tsjepa'`, `'tjepa'`), could be added as
-further versions. Nothing here is implemented or benchmarked yet; this is a reading of the papers
-against the detector's code.
+further versions. The survey itself is a reading of the papers against the detector's code.
+
+**Status, 2026-11-22.** Twelve of the recipes below are now implemented as `variant` values (version
+0.4.0): the four of group A, the four of group B, the three of group C (as versions, not as a
+regulariser option), and LeWorldModel without its action input, which group B first folded into
+LeNEPA (`'lewm'`; it differs from `'lenepa'` in where SIGReg is applied and in what is predicted).
+`REPORT.md` section 4.9 describes each implementation and every choice the papers leave open,
+section 7.8 has the benchmark. The recommendation at the end of this file was written before that.
 
 ## How the candidates were found and judged
 
@@ -54,7 +60,7 @@ prediction is meant to avoid.
 | `'lenepa'` | LeNEPA, Chemeris, Jin, Balestriero, MiLeTS'26 workshop, [arXiv 2607.00958](https://arxiv.org/abs/2607.00958) | **causal** Transformer predicts the tokeniser embedding of the next patch; squared L2 in a shared projector's space; SIGReg computed per sample over its own tokens; no EMA, no stop-gradient, no masks | a causal core; `pred` becomes the next-latent error of each patch (the first patch has none); `embed` unchanged. About 150 lines | workshop paper; not evaluated on anomaly detection; slightly behind an ECG-tuned masked JEPA on PTB-XL (AUROC 0.880 against 0.891); its 8-layer encoder becomes 2 layers here |
 | `'sjepa'` | stochastic-latent JEPA, Giakoumoglou et al., [arXiv 2611.09302](https://arxiv.org/abs/2611.09302) | I-JEPA plus a Gaussian latent given to the predictor as a prefix token (prior from the context, posterior from context and target) and a KL term; EMA kept | prior and posterior heads, a KL term, a choice of which latent to use when scoring. About 120 lines | posted 6 Nov 2026; default KL weight not found in the text read; name collides with Signal-JEPA |
 | `'cfjepa'` | CF-JEPA, Lee & Sim, [arXiv 2606.07031](https://arxiv.org/abs/2606.07031) | no masks: random crops as context, the rest of the series split into three zones, one linear predictor per zone; L1 on unit-normalised vectors with a weight annealed to zero; VICReg variance / covariance (0.081, 0.076) and a multi-scale invariance term across crops (1.101); EMA from 0.983; encoder of 5 multi-scale dilated depthwise-convolution blocks with one embedding per time step | a per-time-step convolutional core and a crop sampler. Only the `embed` score follows the paper (it scores by k-NN or Gaussian distance of the EMA encoder's embeddings to training embeddings). About 250 lines | the largest job; how a crop's embeddings are mapped onto a zone of another length is not given in the main text; the code is announced, not released |
-| `'vjepa21'` | V-JEPA 2.1, Meta FAIR, [arXiv 2603.14482](https://arxiv.org/abs/2603.14482) | adds a loss on the visible tokens, weighted by 0.5 / sqrt(distance to the nearest hidden token), and applies the losses at four encoder depths; L1; fixed EMA 0.99925 | the dense loss is about 20 lines on top of `'vjepa'`; deep supervision needs intermediate outputs and a fusion layer | designed for very deep encoders: with 2 layers the deep supervision has two levels, and a fixed momentum of 0.99925 barely moves the target in a 10-epoch budget |
+| `'vjepa21'` | V-JEPA 2.1, Meta FAIR, [arXiv 2603.14482](https://arxiv.org/abs/2603.14482) | adds a loss on the visible tokens, weighted by 0.5 / sqrt(distance to the nearest hidden token), and applies the losses at four encoder depths; L1; fixed EMA 0.99925 | the dense loss is about 20 lines on top of `'vjepa'`; deep supervision needs intermediate outputs and a fusion layer | designed for very deep encoders: with 2 layers the deep supervision has two levels (correction of 2026-11-22: a fixed momentum of 0.99925 is not an obstacle, the target still moves about 40 % of the way to the online encoder in the 10-epoch budget) |
 
 LeWorldModel (Maes et al., [arXiv 2603.19312](https://arxiv.org/abs/2603.19312), NeurIPS 2026) is not counted
 separately: its two loss terms (next-embedding error and SIGReg per time step, no EMA, no stop-gradient)

@@ -18,8 +18,9 @@ second score is the Mahalanobis distance of every patch embedding to the
 training embeddings (``score='embed'``).
 
 The detector is a family: ``variant`` selects which JEPA trains the
-network (LeJEPA, I-JEPA, TS-JEPA or T-JEPA). Masking, scores, training
-budget and the PyOD interface are the same for all of them.
+network (LeJEPA, I-JEPA, TS-JEPA, T-JEPA and twelve further versions, see
+:class:`TSJEPAOD`). Scores, training budget and the PyOD interface are the
+same for all of them.
 """
 # License: BSD 2 clause
 
@@ -34,16 +35,21 @@ from pyod.models.base import BaseDetector
 from pyod.models._ts_utils import validate_ts_input
 
 from ._nets import JEPACore, sample_masks, eval_masks, _MASK_MODES
+from ._recipes import RECIPES, momentum_at
 from ._sigreg import sigreg_loss, ema_update
 from ._tjepa_nets import TJEPACore
 from ._tsjepa_nets import TSJEPACore
 
 _SCORES = ('pred', 'embed', 'combined')
-_VARIANTS = ('lejepa', 'ijepa', 'tsjepa', 'tjepa')
+# the first four versions are implemented in this module, the others are
+# recipes (``_recipes.py``)
+_VARIANTS = ('lejepa', 'ijepa', 'tsjepa', 'tjepa') + tuple(RECIPES)
 # what ``None`` means for the two parameters whose published value differs
 # between the versions: (encoder_norm, ema_momentum)
 _VARIANT_DEFAULTS = {'lejepa': (False, None), 'ijepa': (False, 0.996),
                      'tsjepa': (True, 0.998), 'tjepa': (True, 0.996)}
+_VARIANT_DEFAULTS.update({name: (r.encoder_norm, r.ema_momentum)
+                          for name, r in RECIPES.items()})
 
 
 class TSJEPAOD(BaseDetector):
@@ -79,9 +85,47 @@ class TSJEPAOD(BaseDetector):
     network, the target mechanism and the loss. The masking
     (``mask_mode``, ``mask_ratio``), the model sizes, the optimiser and
     the training budget are this detector's own and are the same for all
-    versions, and the anomaly scores are not part of any of the four
+    versions, and the anomaly scores are not part of any of the
     papers. The masking of TS-JEPA's paper is ``mask_mode='random',
     mask_ratio=0.7``.
+
+    Twelve further versions are re-implemented from their papers
+    (constants and what was adapted: ``jepa_od/_recipes.py``; benchmark:
+    REPORT.md, section 7.8):
+
+    ================  ====================================================
+    ``variant``       what trains the network
+    ================  ====================================================
+    ``'vjepa'``       V-JEPA: ``'ijepa'`` with an absolute-error loss
+    ``'vjepa21'``     V-JEPA 2.1: also predicts the visible patches, at
+                      several encoder depths
+    ``'cjepa'``       C-JEPA: ``'ijepa'`` plus VICReg terms on the context
+                      embeddings
+    ``'sjepa'``       stochastic-latent JEPA: ``'ijepa'`` with a Gaussian
+                      latent for the predictor and a KL term
+    ``'salt'``        SALT: a teacher trained by masked reconstruction and
+                      then frozen provides the targets
+    ``'vicreg'``      ``'lejepa'`` with VICReg variance and covariance
+                      terms in place of SIGReg (EB-JEPA)
+    ``'kerjepa'``     KerJEPA: a closed-form kernel discrepancy in place
+                      of SIGReg, standardised targets
+    ``'lpjepa'``      Rectified LpJEPA: non-negative embeddings matched to
+                      a rectified Laplace distribution
+    ``'lambdajepa'``  lambda-JEPA: a Gaussian divergence (SACReg) in place
+                      of SIGReg
+    ``'lenepa'``      LeNEPA: a causal Transformer predicts the embedding
+                      of the next patch; SIGReg per window; no masks
+    ``'lewm'``        LeWorldModel without actions: next-patch embedding
+                      prediction; SIGReg per patch position; no masks
+    ``'cfjepa'``      CF-JEPA: crops of the window as context, forward
+                      prediction of three zones, convolutional encoder
+                      with one embedding per time step; no masks
+    ================  ====================================================
+
+    ``'lenepa'``, ``'lewm'`` and ``'cfjepa'`` do not hide patches:
+    ``mask_mode`` and ``mask_ratio`` are ignored, their ``pred`` score is
+    the error of predicting a patch from the patches before it, and the
+    first patch of a window (for ``'cfjepa'`` the leading crop) gets none.
 
     Parameters
     ----------
@@ -119,18 +163,28 @@ class TSJEPAOD(BaseDetector):
         Masks per window at inference. ``None`` enumerates every block
         position (deterministic, complete coverage).
 
-    variant : {'lejepa', 'ijepa', 'tsjepa', 'tjepa'}, default 'lejepa'
-        The JEPA version, see the table above.
+    variant : str, optional (default='lejepa')
+        The JEPA version, one of the sixteen names in the tables above.
+
+    variant_params : dict or None, optional (default=None)
+        Overrides of the constants of a version of the second table, e.g.
+        ``{'var_weight': 1.0, 'cov_weight': 40.0}`` for ``'vicreg'``.
+        The names and published values are in ``jepa_od/_recipes.py``;
+        the resolved values are in ``variant_params_`` after ``fit``.
 
     sigreg_weight, sigreg_slices
         SIGReg settings of ``variant='lejepa'``, see
-        :class:`jepa_od.JEPAOD`. Ignored by the other versions.
+        :class:`jepa_od.JEPAOD`. ``sigreg_slices`` is also the number of
+        random projections of ``'lenepa'``, ``'lewm'`` and ``'lpjepa'``;
+        the other versions ignore both.
 
     ema_momentum : float or None, optional (default=None)
         Start value of the target-encoder momentum of the EMA versions; it
         rises linearly to 1 during training. ``None`` is the published
-        value: 0.996 for ``'ijepa'`` and ``'tjepa'``, 0.998 for
-        ``'tsjepa'``. Ignored by ``'lejepa'``.
+        value: 0.996 for ``'ijepa'``, ``'tjepa'``, ``'cjepa'`` and
+        ``'sjepa'``, 0.998 for ``'tsjepa'`` and ``'vjepa'``, 0.99925 (held
+        fixed) for ``'vjepa21'`` and 0.983 (cosine schedule) for
+        ``'cfjepa'``. Ignored by the versions without an EMA target.
 
     recon_weight : float, optional (default=0.0)
         Weight of the reconstruction anchor, see :class:`jepa_od.JEPAOD`.
@@ -153,9 +207,9 @@ class TSJEPAOD(BaseDetector):
     grad_clip : float or None, optional (default=1.0)
 
     encoder_norm : bool or None, optional (default=None)
-        Normalised encoder output. ``None`` is False for ``'lejepa'`` and
-        ``'ijepa'`` and True, the published form, for ``'tsjepa'`` and
-        ``'tjepa'``. For ``'lejepa'`` keep it off: a final LayerNorm gains
+        Normalised encoder output. ``None`` is True, the published form,
+        for ``'tsjepa'`` and ``'tjepa'`` and False for all other versions
+        (``'cfjepa'`` has no such layer). For ``'lejepa'`` keep it off: a final LayerNorm gains
         ~0.04 ROC-AUC when test data follow the training distribution
         (synthetic, NAB) but saturates shifted inputs and loses ~0.3
         ROC-AUC when the test series has a different operating regime
@@ -187,8 +241,9 @@ class TSJEPAOD(BaseDetector):
                  sigreg_slices=128, ema_momentum=None, recon_weight=0.0,
                  score='pred', score_aggregation='mean',
                  epochs=10, lr=1e-3, weight_decay=1e-4, batch_size=64,
-                 grad_clip=1.0, encoder_norm=None, device='auto',
-                 random_state=42, verbose=0, contamination=0.1):
+                 grad_clip=1.0, encoder_norm=None, variant_params=None,
+                 device='auto', random_state=42, verbose=0,
+                 contamination=0.1):
         super(TSJEPAOD, self).__init__(contamination=contamination)
         self.window_size = window_size
         self.patch_len = patch_len
@@ -216,6 +271,7 @@ class TSJEPAOD(BaseDetector):
         self.batch_size = batch_size
         self.grad_clip = grad_clip
         self.encoder_norm = encoder_norm
+        self.variant_params = variant_params
         self.device = device
         self.random_state = random_state
         self.verbose = verbose
@@ -241,6 +297,15 @@ class TSJEPAOD(BaseDetector):
         if self.recon_weight > 0 and self.variant not in ('lejepa', 'ijepa'):
             raise ValueError("recon_weight is only available for the "
                              "'lejepa' and 'ijepa' variants")
+        if self.variant_params:
+            known = RECIPES[self.variant].params \
+                if self.variant in RECIPES else {}
+            unknown = sorted(set(self.variant_params) - set(known))
+            if not isinstance(self.variant_params, dict) or unknown:
+                raise ValueError(
+                    "variant_params of %r must be a dict with keys from %s; "
+                    "got %r" % (self.variant, sorted(known),
+                                self.variant_params))
         if self.mask_mode not in _MASK_MODES:
             raise ValueError("mask_mode must be one of %s" % (_MASK_MODES,))
         if self.score not in _SCORES:
@@ -270,6 +335,9 @@ class TSJEPAOD(BaseDetector):
         size = dict(d_model=self.d_model, n_heads=self.n_heads,
                     n_layers=self.n_layers, pred_layers=self.pred_layers,
                     dropout=self.dropout, encoder_norm=self.encoder_norm_)
+        if self.variant in RECIPES:
+            return RECIPES[self.variant].build(self, n_tokens, n_channels,
+                                               size, self.variant_params_)
         if self.variant == 'tsjepa':
             return TSJEPACore(n_tokens=n_tokens, patch_len=self.patch_len,
                               n_channels=n_channels, **size)
@@ -324,6 +392,9 @@ class TSJEPAOD(BaseDetector):
                               else bool(self.encoder_norm))
         self.ema_momentum_ = (momentum if self.ema_momentum is None
                               else self.ema_momentum)
+        self.variant_params_ = dict(
+            RECIPES[self.variant].params if self.variant in RECIPES else {},
+            **(self.variant_params or {}))
 
         tstep = self.train_step or max(1, self.patch_len // 2)
         W = self._windows(Xs, self.window_size, tstep)
@@ -360,65 +431,98 @@ class TSJEPAOD(BaseDetector):
         return scores
 
     # ------------------------------------------------------------------
+    def _loss(self, model, xb, ctx, tgt, gen):
+        """Loss of one batch for the four versions implemented here."""
+        if self.variant == 'tjepa':   # one target set per window
+            pred, h_tgt, h_all = model(xb, ctx, tgt.unsqueeze(1))
+        else:
+            pred, h_tgt, h_all = model(xb, ctx, tgt)
+        if self.variant == 'tsjepa':
+            loss_pred = F.l1_loss(pred, h_tgt.detach())
+        else:
+            loss_pred = F.mse_loss(pred, h_tgt.detach())
+        loss = loss_pred
+        if self.variant == 'lejepa':
+            reg = sigreg_loss(h_all.transpose(0, 1),
+                              num_slices=self.sigreg_slices,
+                              generator=gen)
+            loss = (1 - self.sigreg_weight) * loss_pred \
+                + self.sigreg_weight * reg
+        if self.recon_weight > 0:
+            loss = loss + self.recon_weight * F.mse_loss(
+                model.recon_head(h_all), xb)
+        return loss, loss_pred
+
     def _train(self, patches, device):
         model = self.model_
+        recipe = RECIPES.get(self.variant)
+        hp = self.variant_params_
         gen = torch.Generator().manual_seed(self.random_state)
-        loader = torch.utils.data.DataLoader(
-            torch.utils.data.TensorDataset(patches),
-            batch_size=self.batch_size, shuffle=True,
-            drop_last=len(patches) >= self.batch_size, generator=gen)
+
+        def make_loader():
+            return torch.utils.data.DataLoader(
+                torch.utils.data.TensorDataset(patches),
+                batch_size=self.batch_size, shuffle=True,
+                drop_last=len(patches) >= self.batch_size, generator=gen)
+
+        if recipe is None:
+            n_epochs = self.epochs
+            schedule = None if self.variant == 'lejepa' else 'linear'
+            masked = True
+        else:
+            n_epochs = recipe.train_epochs(self, hp)
+            schedule, masked = recipe.ema_schedule, recipe.masked
+            recipe.pretrain(self, model, make_loader, device, gen, hp)
+        ema_pairs = [] if schedule is None else (
+            [(model.target_encoder, model.encoder)] if recipe is None
+            else recipe.ema_pairs(model))
+
+        loader = make_loader()
         opt = torch.optim.AdamW(model.parameters(), lr=self.lr,
                                 weight_decay=self.weight_decay)
         sched = torch.optim.lr_scheduler.CosineAnnealingLR(
-            opt, T_max=max(1, self.epochs), eta_min=self.lr * 0.05)
-        total_steps = max(1, self.epochs * len(loader))
+            opt, T_max=max(1, n_epochs), eta_min=self.lr * 0.05)
+        total_steps = max(1, n_epochs * len(loader))
         step = 0
         model.train()
-        for epoch in range(self.epochs):
+        for epoch in range(n_epochs):
             run = []
             for (xb,) in loader:
                 xb = xb.to(device)
-                ctx, tgt = sample_masks(xb.size(0), self.n_tokens_,
-                                        self.n_mask_, self.mask_mode, gen)
-                ctx, tgt = ctx.to(device), tgt.to(device)
+                ctx = tgt = None
+                if masked:
+                    ctx, tgt = sample_masks(xb.size(0), self.n_tokens_,
+                                            self.n_mask_, self.mask_mode, gen)
+                    ctx, tgt = ctx.to(device), tgt.to(device)
                 opt.zero_grad()
-                if self.variant == 'tjepa':   # one target set per window
-                    pred, h_tgt, h_all = model(xb, ctx, tgt.unsqueeze(1))
+                if recipe is None:
+                    loss, loss_pred = self._loss(model, xb, ctx, tgt, gen)
                 else:
-                    pred, h_tgt, h_all = model(xb, ctx, tgt)
-                if self.variant == 'tsjepa':
-                    loss_pred = F.l1_loss(pred, h_tgt.detach())
-                else:
-                    loss_pred = F.mse_loss(pred, h_tgt.detach())
-                loss = loss_pred
-                if self.variant == 'lejepa':
-                    reg = sigreg_loss(h_all.transpose(0, 1),
-                                      num_slices=self.sigreg_slices,
-                                      generator=gen)
-                    loss = (1 - self.sigreg_weight) * loss_pred \
-                        + self.sigreg_weight * reg
-                if self.recon_weight > 0:
-                    loss = loss + self.recon_weight * F.mse_loss(
-                        model.recon_head(h_all), xb)
+                    state = dict(frac=min(1.0, step / total_steps),
+                                 epoch=epoch, n_epochs=n_epochs)
+                    loss, loss_pred = recipe.loss(self, model, xb, ctx, tgt,
+                                                  gen, state, hp)
                 loss.backward()
                 if self.grad_clip:
                     torch.nn.utils.clip_grad_norm_(model.parameters(),
                                                    self.grad_clip)
                 opt.step()
-                if self.variant != 'lejepa':
-                    frac = min(1.0, step / total_steps)
-                    m = self.ema_momentum_ \
-                        + (1 - self.ema_momentum_) * frac
-                    ema_update(model.target_encoder, model.encoder, m)
+                if ema_pairs:
+                    m = momentum_at(self.ema_momentum_,
+                                    min(1.0, step / total_steps), schedule)
+                    for target, online in ema_pairs:
+                        ema_update(target, online, m)
                 step += 1
                 run.append(loss_pred.item())
             sched.step()
             if self.verbose:
                 print('Epoch %d/%d, latent pred loss=%.4f'
-                      % (epoch + 1, self.epochs, float(np.mean(run))))
+                      % (epoch + 1, n_epochs, float(np.mean(run))))
         model.eval()
 
     def _eval_mask_set(self):
+        if hasattr(self.model_, 'eval_mask_set'):   # versions without masks
+            return self.model_.eval_mask_set()
         gen = torch.Generator().manual_seed(self.random_state + 1)
         return eval_masks(self.n_tokens_, self.n_mask_, self.mask_mode,
                           self.n_mask_samples, gen)

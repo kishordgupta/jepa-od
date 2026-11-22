@@ -91,8 +91,8 @@ class TestTSJEPAOD(unittest.TestCase):
             self.clf.decision_function(np.random.randn(500, 2))
         with self.assertRaises(ValueError):
             TSJEPAOD(window_size=40, patch_len=5,
-                     variant='vjepa').fit(self.X_train)
-        for v in ('tsjepa', 'tjepa'):
+                     variant='nojepa').fit(self.X_train)
+        for v in ('tsjepa', 'tjepa', 'vjepa'):
             with self.assertRaises(ValueError):
                 TSJEPAOD(window_size=40, patch_len=5, variant=v,
                          recon_weight=0.1).fit(self.X_train)

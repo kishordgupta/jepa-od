@@ -16,6 +16,9 @@ The JEPA versions of REPORT.md section 7.7 (V = ijepa, tsjepa, tjepa; the two fi
 
 and, for the masking of the TS-JEPA paper, the same two commands with
 ``--variant tsjepa --mask random:0.7`` and the output files ``tsjepa-paper_trained.csv`` / ``tsjepa-paper_untrained.csv``.
+
+The twelve further versions of section 7.8 use the same two commands (benchmarks/run_ts_versions.sh runs them all);
+lenepa, lewm and cfjepa ignore the mask mode and are run with ``--modes block`` only.
 """
 import os, sys, json, glob, time, warnings, argparse
 warnings.filterwarnings('ignore')
@@ -29,7 +32,9 @@ ap.add_argument('--epochs', type=int, default=None, help='default: the class def
 ap.add_argument('--seeds', type=int, default=None,
                 help='default: the committed run, 2 synthetic seeds and seed 0 for NAB and SKAB')
 ap.add_argument('--tag', default='TSJEPAOD', help='model name prefix in the output')
-ap.add_argument('--variant', default='lejepa', help='JEPA version: lejepa (class default), ijepa, tsjepa, tjepa')
+ap.add_argument('--variant', default='lejepa', help='JEPA version: lejepa (class default) or any other name '
+                                                    'accepted by TSJEPAOD(variant=...)')
+ap.add_argument('--modes', default='block,forecast', help='mask modes to run, comma separated')
 ap.add_argument('--mask', default=None, help="MODE:RATIO, e.g. random:0.7; default: block and forecast at the "
                                              "class-default ratio")
 ap.add_argument('--threads', type=int, default=3)
@@ -40,7 +45,7 @@ torch.set_num_threads(args.threads)
 KW = {} if args.epochs is None else {'epochs': args.epochs}
 if args.variant != 'lejepa':
     KW['variant'] = args.variant
-MODES = ('block', 'forecast')
+MODES = tuple(args.modes.split(','))
 if args.mask:
     MODES, KW['mask_ratio'] = (args.mask.split(':')[0],), float(args.mask.split(':')[1])
 SYN_SEEDS = range(2 if args.seeds is None else args.seeds)

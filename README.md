@@ -30,7 +30,7 @@ embedding** to the training Gaussian, usable alone (`score='embed'`) or fused (`
 
 | | `JEPAOD` | `TJEPAOD` | `TSJEPAOD` |
 |---|---|---|---|
-| origin | this project, built on I-JEPA and LeJEPA | training recipe of T-JEPA (Thimonier et al., ICLR 2025, [arXiv 2410.05016](https://arxiv.org/abs/2410.05016)) | this project; four selectable JEPA versions (below) |
+| origin | this project, built on I-JEPA and LeJEPA | training recipe of T-JEPA (Thimonier et al., ICLR 2025, [arXiv 2410.05016](https://arxiv.org/abs/2410.05016)) | this project; sixteen selectable JEPA versions (below) |
 | collapse prevention | SIGReg, one shared encoder | EMA target encoder and a [REG] token | SIGReg by default, an EMA target encoder in the other versions |
 | context / targets | 70 % of the tokens visible, one mask per row | 20-40 % visible, four target subsets per row | block or causal patch masks |
 | encoder output | not normalised | LayerNorm'ed | not normalised (`lejepa`, `ijepa`), normalised (`tsjepa`, `tjepa`) |
@@ -44,8 +44,9 @@ implemented, because its text could not be read (login required).
 
 ### JEPA versions of `TSJEPAOD`
 
-`TSJEPAOD(variant=...)` selects which JEPA trains the time-series network. Masking, scores, model
-sizes, training budget and the PyOD interface are the same for all four.
+`TSJEPAOD(variant=...)` selects which JEPA trains the time-series network: sixteen versions, the
+four below and twelve more in the next table. Scores, model sizes, training budget and the PyOD
+interface are the same for all of them.
 
 | `variant` | network | target and collapse prevention | loss | source |
 |---|---|---|---|---|
@@ -60,6 +61,29 @@ are not the authors' code. Each version contributes its network, target mechanis
 masking is the detector's own (`mask_mode`, `mask_ratio`); TS-JEPA's paper masks 70 % of the patches
 at random, which is `mask_mode='random', mask_ratio=0.7`. None of the papers defines an anomaly
 score. `REPORT.md` section 4.8 lists the differences, section 7.7 has the comparison.
+
+Twelve further versions (added in 0.4.0; `REPORT.md` section 4.9 has the details, section 7.8 the results):
+
+| `variant` | what trains the network | source |
+|---|---|---|
+| `'vjepa'` | `'ijepa'` with an absolute-error loss | [V-JEPA](https://arxiv.org/abs/2404.08471) |
+| `'vjepa21'` | also predicts the visible patches, at several encoder depths | [V-JEPA 2.1](https://arxiv.org/abs/2603.14482) |
+| `'cjepa'` | `'ijepa'` plus VICReg terms on the context embeddings | [C-JEPA](https://arxiv.org/abs/2410.19560) |
+| `'sjepa'` | `'ijepa'` with a Gaussian latent for the predictor and a KL term | [stochastic-latent JEPA](https://arxiv.org/abs/2611.09302) |
+| `'salt'` | a teacher trained by masked reconstruction, then frozen, provides the targets | [SALT](https://arxiv.org/abs/2509.24317) |
+| `'vicreg'` | `'lejepa'` with VICReg variance and covariance terms in place of SIGReg | [EB-JEPA](https://arxiv.org/abs/2602.03604) |
+| `'kerjepa'` | a closed-form kernel discrepancy in place of SIGReg, standardised targets | [KerJEPA](https://arxiv.org/abs/2512.19605) |
+| `'lpjepa'` | non-negative embeddings matched to a rectified Laplace distribution | [Rectified LpJEPA](https://arxiv.org/abs/2602.01456) |
+| `'lambdajepa'` | a Gaussian divergence (SACReg) in place of SIGReg | [lambda-JEPA](https://arxiv.org/abs/2609.35288) |
+| `'lenepa'` | a causal Transformer predicts the embedding of the next patch; SIGReg per window; no masks | [LeNEPA](https://arxiv.org/abs/2607.00958) |
+| `'lewm'` | next-patch embedding prediction with SIGReg per patch position; no masks; the paper's action input is removed | [LeWorldModel](https://arxiv.org/abs/2603.19312) |
+| `'cfjepa'` | crops as context, forward prediction of three zones, convolutional encoder; no masks | [CF-JEPA](https://arxiv.org/abs/2606.07031) |
+
+All twelve are written from the papers, not from released code. Where a paper leaves a constant or a
+step open, it was fixed here before the benchmark was run; `REPORT.md` section 4.9 names each such
+choice, and `variant_params` overrides any constant, e.g.
+`TSJEPAOD(variant='vicreg', variant_params={'cov_weight': 40.0})`. `'lenepa'`, `'lewm'` and `'cfjepa'`
+do not hide patches, so `mask_mode` and `mask_ratio` do not apply to them.
 
 ## What the benchmarks show
 
@@ -146,7 +170,9 @@ X_train, X_test, y_train, y_test = generate_ts_data(n_channels=3, random_state=4
 ts = TSJEPAOD(window_size=100, patch_len=10).fit(X_train)   # defaults: 10 epochs, <=5000 windows
 ts_scores = ts.decision_function(X_test)    # shape (n_timestamps,)
 
-# the same detector trained with another JEPA version: 'lejepa' (default), 'ijepa', 'tsjepa', 'tjepa'
+# the same detector trained with another JEPA version: 'lejepa' (default), 'ijepa', 'tsjepa', 'tjepa',
+# 'vjepa', 'vjepa21', 'cjepa', 'sjepa', 'salt', 'vicreg', 'kerjepa', 'lpjepa', 'lambdajepa', 'lenepa',
+# 'lewm', 'cfjepa'
 ts2 = TSJEPAOD(window_size=100, patch_len=10, variant='tsjepa').fit(X_train)
 ```
 
@@ -155,7 +181,8 @@ Key options (`JEPAOD` and `TSJEPAOD`): `mask_mode` (`random` / `block` / `foreca
 `target_mode` (`JEPAOD` only: `sigreg` default, or `ema` for an I-JEPA style EMA teacher),
 `recon_weight` (optional MTS-JEPA style reconstruction anchor), `d_model`, `n_layers`.
 
-`TSJEPAOD` additionally has `variant` (the JEPA version, see above), `patch_len`, `step`,
+`TSJEPAOD` additionally has `variant` (the JEPA version, see above), `variant_params` (overrides of a
+version's constants), `patch_len`, `step`,
 `score_aggregation` (`mean`/`max`), `epochs` and `max_train_windows` (the training budget; keep it small on
 long, contaminated series). `mask_mode='forecast'` makes it causal (only past context), suitable for online
 monitoring. `encoder_norm` must stay off for `JEPAOD` and for the `lejepa` version of `TSJEPAOD` (their
@@ -221,6 +248,13 @@ python benchmarks/make_ts_variant_tables.py          # tables and REPORT.md sect
 ```
 
 The header of `bench_ts_jepa_final.py` has the two extra commands for the masking of the TS-JEPA paper.
+
+The twelve further versions of section 7.8 (24 runs, six at a time, two threads each):
+
+```bash
+sh benchmarks/run_ts_versions.sh 6                   # writes results/ts_variants/V_{trained,untrained}.csv
+python benchmarks/make_ts_versions_tables.py         # tables and REPORT.md section 7.8
+```
 
 Result tables for the committed runs are in `results/report_tables.md`, `results/tjepa_tables.md`,
 `results/extended_tables.md`, `results/ts_control_tables.md` and `results/ts_variant_tables.md`

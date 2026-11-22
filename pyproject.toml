@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jepa-od"
-version = "0.3.0"
+version = "0.4.0"
 description = "Joint-Embedding Predictive Architectures for outlier detection (PyOD-compatible, tabular and time series)"
 readme = "README.md"
 requires-python = ">=3.9"

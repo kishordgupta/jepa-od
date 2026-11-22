@@ -1,9 +1,10 @@
 # Comment for https://github.com/yzhao062/pyod/issues/795
 
-**Status: draft, not posted.** It is written for the author to post. Every number is from
-`results/extended_tables.md` and `results/ts_control_tables.md` (`REPORT.md` section 7.6). The version
-table is from `results/ts_variant_tables.md` (section 7.7). At the author's choice it ends with an offer to drop
-the tabular detector and narrow the proposal to `TSJEPA` as a family with a selectable JEPA version.
+**Status: posted on 2026-11-21 as https://github.com/yzhao062/pyod/issues/795#issuecomment-7072235903** at the author's request, from the author's account.
+The body below is the text as posted. Every number is from `results/extended_tables.md`,
+`results/ts_control_tables.md` and `results/ts_variant_tables.md` (`REPORT.md` sections 7.6 and 7.7).
+It ends with an offer to drop the tabular detector and narrow the proposal to `TSJEPA` as a family with a
+selectable JEPA version.
 
 ## Body
 

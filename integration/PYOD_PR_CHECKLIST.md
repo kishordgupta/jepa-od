@@ -5,8 +5,8 @@
 **Read first (2026-11-21):** the extended benchmark in `REPORT.md` section 7.6 was run after this port.
 On all 47 ADBench datasets the tabular detector is mid-table and an untrained network scores at least as
 well, so the report no longer argues for adding `JEPA` on performance grounds. Issue 795 was written
-before that result; `PYOD_ISSUE_COMMENT_DRAFT.md` is a comment that tells the maintainer. Settle that
-before any pull request. The prototype's `TSJEPAOD` also gained a `variant` option (the JEPA version,
+before that result; the comment in `PYOD_ISSUE_COMMENT_DRAFT.md`, posted on the issue on 2026-11-21, tells
+the maintainer and offers to narrow the proposal to `TSJEPA`. Wait for the answer before any pull request. The prototype's `TSJEPAOD` also gained a `variant` option (the JEPA version,
 `REPORT.md` section 4.8) that replaces `target_mode`; the port's `TSJEPA` does not have it.
 
 The detectors are ported to PyOD as two commits on the branch `feature/jepa-od`, based on

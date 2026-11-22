@@ -22,8 +22,9 @@ and `results/ts_results_jepa_final.csv`, or taken from the bundled-data table in
 ## Found after posting (2026-11-21)
 
 Three things in `REPORT.md` sections 7.5 and 7.6 are not in the posted text, and the second and third
-weaken its case. Nothing has been added to the issue. A comment for the author to post is drafted in
-`integration/PYOD_ISSUE_COMMENT_DRAFT.md`; whether to post it is the author's decision.
+weaken its case. They were added to the issue as a comment on 2026-11-21:
+https://github.com/yzhao062/pyod/issues/795#issuecomment-7072235903
+(text in `integration/PYOD_ISSUE_COMMENT_DRAFT.md`). The comment offers to narrow the proposal to `TSJEPA`.
 
 1. **Prior work.** T-JEPA (Thimonier et al., ICLR 2025, arXiv 2410.05016) already applies JEPA to tabular
    data, as representation learning for supervised tasks. The issue does not cite it. This repository now

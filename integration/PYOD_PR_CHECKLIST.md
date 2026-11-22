@@ -6,8 +6,56 @@
 On all 47 ADBench datasets the tabular detector is mid-table and an untrained network scores at least as
 well, so the report no longer argues for adding `JEPA` on performance grounds. Issue 795 was written
 before that result; the comment in `PYOD_ISSUE_COMMENT_DRAFT.md`, posted on the issue on 2026-11-21, tells
-the maintainer and offers to narrow the proposal to `TSJEPA`. Wait for the answer before any pull request. The prototype's `TSJEPAOD` also gained a `variant` option (the JEPA version,
-`REPORT.md` section 4.8) that replaces `target_mode`; the port's `TSJEPA` does not have it.
+the maintainer and offers to narrow the proposal to `TSJEPA`, as a family with a selectable JEPA version
+(`variant`, `REPORT.md` section 4.8). Wait for the answer before any pull request.
+
+## The branch for the narrowed proposal: `feature/ts-jepa` (2026-11-21)
+
+Built so that a pull request can be opened as soon as the maintainer accepts the `TSJEPA`-only proposal:
+https://github.com/kishordgupta/pyod/tree/feature/ts-jepa
+
+* **One commit** (`455ca3c`, "Add TSJEPA detector for time series (experimental)") on top of
+  `yzhao062/pyod:development` at `f785bc9` (PyOD 3.6.9). No tabular `JEPA`, no workflow file touched.
+  Upstream has since added one merge commit without file changes (`e9d8670`), so GitHub shows the branch
+  as one ahead and one behind. Rebase onto the then-current `development` before opening the pull request.
+* **Content.** `pyod/models/ts_jepa.py` (`TSJEPA` with `variant` = `'lejepa'`, `'ijepa'`, `'tsjepa'`,
+  `'tjepa'`; `encoder_norm=None` and `ema_momentum=None` resolve per variant; `target_mode` is gone),
+  `pyod/models/_jepa_utils.py` (the networks of the four variants, SIGReg, EMA update, mask samplers),
+  `pyod/test/test_ts_jepa.py` (28 tests), `examples/ts_jepa_example.py`, the API page, the model-table
+  rows in `README.rst` and `docs/index.rst`, two bibliography entries, the two experimental-detector
+  lists, and the `conftest.py` skip-list line.
+* **Same patch here:** `integration/pyod-patches-ts-jepa/`, applied with
+  `git switch -c feature/ts-jepa upstream/development && git am --keep-cr <patch>`.
+* **Parity with this repository.** On two series, four variants and five settings each (block, forecast
+  and 70 % random masking, `encoder_norm=False` with another momentum, zero epochs), `TSJEPA` and
+  `TSJEPAOD` return identical scores for `'lejepa'`, `'ijepa'` and `'tsjepa'`. For trained `'tjepa'` they
+  agree to 2e-6: the prototype sends its single target set through the multi-target code of the tabular
+  class, an identity reshaping that changes the last float digits; with that step added the port is
+  identical too.
+
+Checks that ran on `455ca3c` (Python 3.11.18, torch 2.15.0, macOS arm64, CPU):
+
+| check | result |
+|---|---|
+| `pytest pyod/test/test_ts_jepa.py` | 28 passed, about 65 s |
+| the time-series suites, `test_base`, `test_readme_rst`, `test_skill_api_refs`, `test_skill_kb_consistency`, `test_utility` | all passed |
+| `python scripts/regen_skill.py --check` | skill files up to date |
+| whole `pyod/test` directory | 1576 passed, 68 skipped, 0 failed. Not run here because optional packages are missing: `test_thresholds.py` (15 errors, `pythresh`) and five modules that need `xgboost`, `combo` or `suod` |
+| `examples/ts_jepa_example.py` | runs, ROC 0.954 |
+| Sphinx build of the module page | no warnings from the new docstrings |
+| `import pyod.models.ts_jepa` with torch blocked | imports without torch; `fit` raises the install hint |
+| Python 3.9.6 `ast.parse` of the four Python files | parses |
+
+Not run: PyOD's CI matrix on this branch (it needs a pull request, see below), the full documentation
+build, Coveralls, any GPU.
+
+Left out on purpose, as before: `CHANGES.txt`, the knowledge base and its detector counts, and the
+`_DETECTOR_SHORTCUTS` line.
+
+## The first port: `feature/jepa-od`
+
+This is the branch linked in issue 795. It has the tabular `JEPA` and a `TSJEPA` without `variant`
+(it still has `target_mode`). It is kept as it was.
 
 The detectors are ported to PyOD as two commits on the branch `feature/jepa-od`, based on
 `yzhao062/pyod` branch `development` at commit `9680a8b` (PyOD 3.6.8).

@@ -41,7 +41,8 @@ https://github.com/yzhao062/pyod/issues/795#issuecomment-7072235903
    nothing measurable on SKAB (0.825 against 0.831) or NAB (0.628 against 0.671).
 
 Since then the prototype's `TSJEPAOD` has a `variant` option that selects the JEPA version (`REPORT.md`
-sections 4.8 and 7.7). The issue and the port branch describe the detector without it.
+sections 4.8 and 7.7). The issue and the branch it links describe the detector without it; the branch
+`feature/ts-jepa` on the fork has `TSJEPA` alone with `variant` (`integration/PYOD_PR_CHECKLIST.md`).
 
 ## Title
 

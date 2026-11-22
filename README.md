@@ -234,8 +234,11 @@ Research prototype. `JEPAOD` and `TSJEPAOD` are ported to PyOD as `pyod.models.j
 `pyod.models.ts_jepa.TSJEPA`: two commits on top of PyOD 3.6.8, on the branch
 [`feature/jepa-od`](https://github.com/kishordgupta/pyod/tree/feature/jepa-od) of the PyOD fork and
 as patches in `integration/pyod-patches/`. `integration/PYOD_PR_CHECKLIST.md` has the file map, the checks that
-ran and the steps to a pull request. `TJEPAOD` and the `variant` option of `TSJEPAOD` are in this
-repository only and are not part of the port, whose `TSJEPA` still has `target_mode`.
+ran and the steps to a pull request. `TJEPAOD` is in this repository only.
+
+A second branch, [`feature/ts-jepa`](https://github.com/kishordgupta/pyod/tree/feature/ts-jepa), holds the
+narrowed proposal: `TSJEPA` alone, with the `variant` option, as one commit on top of PyOD 3.6.9 (patch in
+`integration/pyod-patches-ts-jepa/`). It is ready for a pull request if the maintainer accepts.
 
 The port was written before the extended benchmark. On the full ADBench suite the tabular detector is
 not better than detectors PyOD already has, and `REPORT.md` (verdict in section 1) no longer argues for

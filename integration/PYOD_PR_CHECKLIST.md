@@ -152,6 +152,43 @@ three in a subclass, with scores equal up to rounding):
    `embed` and `combined` scores on long series.
 4. A channel that is constant in the training data is divided by 1e-8 when scoring, so any later change
    of it gives a value of the order of 1e8. 63 of the 180 multivariate TSB-AD series have such a channel.
+   The benchmark below measured it: on those 63 series the factor raises the mean VUS-PR from 0.298 to
+   0.328 (it acts as an alarm for a channel that never moved in training), so replacing it by a unit
+   scale, PyOD's usual guard, would cost 0.011 on the mean of the multivariate list. It is an accident
+   all the same, and a decision for the maintainer.
+
+## TSB-AD benchmark of the branch (2026-11-24)
+
+`TSJEPA` of this branch (`0fa3372`) was run on the two evaluation lists of TSB-AD, 180 multivariate and
+350 univariate series, at its class defaults and untuned, for all sixteen versions, trained and with zero
+epochs: 75 runs of a whole list, all complete (`REPORT.md` section 7.9 of the prototype repository,
+`results/tsb/`). What matters for a pull request:
+
+| | TSB-AD-M | TSB-AD-U |
+|---|---|---|
+| best published mean VUS-PR | 0.313 (CNN) | 0.423 (Sub-PCA) |
+| `TSJEPA()` trained, score `pred` (the defaults) | 0.351, above all 23 published means | 0.378, seventh of 33 |
+| `TSJEPA(epochs=0)`, `pred` | 0.347 | 0.346 |
+| `TSJEPA()`, score `embed` | 0.353 | 0.461 |
+| `TSJEPA()`, score `combined` | 0.352 | 0.455 |
+| `TSJEPA(variant='vicreg')`, `pred` | 0.360 | 0.417 |
+| `TSJEPA(variant='lewm')`, `pred` | 0.386 | 0.394 |
+| `TSJEPA(variant='cfjepa')`, `embed` (picked after the results) | 0.434 | 0.530 |
+| seeds 42 / 0 / 1 of the default | 0.351 / 0.352 / 0.351 | 0.378 / 0.377 / 0.376 |
+| minutes for the whole list, default version, one shared H100 | 46 | 49 |
+
+* It is a result the proposal can cite, with its limits stated: the published numbers are TSB-AD's own
+  and tuned, they were not re-run and could not be reproduced from TSB-AD's current code; the lead on the
+  multivariate list is in the mean and not per series (better than CNN on 87 of 180, p = 0.11); 0.011
+  of it is the accident of item 4 above.
+* It does not show that JEPA training is the reason. Training adds +0.004 and +0.032 to the default
+  score (both significant), and a Mahalanobis distance on raw patches with no network scores 0.345 and
+  0.465.
+* Two defaults could be reconsidered before a pull request and were left as they are: `variant`
+  (`vicreg` and `lambdajepa` are significantly ahead of `lejepa` on both lists and level with it on the
+  earlier benchmarks) and `score` (`combined` is level with `pred` on TSB-AD-M and 0.077 ahead on
+  TSB-AD-U).
+* Nothing about this benchmark has been posted on issue 795.
 
 ## The first port: `feature/jepa-od`
 

@@ -1,11 +1,12 @@
 """Tables for the TSB-AD benchmark of the sixteen JEPA versions of TSJEPA (REPORT.md section 7.9).
 
 Reads results/tsb/metrics/{M,U}-Eva/<run>.csv (benchmarks/eval_tsb.py), results/tsb/runs/ (the timing logs of
-benchmarks/bench_tsb.py) and TSB-AD's published per-file VUS-PR (data/tsb_published/, fetched by
+benchmarks/bench_tsb.py), results/tsb/const_channels.csv (which series have a channel that is constant in the
+training prefix) and TSB-AD's published per-file VUS-PR (data/tsb_published/, fetched by
 benchmarks/download_data.py --tsb-published). Writes results/tsb_tables.md and refreshes REPORT.md between the
 TSB markers.
 
-The 62 tests below were fixed when four of the 70 runs had been evaluated (the untrained default version on both
+The 62 tests below were fixed when four of the 75 runs had been evaluated (the untrained default version on both
 sets, and trained 'ijepa' and 'tsjepa' on TSB-AD-M): for each version and set, trained against its zero-epoch
 control; for each of the fifteen other versions and set, trained against the trained default version 'lejepa'.
 All on VUS-PR of the default score `pred`.
@@ -71,6 +72,15 @@ def rank_among(s, value):
     return 1 + int((published[s][methods[s]].mean() > value).sum())
 
 
+def mean_ranks(s, x=None):
+    """Mean over series of the rank by VUS-PR (1 = best, ties share the mean rank) of the published detectors,
+    with one more detector `x` among them when it is given."""
+    d = published[s][methods[s]].copy()
+    if x is not None:
+        d['x'] = x
+    return d.rank(axis=1, ascending=False).mean()
+
+
 out = []
 missing = [f'{s}: {run(v, k)}' for s in SETS for v in VERSIONS for k in ('trained', 'e0') if metric(s, run(v, k)) is None]
 out.append('Coverage: ' + ', '.join(f'{SETS[s][0]}-Eva {len(published[s])} series' for s in SETS)
@@ -95,27 +105,39 @@ candidates = [('default detector: lejepa, trained, `pred`', run('lejepa'), 'pred
               ('no network: raw patches, `embed`', run('rawpatch', None), 'embed')]
 for v in VERSIONS[1:]:
     candidates.append((f'{v}, trained, `pred`', run(v), 'pred'))
+# not planned: the constant-channel ablation, and the highest cell of the two tables above
+candidates += [('lejepa, trained, `pred`, constant channels at unit scale', run('lejepa') + '_unitconst', 'pred'),
+               ('picked after the results: cfjepa, trained, `embed`', run('cfjepa'), 'embed'),
+               ('picked after the results: cfjepa, untrained, `embed`', run('cfjepa', 'e0'), 'embed')]
 for label, tag, score in candidates:
     row = {'detector': label}
     for s, (name, _) in SETS.items():
         x = metric(s, tag, score)
         if x is None:
             row[f'{name}: VUS-PR'] = row[f'{name}: place'] = row[f'{name}: vs best published'] = ''
+            row[f'{name}: mean rank'] = ''
             continue
         best = published[s][methods[s]].mean().idxmax()
         d = x - published[s][best]
         row[f'{name}: VUS-PR'] = f'{x.mean():.3f}'
         row[f'{name}: place'] = f'{rank_among(s, x.mean())} of {len(methods[s]) + 1}'
+        r = mean_ranks(s, x)
+        row[f'{name}: mean rank'] = f'{r["x"]:.1f} ({1 + int((r.drop("x") < r["x"]).sum())}.)'
         row[f'{name}: vs best published'] = (f'{d.mean():+.3f}, {int((d > 0).sum())} / {int((d < 0).sum())} series, '
                                              f'p {fmt_p(signed_rank(d))}')
     rows.append(row)
 tops = '; '.join(f'{SETS[s][0]}: ' + ', '.join(f'{k} {v:.3f}' for k, v in
                  published[s][methods[s]].mean().sort_values(ascending=False).head(5).items()) for s in SETS)
+top_ranks = '; '.join(f'{SETS[s][0]}: ' + ', '.join(f'{k} {v:.1f}' for k, v in
+                      mean_ranks(s).sort_values().head(3).items()) for s in SETS)
 out.append('#### Next to the detectors TSB-AD published (same files, same VUS-PR code; their numbers are taken from '
            'the TSB-AD repository, not re-run). Place: where the mean VUS-PR falls among the published means '
-           f'({len(methods["M"])} detectors on TSB-AD-M, {len(methods["U"])} on TSB-AD-U). Last columns: difference '
+           f'({len(methods["M"])} detectors on TSB-AD-M, {len(methods["U"])} on TSB-AD-U). Mean rank: the detector '
+           'is ranked among the published ones on each series (1 = best) and the ranks are averaged; in brackets '
+           'its place by that mean rank. Last columns: difference '
            'to the best published detector of the set, series better / worse, and the p-value of a two-sided '
-           f'Wilcoxon signed-rank test (not corrected). Published top five: {tops}\n\n'
+           f'Wilcoxon signed-rank test (not corrected). Published top five by mean VUS-PR: {tops}. Best published '
+           f'mean ranks, without ours: {top_ranks}\n\n'
            + md(pd.DataFrame(rows).set_index('detector')))
 
 # table 3: the tests fixed in advance
@@ -161,7 +183,9 @@ for s, (name, _) in SETS.items():
     t = d.groupby(source).mean()
     t.insert(0, 'series', source.value_counts())
     t = t.sort_values('series', ascending=False)
+    macro = list(t.drop(columns='series').mean())
     t.loc['all series'] = [len(d)] + list(d.mean())
+    t.loc['mean of the dataset means'] = [len(d)] + macro
     t['series'] = t['series'].astype(int)
     for c in t.columns[1:]:
         t[c] = t[c].map(lambda x: f'{x:.3f}')
@@ -182,6 +206,35 @@ for label, tag in [('seed 42 (the class default)', run('lejepa')), ('seed 0', ru
     rows.append(row)
 out.append('#### Seeds, and fitting on the whole series instead of the training prefix: mean VUS-PR\n\n'
            + md(pd.DataFrame(rows).set_index('run of lejepa, trained')))
+
+# table 6: channels that are constant in the training prefix
+cpath = os.path.join(R, 'const_channels.csv')
+if os.path.exists(cpath):
+    const = pd.read_csv(cpath)
+    rows = []
+    for s, (name, _) in SETS.items():
+        moves = set(const[(const.suite == s) & (const.const_train_moves_later > 0)].file)
+        for kind, label in (('trained', 'trained'), ('e0', 'untrained')):
+            for part, pick in (('with such a channel', True), ('without', False), ('all', None)):
+                row = {'set': name, 'lejepa': label, 'series': part}
+                for sc in ('pred', 'embed'):
+                    a, b = metric(s, run('lejepa', kind), sc), metric(s, run('lejepa', kind) + '_unitconst', sc)
+                    if a is None or b is None:
+                        break
+                    keep = a.index if pick is None else a.index[a.index.isin(moves) == pick]
+                    d = (b - a)[keep]
+                    row['n'] = len(keep)
+                    row[f'`{sc}`: as is / unit scale'] = f'{a[keep].mean():.3f} / {b[keep].mean():.3f}'
+                    row[f'`{sc}`: better / worse'] = f'{int((d > 1e-9).sum())} / {int((d < -1e-9).sum())}'
+                else:
+                    rows.append(row)
+    if rows:
+        out.append('#### Channels that are constant in the training prefix. The detector divides by the standard '
+                   'deviation of the training prefix plus 1e-8, so such a channel is multiplied by 1e8 when it moves '
+                   'later. "Unit scale" divides these channels by 1 instead; everything else is the same run. '
+                   '"With such a channel": the series where a channel is constant in the prefix and moves later. '
+                   'Mean VUS-PR, and the number of series where unit scale is better / worse.\n\n'
+                   + md(pd.DataFrame(rows).set_index('set')))
 
 text = '\n\n'.join(out) + '\n'
 open(os.path.join(ROOT, 'results', 'tsb_tables.md'), 'w').write(text)

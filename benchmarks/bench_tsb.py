@@ -2,8 +2,9 @@
 
 TSB-AD has 180 multivariate (TSB-AD-M) and 350 univariate (TSB-AD-U) evaluation series, and publishes the
 VUS-PR of its reference detectors on every one of them. This script follows the protocol of TSB-AD's
-``benchmark_exp/Run_Detector_M.py`` for a semi-supervised detector: fit on the anomaly-free prefix that the
-file name gives (``..._tr_<n>_1st_<m>.csv``), then score the whole series. It writes the scores of the three
+``benchmark_exp/Run_Detector_M.py`` for a semi-supervised detector: fit on the training prefix that the
+file name gives (``..._tr_<n>_1st_<m>.csv``; it ends before the first anomaly in 476 of the 530 series), then score
+the whole series. It writes the scores of the three
 score types; ``benchmarks/eval_tsb.py`` turns them into TSB-AD's metrics.
 
 The detector is the PyOD port (``pyod.models.ts_jepa.TSJEPA`` of the checkout given with ``--pyod``), with the

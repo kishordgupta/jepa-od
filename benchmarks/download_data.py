@@ -6,10 +6,17 @@ The datasets are third-party and are not stored in this repository:
 * NAB realKnownCause (Numenta Anomaly Benchmark): https://github.com/numenta/NAB
 * SKAB valve1 (Skoltech Anomaly Benchmark): https://github.com/waico/SKAB
 
-Usage: python benchmarks/download_data.py [--dest data] [--all-adbench]
+Usage: python benchmarks/download_data.py [--dest data] [--all-adbench] [--tsb-published]
 
 --all-adbench also fetches the other 31 ADBench classical datasets into
 data/adbench_extra/ (about 72 MB) for benchmarks/bench_extended.py.
+
+--tsb-published fetches only the per-file VUS-PR that TSB-AD published for its
+reference detectors (https://github.com/TheDatumOrg/TSB-AD, Apache-2.0; two CSV
+files, 0.3 MB) into data/tsb_published/ for benchmarks/make_tsb_tables.py. The
+TSB-AD series themselves (TSB-AD-M.zip 540 MB, TSB-AD-U.zip 73 MB, from
+https://www.thedatum.org/datasets/) are not fetched by this script; see
+benchmarks/bench_tsb.py.
 """
 import argparse
 import os
@@ -46,6 +53,11 @@ SKAB_FREE = 'https://raw.githubusercontent.com/waico/SKAB/master/data/anomaly-fr
 SKAB_FILES = list(range(16))
 
 
+# the commit of TSB-AD whose metric code and file lists the benchmark used
+TSB_PUBLISHED = ('https://raw.githubusercontent.com/TheDatumOrg/TSB-AD/303dffbfc11612995b17b06633f8c9d0ea0e38e5/'
+                 'benchmark_exp/benchmark_eval_results/{}_mergedTable_VUS-PR.csv')
+
+
 def fetch(url, path):
     if os.path.exists(path) and os.path.getsize(path) > 0:
         return
@@ -61,9 +73,16 @@ def main():
     ap.add_argument('--dest', default=os.path.join(ROOT, 'data'))
     ap.add_argument('--all-adbench', action='store_true',
                     help='also fetch the other 31 ADBench datasets into <dest>/adbench_extra')
+    ap.add_argument('--tsb-published', action='store_true',
+                    help="fetch only TSB-AD's published per-file VUS-PR into <dest>/tsb_published")
     args = ap.parse_args()
     dest = args.dest
 
+    if args.tsb_published:
+        for name in ('multi', 'uni'):
+            fetch(TSB_PUBLISHED.format(name), os.path.join(dest, 'tsb_published', f'{name}_mergedTable_VUS-PR.csv'))
+        print(f'done: {dest}')
+        return
     print('ADBench')
     for name in ADBENCH_FILES:
         fetch(ADBENCH.format(name), os.path.join(dest, 'adbench', f'{name}.npz'))

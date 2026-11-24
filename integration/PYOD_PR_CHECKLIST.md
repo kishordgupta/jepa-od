@@ -14,9 +14,10 @@ the maintainer and offers to narrow the proposal to `TSJEPA`, as a family with a
 Built so that a pull request can be opened as soon as the maintainer accepts the `TSJEPA`-only proposal:
 https://github.com/kishordgupta/pyod/tree/feature/ts-jepa
 
-* **Two commits** on top of `yzhao062/pyod:development` at `f785bc9` (PyOD 3.6.9): `455ca3c`, "Add TSJEPA
-  detector for time series (experimental)", with the first four versions, and `cb26e0c`, "TSJEPA: twelve
-  further JEPA versions for `variant`" (next section). No tabular `JEPA`, no workflow file touched.
+* **Three commits** on top of `yzhao062/pyod:development` at `f785bc9` (PyOD 3.6.9): `455ca3c`, "Add TSJEPA
+  detector for time series (experimental)", with the first four versions; `cb26e0c`, "TSJEPA: twelve
+  further JEPA versions for `variant`" (next section); and `0fa3372`, "TSJEPA tests: follow the device of
+  the fitted network" (the section after it). No tabular `JEPA`, no workflow file touched.
   Upstream has since added one merge commit without file changes (`e9d8670`), so GitHub shows the branch
   as behind by one. Rebase onto the then-current `development` before opening the pull request.
 * **What the issue says about the branch.** The first comment describes four versions. The second, posted
@@ -34,8 +35,8 @@ The bullets and the table below describe the first commit.
   rows in `README.rst` and `docs/index.rst`, two bibliography entries, the two experimental-detector
   lists, and the `conftest.py` skip-list line.
 * **Same patches here:** `integration/pyod-patches-ts-jepa/` (one per commit), applied with
-  `git switch -c feature/ts-jepa upstream/development && git am --keep-cr <patches>`. Checked: both
-  applied in order to `f785bc9` give the tree of `cb26e0c`.
+  `git switch -c feature/ts-jepa upstream/development && git am --keep-cr <patches>`. Checked: the first
+  two applied in order to `f785bc9` give the tree of `cb26e0c`; the third is `git format-patch` of `0fa3372`.
 * **Parity with this repository.** On two series, four variants and five settings each (block, forecast
   and 70 % random masking, `encoder_norm=False` with another momentum, zero epochs), `TSJEPA` and
   `TSJEPAOD` return identical scores for `'lejepa'`, `'ijepa'` and `'tsjepa'`. For trained `'tjepa'` they
@@ -107,7 +108,50 @@ Checks that ran on `cb26e0c` (Python 3.11.18, torch 2.15.0, macOS arm64, CPU):
 | Python 3.9.6 `ast.parse` of the six changed Python files | parses |
 
 Not run: PyOD's CI matrix on this branch (it needs a pull request inside the fork; the author said "not
-now" on 2026-11-21), the full documentation build, Coveralls, any GPU.
+now" on 2026-11-21), the full documentation build, Coveralls. No GPU was used for this commit; the next
+section is the GPU check.
+
+## Third commit on `feature/ts-jepa`: the tests on a GPU (2026-11-24)
+
+The branch had never run on a GPU. On a server with NVIDIA H100 cards (Linux, Python 3.10.12, torch
+2.14.1 with CUDA 13.0) the detector ran on the first try, and six of the 55 tests failed: with
+`device='auto'` the fitted network is on the GPU, and those tests compared it with a network on the CPU
+or fed it CPU tensors. `0fa3372` moves the tensors of the tests to the device of the fitted network. The
+detector's code is unchanged.
+
+| check on the GPU server | result |
+|---|---|
+| `pytest pyod/test/test_ts_jepa.py pyod/test/test_ts_jepa_variants.py` on a GPU | 55 passed (6 failed before `0fa3372`) |
+| the same with no GPU visible (`CUDA_VISIBLE_DEVICES=`) | 55 passed |
+| the same on macOS (CPU) | 55 passed |
+| all sixteen versions fitted on the CPU and on the GPU, three settings (`benchmarks/gpu_check.py`, `results/gpu/gpu_check.json`) | every fit runs; parameters and buffers are on the requested device; scores, `predict_proba` and a pickle round trip are fine |
+| CPU scores against GPU scores, same seed | Spearman at least 0.996, ROC-AUC within 0.007, labels agree on at least 99.1 % of the timestamps |
+| a second GPU fit with the same seed | identical scores for all sixteen versions |
+| `device='cuda:0'` and `device='auto'` | both put the network on the GPU |
+
+Speed of one fit, GPU against 8 CPU threads of the same server (median over the sixteen versions):
+
+| setting | CPU time / GPU time |
+|---|---|
+| the test setting (1000 timestamps, 2 epochs) | 0.78: the GPU is slower |
+| the class defaults on 20,000 timestamps | 0.53: the GPU takes about twice as long (only `cfjepa` is faster on it, 1.6) |
+| `d_model=256`, 4 layers, batch 256, 20,000 training windows, 8 channels | 3.2 (2.0 to 10.9): the GPU is faster |
+
+So with the default network a GPU does not pay, and `device='auto'` picks it anyway (PyOD's other
+detectors have the same default).
+
+Found on long series and **not changed in the branch** (`benchmarks/bench_tsb.py` works around the first
+three in a subclass, with scores equal up to rounding):
+
+1. Scoring runs `batch_size` (64) windows at a time. On the GPU a series of 200,000 timestamps takes 26 s
+   to score; 2048 windows at a time take 5.7 s.
+2. `_windows` builds all windows by indexing: three times slower than a copy of a strided view, with
+   three times the peak memory. All windows of a series are in memory at once (timestamps x window x
+   channels x 4 bytes: several GB for the longest multivariate TSB-AD series).
+3. `_mahalanobis` contracts three arrays in one `einsum`, which does not use BLAS: most of the time of the
+   `embed` and `combined` scores on long series.
+4. A channel that is constant in the training data is divided by 1e-8 when scoring, so any later change
+   of it gives a value of the order of 1e8. 63 of the 180 multivariate TSB-AD series have such a channel.
 
 ## The first port: `feature/jepa-od`
 

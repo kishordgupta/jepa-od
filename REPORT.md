@@ -1,7 +1,7 @@
 # JEPA-OD: Can Joint-Embedding Predictive Architectures Detect Outliers?
 
 *Research study, design and prototype for a PyOD-compatible JEPA outlier detector (tabular and time series).*
-*Date: 2026-11-20; updated 2026-11-21 with the T-JEPA family and an untrained control (Section 7.5), and with the full ADBench suite and the time-series control (Section 7.6), which revise the headline results, and with selectable JEPA versions for the time-series detector (Sections 4.8 and 7.7); updated 2026-11-22 with twelve further versions (Sections 4.9 and 7.8) and 2026-11-24 with the TSB-AD benchmark on a GPU (Section 7.9). Code: `jepa_od/`, benchmarks: `benchmarks/`, raw results: `results/`.*
+*Date: 2026-11-20; updated 2026-11-21 with the T-JEPA family and an untrained control (Section 7.5), and with the full ADBench suite and the time-series control (Section 7.6), which revise the headline results, and with selectable JEPA versions for the time-series detector (Sections 4.8 and 7.7); updated 2026-11-22 with twelve further versions (Sections 4.9 and 7.8) and 2026-11-24 with the TSB-AD benchmark on a GPU (Section 7.9) and its confirmation on 540 further series (Section 7.10). Code: `jepa_od/`, benchmarks: `benchmarks/`, raw results: `results/`.*
 
 ---
 
@@ -20,8 +20,9 @@
 * **JEPA versions of the time-series detector (Sections 4.8 and 7.7, added 2026-11-21).** `TSJEPAOD(variant=...)` selects which JEPA trains the network: `'lejepa'` (SIGReg, the default and the detector described above), `'ijepa'` (EMA target), `'tsjepa'` (the recipe of TS-JEPA, Ennadir et al.) or `'tjepa'` (the T-JEPA recipe on patch tokens). No version beats the default: on the synthetic series the `pred` score is 0.941 for `lejepa`, 0.931 for `tsjepa`, 0.928 for `tjepa` and 0.885 for `ijepa`, and on SKAB, where the test data are in another regime, the three EMA versions fall to 0.43 to 0.67 against 0.825. `tjepa` is numerically ahead on NAB (0.684 against 0.628, not significant).
 * **Twelve further versions (Sections 4.9 and 7.8, added 2026-11-22).** `variant` also accepts `'vjepa'`, `'vjepa21'`, `'cjepa'`, `'sjepa'`, `'salt'`, `'vicreg'`, `'kerjepa'`, `'lpjepa'`, `'lambdajepa'`, `'lenepa'`, `'lewm'` and `'cfjepa'`, each written from its paper, with every choice the papers leave open listed in Section 4.9. One of them, `kerjepa` (a closed-form kernel regulariser in place of SIGReg), is level with the default in all three groups (0.950 / 0.829 / 0.633 against 0.941 / 0.825 / 0.628) at about half the fitting time; the margins are under 0.01. Across the sixteen versions the split on SKAB follows the normalisation of the prediction target: the five versions with an un-normalised target from a shared encoder score 0.825 to 0.829 whatever their regulariser, and the seven new versions that normalise their targets score 0.21 to 0.62. Training still pays only on the synthetic series.
 * **TSB-AD, 530 longer series (Section 7.9, added 2026-11-24).** The PyOD port of the time-series detector was run at its class defaults, untuned, on the two evaluation lists of TSB-AD (180 multivariate and 350 univariate series, 37.7 million timestamps) for all sixteen versions, trained and untrained, on a GPU. Mean VUS-PR of the default version is 0.351 on the multivariate list, above all 23 published means (best 0.313), and 0.378 on the univariate list, seventh of 33 (best 0.423). The lead on the multivariate list is a lead in the mean and not per series (better on 87 of 180, p = 0.11), about 0.011 of it comes from an accident of the scaling, and the published numbers are taken as published. Training adds a significant but small part of the default score (+0.004 and +0.032); the untrained network places the same on the multivariate list, and a Mahalanobis distance on raw patches with no network matches the `embed` score (0.345 and 0.465 against 0.353 and 0.461). `vicreg`, `lambdajepa` and `lewm` are significantly ahead of the default on both lists. The highest scores, 0.434 and 0.530, come from the `embed` score of the `cfjepa` encoder, on the multivariate list with or without training; that cell was picked after the results were seen.
+* **Confirmation on 540 series no run had used (Section 7.10, added 2026-11-24).** With the comparisons and tests fixed beforehand, everything was run again on the rest of TSB-AD: its two tuning lists (20 multivariate and 48 univariate series) and the 472 univariate series outside its evaluation and tuning lists. Ten of the 18 tests hold, seven have the expected sign without being significant (five of them on the 20 multivariate series) and one is reversed. `vicreg`, `lambdajepa` and `lewm` are ahead of the default version again on all three lists, and training again adds 0.03 to the default score on univariate series. The `embed` score of `cfjepa` is ahead of the default detector again (+0.16 to +0.17), but it is not the best configuration in general: on the 472 series it is 0.21 below a Mahalanobis distance of raw patches with no network, which there is above all sixteen versions with every score type. Per source dataset the numbers repeat those of the evaluation list; `cfjepa` `embed` gains on UCR, the ECG sets, SMAP and NAB and loses on YAHOO, which is 224 of the 472 series. On univariate series the default score `pred` is 0.08 to 0.22 below `combined` on all three lists.
 
-**Verdict for the library goal (revised after Section 7.6).** The evidence does not support adding the tabular detector to PyOD on performance grounds: on the full ADBench suite it is a mid-table detector, significantly behind IForest, not ahead of AutoEncoder and about 40 times slower than it, and a network with no training scores at least as well. The time-series detector has one supported strength, anomalies that break temporal structure, where training is what makes its default score work. On the two real benchmarks training adds nothing, and the known weak spots remain (sustained level shifts, large raw-space deviations that a windowed KNN already finds). The earlier verdict, "the highest mean among the deep models on the tabular sweep", described the 16-dataset subset and is withdrawn. The code in this repo is structured to drop into `pyod/models/jepa.py` and `pyod/models/ts_jepa.py` (Section 6). PyOD's inclusion policy requires an accepted issue first and, for a new method, a two-year maintenance commitment. Section 7.9 adds to the verdict for the time-series detector: on TSB-AD it is competitive with the published detectors at its defaults, which is a reason to include it that the earlier benchmarks did not give, and the evidence that JEPA training is what makes it work stays weak.
+**Verdict for the library goal (revised after Section 7.6).** The evidence does not support adding the tabular detector to PyOD on performance grounds: on the full ADBench suite it is a mid-table detector, significantly behind IForest, not ahead of AutoEncoder and about 40 times slower than it, and a network with no training scores at least as well. The time-series detector has one supported strength, anomalies that break temporal structure, where training is what makes its default score work. On the two real benchmarks training adds nothing, and the known weak spots remain (sustained level shifts, large raw-space deviations that a windowed KNN already finds). The earlier verdict, "the highest mean among the deep models on the tabular sweep", described the 16-dataset subset and is withdrawn. The code in this repo is structured to drop into `pyod/models/jepa.py` and `pyod/models/ts_jepa.py` (Section 6). PyOD's inclusion policy requires an accepted issue first and, for a new method, a two-year maintenance commitment. Section 7.9 adds to the verdict for the time-series detector: on TSB-AD it is competitive with the published detectors at its defaults, which is a reason to include it that the earlier benchmarks did not give, and the evidence that JEPA training is what makes it work stays weak. Section 7.10 confirms the comparison of versions on series that were not used to find it, and takes back the reading of `cfjepa` with the `embed` score as the best configuration.
 
 ---
 
@@ -1035,7 +1036,7 @@ Coverage: 5 seeds; series per group: synthetic 15, SKAB 16, NAB 7; every version
 
 Three things differ from calling the class directly, and each was checked. (i) `bench_tsb.py` subclasses the detector to score 2 048 windows at a time, to build the windows as a strided view and to compute the Mahalanobis distance with a matrix product. Against the unmodified class, on nine combinations of version and series, the largest difference is 1.2e-6 of the score range. (ii) VUS is computed by a rewrite of TSB-AD's function that is 20 to 100 times faster; on 120 score vectors the two agree to 1.2e-15. (iii) The runs were made on H100 GPUs of a shared server, twelve at a time with four CPU threads each, so the minutes in the tables are indicative.
 
-**The published numbers.** The comparison uses the per-series VUS-PR tables of the TSB-AD repository (commit 303dffb): 23 detectors on TSB-AD-M and 32 on TSB-AD-U, each with the hyper-parameters TSB-AD lists as selected on its tuning series. They were not re-run. A check on a few series could not reproduce them from the repository's current code: its `PCA` and `HBOS` with the listed hyper-parameters gave values that differ from the published ones by up to 0.88 on a single series, while `PCA` with a window of 1 reproduced one published value to four decimals (0.2035). So the data, the labels and the metric code are the ones TSB-AD used, and the settings behind its published tables are not the ones in the repository today. "Place" below is the place of a mean among the published means, and nothing more.
+**The published numbers.** The comparison uses the per-series VUS-PR tables of the TSB-AD repository (commit 303dffb): 23 detectors on TSB-AD-M and 32 on TSB-AD-U, each with the hyper-parameters TSB-AD lists as selected on its tuning series. They were not re-run. A check on a few series could not reproduce them from the repository's current code: its `PCA` and `HBOS` with the listed hyper-parameters gave values that differ from the published ones by up to 0.88 on a single series, while `PCA` with a window of 1 reproduced one published value to four decimals (0.2035). (Section 7.10 later re-ran `PCA` with that window and `Sub-PCA` on the whole lists: they are within 0.01 of the published value on 150 of 180 and on 317 of 350 series.) So the data, the labels and the metric code are the ones TSB-AD used, and the settings behind its published tables are not the ones in the repository today. "Place" below is the place of a mean among the published means, and nothing more.
 
 **GPU check.** Before the benchmark, all sixteen versions were fitted on an H100 and on 8 CPU threads in three sizes (`benchmarks/gpu_check.py`, `results/gpu/gpu_check.json`). CPU and GPU scores agree (Spearman at least 0.996, ROC-AUC within 0.0064) and a second GPU fit repeats the first exactly. At the class defaults the GPU is slower than the CPU (median CPU time / GPU time 0.53); with a larger network (`d_model=256`, 4 layers, batch 256, 20 000 windows, 8 channels) it is 3.2 times faster. Six of the branch's 55 tests assumed the CPU and were corrected in the branch's third commit; the detector was not changed.
 
@@ -1051,7 +1052,7 @@ Three things differ from calling the class directly, and each was checked. (i) `
 8. **Part of the margin on TSB-AD-M is an accident.** The detector divides each channel by its standard deviation in the training data plus 1e-8. In 63 of the 180 multivariate series a channel is constant in the prefix and moves later, and it is then multiplied by 1e8. Dividing such channels by 1 instead lowers the mean on those 63 series from 0.328 to 0.298 (better on 24, worse on 32) and the mean of the list from 0.351 to 0.340. The accident acts as an alarm for a channel that never moved during training, which is often a real anomaly in these datasets. Without it the default version is still above the published means, and the margin over CNN falls to +0.027 (better on 82, worse on 98 series, p = 0.35). Three univariate series are affected; there the ablation was run for the untrained control only, and the mean of the list moves by less than 0.001.
 9. **Cost.** The default version needs 31 minutes of fitting and 15 of scoring for the 180 multivariate series and 37 and 13 minutes for the 350 univariate ones, on one shared H100 with four CPU threads (median fit 5.3 s and 2.8 s per series, at most 38 s to score a series). `lewm` takes half of that (23 and 24 minutes), `cfjepa` 108 and 119 minutes. GPU memory stays under 0.6 GB for the default version and under 5.2 GB in every run. The `rawpatch` control takes 16 and 5 minutes on four CPU threads without a GPU. The four speed and scaling issues found on long series (scoring in batches of 64, window construction by fancy indexing, a non-BLAS Mahalanobis distance, the 1e-8 of finding 8) are listed in `integration/PYOD_PR_CHECKLIST.md` and are not changed in the branch.
 
-**What this changes.** For the proposal to PyOD it is the first evidence on an established, large benchmark: with class defaults and no tuning the time-series detector lands above the published means on the multivariate list and seventh of 33 on the univariate one, it is insensitive to the seed, and fitting and scoring a series takes about a minute at most (66 s for the longest one, 900 000 timestamps, on a shared GPU). The limits are in findings 1 and 8 and in the paragraph on the published numbers: the lead on TSB-AD-M is a lead in the mean, not per series, part of it is an accident of the scaling, and the published numbers are tuned by their authors and could not be reproduced here. For the question of this report, whether JEPA training detects anomalies, the answer stays close to that of Sections 7.6 to 7.8. Training adds a significant but small part of the default score (+0.004 and +0.032), the untrained network already places where the trained one does on TSB-AD-M, and a Mahalanobis distance on raw patches matches the `embed` score. Two choices are open and were not changed: the default `variant` (`vicreg` and `lambdajepa` are significantly ahead of `lejepa` on both lists and were level with it in Section 7.8; `lewm` is ahead here and fell under the regime shift of SKAB after training) and the default score (`combined` is level with `pred` on TSB-AD-M, 0.352 against 0.351, and well ahead on TSB-AD-U, 0.455 against 0.378). The `embed` score of `cfjepa` is the strongest result of the benchmark and the least secure, since it was selected on the series it is reported on.
+**What this changes.** For the proposal to PyOD it is the first evidence on an established, large benchmark: with class defaults and no tuning the time-series detector lands above the published means on the multivariate list and seventh of 33 on the univariate one, it is insensitive to the seed, and fitting and scoring a series takes about a minute at most (66 s for the longest one, 900 000 timestamps, on a shared GPU). The limits are in findings 1 and 8 and in the paragraph on the published numbers: the lead on TSB-AD-M is a lead in the mean, not per series, part of it is an accident of the scaling, and the published numbers are tuned by their authors and were not re-run here (Section 7.10 re-runs two of them). For the question of this report, whether JEPA training detects anomalies, the answer stays close to that of Sections 7.6 to 7.8. Training adds a significant but small part of the default score (+0.004 and +0.032), the untrained network already places where the trained one does on TSB-AD-M, and a Mahalanobis distance on raw patches matches the `embed` score. Two choices are open and were not changed: the default `variant` (`vicreg` and `lambdajepa` are significantly ahead of `lejepa` on both lists and were level with it in Section 7.8; `lewm` is ahead here and fell under the regime shift of SKAB after training) and the default score (`combined` is level with `pred` on TSB-AD-M, 0.352 against 0.351, and well ahead on TSB-AD-U, 0.455 against 0.378). The `embed` score of `cfjepa` is the strongest result of the benchmark and the least secure, since it was selected on the series it is reported on. Section 7.10 tests all of this on series that were not used here.
 
 Coverage: TSB-AD-M-Eva 180 series, TSB-AD-U-Eva 350 series; every run has every series.
 
@@ -1272,6 +1273,295 @@ Coverage: TSB-AD-M-Eva 180 series, TSB-AD-U-Eva 350 series; every run has every 
 
 <!-- TSB:END -->
 
+<!-- TSBC:BEGIN -->
+
+### 7.10 TSB-AD confirmation: 540 series that no run had used
+
+*Added 2026-11-24. Plan: `results/tsb_confirm_plan.md`, committed and pushed (1923079) before any detector was run on these series. Same detector and code as Section 7.9: `benchmarks/bench_tsb.py` (`--split Tuning` and `--split Rest`), `benchmarks/run_tsb.sh` with `QUEUE=confirm`, `benchmarks/eval_tsb.py`; reference detectors by `benchmarks/bench_tsb_ref.py`; tables by `benchmarks/make_tsb_confirm_tables.py`. Raw results: `results/tsb/metrics/` and `results/tsb/runs/`, folders `M-Tuning`, `U-Tuning` and `U-Rest`.*
+
+**Why.** Section 7.9 drew several conclusions after looking at the results on TSB-AD's evaluation lists: that `vicreg`, `lambdajepa` and `lewm` are ahead of the default version, and above all that the `embed` score of the `cfjepa` encoder is far ahead of everything, the highest of 96 cells per list. This section tests them on the rest of TSB-AD, with the comparisons, their direction and the test fixed beforehand.
+
+**Setup.** Three lists that are disjoint from the evaluation lists and from each other: M-Tuning (20 multivariate series, 11 source datasets, 2.0 million timestamps), U-Tuning (48 univariate series, 19 datasets, 2.3 million timestamps) and U-Rest (472 univariate series, 13.3 million timestamps). The tuning lists are the ones on which TSB-AD's authors chose the hyper-parameters of their detectors. U-Rest is every univariate series of TSB-AD that is in neither the evaluation nor the tuning list (`TSB-AD-U-Eva-Full.csv` without the evaluation list); it has four source datasets only, YAHOO (224 series), UCR (152), WSD (86) and Stock (10). The training prefix ends before the first labelled anomaly in 18 of 20, 41 of 48 and 337 of 472 series. All sixteen versions, trained and untrained, and the control without a network ran on each list with the class defaults and seed 42: 99 runs, every one complete, no series failed. The plan fixes six comparisons on each list, 18 two-sided Wilcoxon signed-rank tests on VUS-PR with a Holm correction over the 18, and names four more comparisons to report without a test. With 20 series, M-Tuning can only show large and consistent differences.
+
+**Reference detectors.** TSB-AD publishes per-series numbers for its evaluation lists only, so two detectors of its own code were re-run with the hyper-parameters it lists as optimal: Sub-PCA, the best published univariate detector, and PCA with a window of one timestamp, 0.003 below the best published multivariate one. On the evaluation lists the re-runs come close to the published columns: PCA 0.307 against 0.310 (150 of 180 series within 0.01, none more than 0.1 apart), Sub-PCA 0.417 against 0.423 (317 of 350 within 0.01, 17 more than 0.1 apart). That narrows the statement of Section 7.9 that the published numbers could not be reproduced: for these two detectors they largely can, once the window of PCA is set to one. The best published multivariate detectors, CNN and OmniAnomaly, are neural and were not re-run.
+
+**Findings.**
+
+1. **Ten of the 18 tests hold, seven have the expected sign without being significant, one is reversed.** Five of the seven are on M-Tuning with its 20 series. The reversed one is `cfjepa` `embed` against the control without a network on U-Rest (finding 4).
+2. **The three versions ahead of the default are ahead again.** `pred` score against `lejepa`: `vicreg` +0.027 on M-Tuning (better on 13 series, worse on 7; uncorrected p = 0.048), +0.073 on U-Tuning (37 against 6) and +0.065 on U-Rest (375 against 83), both univariate ones significant after the correction. `lambdajepa`: +0.009, +0.031 (corrected p = 0.044) and +0.039. `lewm`: +0.078 on M-Tuning, significant even with 20 series (16 against 4, corrected p = 0.005), +0.062 on U-Tuning (corrected p = 0.0503, so just not) and +0.035 on U-Rest. All nine differences are larger than on the evaluation lists. `kerjepa` is level with the default again (differences below 0.001 on all three lists). The order of the sixteen `pred` means carries over: the rank correlation with the evaluation list is 0.90 on U-Tuning, 0.86 on U-Rest and 0.64 on M-Tuning, where the eight EMA and frozen-teacher versions are within 0.03 of the default and two of them above it; on the 180 evaluation series they were 0.02 to 0.07 below. One version stands out that was not named in the plan: `lenepa` has the highest `pred` score on U-Rest, 0.342 against 0.177 for the default.
+3. **Training adds to the default score what it added before on univariate series.** Trained against untrained `pred` of `lejepa`: +0.033 on U-Tuning (35 against 10 series) and +0.031 on U-Rest (367 against 92), both significant, against +0.032 on the evaluation list. On M-Tuning it is +0.010 with 11 series better and 9 worse (p = 0.87); on the multivariate evaluation list it was +0.004.
+4. **The `embed` score of `cfjepa` is confirmed as strong on some kinds of series and refuted as the best choice in general.** It is ahead of the default detector on all three lists: +0.165 on M-Tuning (14 against 6 series, uncorrected p = 0.053), +0.172 on U-Tuning (35 against 12) and +0.156 on U-Rest (329 against 139), the two univariate ones significant after the correction. Against the control without a network it is +0.154 on M-Tuning (uncorrected p = 0.044) and +0.050 on U-Tuning (p = 0.17), and on U-Rest it is 0.212 *below* it (0.333 against 0.545; worse on 312 of 472 series). There it is also below the `embed` score of the default version (−0.099) and last of the sixteen versions; the rank correlation of the sixteen `embed` means with the evaluation list is 0.95 on U-Tuning, 0.88 on M-Tuning and 0.39 on U-Rest. The reason is the mix of sources, not instability: per source dataset the numbers of U-Rest repeat those of the evaluation list (seventh table below). `cfjepa` `embed` is the best of our configurations in that table on UCR (0.258 on the evaluation list, 0.239 on U-Rest; the default detector 0.037 and 0.036) and far behind on YAHOO (0.216 and 0.301, against 0.825 and 0.812 for the control without a network). YAHOO is 30 of the 350 evaluation series and 224 of the 472 of U-Rest. On M-Tuning its gain sits in the ECG sets, MSL and SMAP, as on the evaluation list. Training adds +0.088 to it on U-Rest (288 series better, 168 worse), +0.044 on U-Tuning (p = 0.13) and +0.015 on M-Tuning (8 series better, 12 worse).
+5. **The control without a network is level with the `embed` score again, and on U-Rest it is above everything.** `embed` of the default version, trained and untrained: 0.373 and 0.375 on M-Tuning, 0.449 and 0.459 on U-Tuning, 0.432 and 0.435 on U-Rest. The Mahalanobis distance of raw patches: 0.374, 0.458 and 0.545. On U-Rest that is 0.113 above the trained `embed` score (better on 260 series, worse on 151) and above the highest of the 96 cells of that list (0.511). The difference is YAHOO, where the network loses what the raw patches show (0.598 against 0.812).
+6. **On univariate series the default score `pred` is the weakest of the three score types.** This comparison is not in the plan; Section 7.9 had named it as open. `embed` minus `pred` for the default version: +0.083 on the evaluation list, +0.113 on U-Tuning (28 series better, 18 worse) and +0.255 on U-Rest (360 against 103); `combined` minus `pred`: +0.077, +0.106 and +0.224. On the multivariate lists the three score types are level (within 0.002 on the evaluation list, 0.010 on M-Tuning).
+7. **Against the re-run reference.** Multivariate: the default detector is +0.040 above PCA on M-Tuning (better on 13 series, worse on 7, p = 0.23) after +0.044 on the evaluation list (129 against 51). Univariate: Sub-PCA, 0.417 on the evaluation list, has 0.326 on the tuning list, where its hyper-parameters were chosen, and 0.146 on U-Rest. The default detector, 0.039 below it on the evaluation list, is 0.011 above it on U-Tuning (30 against 18 series, p = 0.23) and 0.031 above it on U-Rest (307 against 165). `vicreg` is +0.084 and +0.096 above it, the `embed` score of the default version +0.123 and +0.286. The numbers on U-Rest say little about the standing among published detectors, because Sub-PCA is not the strong detector on its sources: on the evaluation list the best published detector reaches 0.813 on YAHOO, 0.381 on UCR, 0.500 on WSD and 0.998 on Stock, against 0.209, 0.037, 0.266 and 0.745 for the default detector. In absolute terms the default detector is weak on U-Rest (0.177).
+8. **Per source dataset the results are stable.** For the four sources of U-Rest the mean of the default detector differs between the evaluation list and U-Rest by 0.006 on YAHOO, 0.001 on UCR, 0.001 on WSD and 0.036 on Stock, and the order of the columns within a dataset is nearly the same on both lists. The means of whole lists differ because the lists mix the sources differently, which is also why places in a table of means (Section 7.9, finding 1) depend on the list.
+9. **Cost.** 19.1 hours of fitting and scoring for the 99 runs (15.0 of them on U-Rest), about two and a half hours of wall-clock time with twelve runs at a time on four shared H100s. The server's CPUs were oversubscribed by other jobs during these runs, so the minutes are higher than those of Section 7.9 (the default version: 48 minutes for the 472 series of U-Rest; `cfjepa` 148). The reference detectors took 22 minutes of computing on the CPU.
+
+**What this changes.** (i) The comparison of versions for the `pred` score now rests on series that played no part in finding it: `vicreg`, `lambdajepa` and `lewm` are ahead of `lejepa` on all five lists, and `kerjepa` is level with it on all five. That is a reason to reconsider the default `variant`; `vicreg` has the largest and most regular lead on the univariate lists and `lewm` on the multivariate ones. The caution about `lewm` from Section 7.8 (it fell under the regime shift of SKAB after training) stands. (ii) The `embed` score of `cfjepa` should not be read as the best configuration. It is a large and repeatable gain over the default detector on UCR, the ECG sets, SMAP and NAB, and on YAHOO it is far below the `embed` score of the default version and the control without a network, on every list that has YAHOO series; whether a list ranks it first depends on how much YAHOO it holds. (iii) For the question of this report the answer of Section 7.9 stands and is somewhat sharper: training adds 0.03 to the default score on univariate series, the `embed` score is matched by a Mahalanobis distance without a network on every list, and on the 472 series of U-Rest that control is above all sixteen versions with every score type. (iv) The default score is the more consequential open choice: on the three univariate lists `combined` is 0.08 to 0.22 above `pred`, and on the two multivariate ones they are level. No default was changed. (v) Not tested here: the lead over the best published multivariate detectors on other series (they were not re-run, and 20 series would show little), other seeds, and any tuning.
+
+Coverage: M-Tuning 20 series, U-Tuning 48 series, U-Rest 472 series; 33 runs per list; every run has every series, and no run log has an error.
+
+#### M-Tuning (20 series): mean VUS-PR of the three score types, trained / zero-epoch control (minutes: fitting and scoring the whole list once, trained, on a shared H100). Without a network (raw patches, `embed`): 0.374. Reference (PCA (window 1), re-run): 0.323.
+
+| version | pred | embed | combined | minutes |
+|---|---|---|---|---|
+| lejepa | 0.363 / 0.353 | 0.373 / 0.375 | 0.368 / 0.368 | 6 |
+| ijepa | 0.359 / 0.159 | 0.328 / 0.319 | 0.355 / 0.314 | 5 |
+| tsjepa | 0.343 / 0.236 | 0.393 / 0.377 | 0.378 / 0.377 | 4 |
+| tjepa | 0.357 / 0.171 | 0.330 / 0.339 | 0.348 / 0.329 | 5 |
+| vjepa | 0.349 / 0.159 | 0.328 / 0.319 | 0.346 / 0.314 | 4 |
+| vjepa21 | 0.345 / 0.182 | 0.320 / 0.319 | 0.336 / 0.319 | 5 |
+| cjepa | 0.371 / 0.159 | 0.330 / 0.319 | 0.357 / 0.314 | 7 |
+| sjepa | 0.376 / 0.164 | 0.327 / 0.319 | 0.353 / 0.318 | 5 |
+| salt | 0.335 / 0.166 | 0.375 / 0.375 | 0.385 / 0.380 | 4 |
+| vicreg | 0.390 / 0.353 | 0.387 / 0.375 | 0.389 / 0.368 | 6 |
+| kerjepa | 0.363 / 0.353 | 0.372 / 0.375 | 0.368 / 0.368 | 5 |
+| lpjepa | 0.378 / 0.353 | 0.379 / 0.375 | 0.378 / 0.368 | 5 |
+| lambdajepa | 0.372 / 0.353 | 0.367 / 0.375 | 0.370 / 0.368 | 6 |
+| lenepa | 0.365 / 0.368 | 0.417 / 0.403 | 0.418 / 0.399 | 3 |
+| lewm | 0.441 / 0.391 | 0.386 / 0.388 | 0.414 / 0.396 | 4 |
+| cfjepa | 0.348 / 0.248 | 0.528 / 0.513 | 0.525 / 0.509 | 23 |
+
+#### U-Tuning (48 series): mean VUS-PR of the three score types, trained / zero-epoch control (minutes: fitting and scoring the whole list once, trained, on a shared H100). Without a network (raw patches, `embed`): 0.458. Reference (Sub-PCA, re-run): 0.326.
+
+| version | pred | embed | combined | minutes |
+|---|---|---|---|---|
+| lejepa | 0.337 / 0.304 | 0.449 / 0.459 | 0.443 / 0.447 | 7 |
+| ijepa | 0.305 / 0.127 | 0.287 / 0.282 | 0.381 / 0.282 | 5 |
+| tsjepa | 0.329 / 0.134 | 0.497 / 0.489 | 0.493 / 0.482 | 5 |
+| tjepa | 0.345 / 0.121 | 0.400 / 0.394 | 0.453 / 0.395 | 5 |
+| vjepa | 0.295 / 0.127 | 0.287 / 0.282 | 0.379 / 0.282 | 5 |
+| vjepa21 | 0.306 / 0.141 | 0.295 / 0.282 | 0.338 / 0.312 | 5 |
+| cjepa | 0.301 / 0.127 | 0.288 / 0.282 | 0.382 / 0.282 | 7 |
+| sjepa | 0.302 / 0.134 | 0.288 / 0.282 | 0.385 / 0.283 | 5 |
+| salt | 0.332 / 0.078 | 0.458 / 0.459 | 0.468 / 0.458 | 5 |
+| vicreg | 0.410 / 0.304 | 0.449 / 0.459 | 0.449 / 0.447 | 5 |
+| kerjepa | 0.336 / 0.304 | 0.446 / 0.459 | 0.441 / 0.447 | 6 |
+| lpjepa | 0.317 / 0.300 | 0.430 / 0.452 | 0.412 / 0.438 | 6 |
+| lambdajepa | 0.367 / 0.304 | 0.402 / 0.459 | 0.405 / 0.447 | 6 |
+| lenepa | 0.342 / 0.272 | 0.472 / 0.473 | 0.478 / 0.476 | 4 |
+| lewm | 0.398 / 0.304 | 0.435 / 0.437 | 0.454 / 0.439 | 3 |
+| cfjepa | 0.328 / 0.204 | 0.508 / 0.464 | 0.504 / 0.448 | 23 |
+
+#### U-Rest (472 series): mean VUS-PR of the three score types, trained / zero-epoch control (minutes: fitting and scoring the whole list once, trained, on a shared H100). Without a network (raw patches, `embed`): 0.545. Reference (Sub-PCA, re-run): 0.146.
+
+| version | pred | embed | combined | minutes |
+|---|---|---|---|---|
+| lejepa | 0.177 / 0.146 | 0.432 / 0.435 | 0.401 / 0.403 | 48 |
+| ijepa | 0.144 / 0.048 | 0.404 / 0.396 | 0.430 / 0.404 | 38 |
+| tsjepa | 0.171 / 0.043 | 0.469 / 0.466 | 0.457 / 0.464 | 39 |
+| tjepa | 0.160 / 0.055 | 0.490 / 0.491 | 0.511 / 0.483 | 40 |
+| vjepa | 0.135 / 0.048 | 0.403 / 0.396 | 0.425 / 0.404 | 37 |
+| vjepa21 | 0.133 / 0.063 | 0.398 / 0.396 | 0.424 / 0.425 | 40 |
+| cjepa | 0.147 / 0.048 | 0.402 / 0.396 | 0.433 / 0.404 | 59 |
+| sjepa | 0.141 / 0.048 | 0.403 / 0.396 | 0.432 / 0.403 | 42 |
+| salt | 0.146 / 0.040 | 0.435 / 0.435 | 0.436 / 0.432 | 35 |
+| vicreg | 0.242 / 0.146 | 0.428 / 0.435 | 0.397 / 0.403 | 46 |
+| kerjepa | 0.177 / 0.146 | 0.429 / 0.435 | 0.399 / 0.403 | 44 |
+| lpjepa | 0.179 / 0.143 | 0.376 / 0.392 | 0.341 / 0.359 | 43 |
+| lambdajepa | 0.216 / 0.146 | 0.395 / 0.435 | 0.367 / 0.403 | 49 |
+| lenepa | 0.342 / 0.213 | 0.446 / 0.447 | 0.454 / 0.436 | 28 |
+| lewm | 0.213 / 0.143 | 0.438 / 0.442 | 0.442 / 0.436 | 28 |
+| cfjepa | 0.163 / 0.095 | 0.333 / 0.245 | 0.324 / 0.236 | 148 |
+
+#### The 18 tests fixed in the plan (VUS-PR; two-sided Wilcoxon signed-rank over series; Holm correction over the 18; CI: bootstrap over series). Reading: "holds" when A − B is positive, as on the evaluation list, and the corrected p is below 0.05; "same direction" when only the sign agrees; "not confirmed" when A − B is negative.
+
+|  | A | B | list | series | VUS-PR A / B | A − B [95 % CI] | A / B better | A − B on the evaluation list | p | p (Holm) | reading |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | `cfjepa`, trained, `embed` | `lejepa`, trained, `pred` | M-Tuning | 20 | 0.528 / 0.363 | +0.165 [+0.049, +0.295] | 14 / 6 | +0.083 | 0.053 | 0.264 | same direction |
+| 1 | `cfjepa`, trained, `embed` | `lejepa`, trained, `pred` | U-Tuning | 48 | 0.508 / 0.337 | +0.172 [+0.082, +0.265] | 35 / 12 | +0.152 | <0.001 | 0.005 | holds |
+| 1 | `cfjepa`, trained, `embed` | `lejepa`, trained, `pred` | U-Rest | 472 | 0.333 / 0.177 | +0.156 [+0.127, +0.185] | 329 / 139 | +0.152 | <0.001 | <0.001 | holds |
+| 2 | `cfjepa`, trained, `embed` | raw patches, `embed` | M-Tuning | 20 | 0.528 / 0.374 | +0.154 [+0.040, +0.281] | 14 / 6 | +0.089 | 0.044 | 0.264 | same direction |
+| 2 | `cfjepa`, trained, `embed` | raw patches, `embed` | U-Tuning | 48 | 0.508 / 0.458 | +0.050 [-0.051, +0.145] | 29 / 18 | +0.064 | 0.169 | 0.338 | same direction |
+| 2 | `cfjepa`, trained, `embed` | raw patches, `embed` | U-Rest | 472 | 0.333 / 0.545 | -0.212 [-0.250, -0.174] | 151 / 312 | +0.064 | <0.001 | <0.001 | not confirmed |
+| 3 | `vicreg`, trained, `pred` | `lejepa`, trained, `pred` | M-Tuning | 20 | 0.390 / 0.363 | +0.027 [+0.006, +0.054] | 13 / 7 | +0.009 | 0.048 | 0.264 | same direction |
+| 3 | `vicreg`, trained, `pred` | `lejepa`, trained, `pred` | U-Tuning | 48 | 0.410 / 0.337 | +0.073 [+0.028, +0.130] | 37 / 6 | +0.039 | <0.001 | <0.001 | holds |
+| 3 | `vicreg`, trained, `pred` | `lejepa`, trained, `pred` | U-Rest | 472 | 0.242 / 0.177 | +0.065 [+0.050, +0.081] | 375 / 83 | +0.039 | <0.001 | <0.001 | holds |
+| 4 | `lambdajepa`, trained, `pred` | `lejepa`, trained, `pred` | M-Tuning | 20 | 0.372 / 0.363 | +0.009 [+0.001, +0.019] | 14 / 6 | +0.004 | 0.048 | 0.264 | same direction |
+| 4 | `lambdajepa`, trained, `pred` | `lejepa`, trained, `pred` | U-Tuning | 48 | 0.367 / 0.337 | +0.031 [+0.004, +0.076] | 29 / 15 | +0.014 | 0.005 | 0.044 | holds |
+| 4 | `lambdajepa`, trained, `pred` | `lejepa`, trained, `pred` | U-Rest | 472 | 0.216 / 0.177 | +0.039 [+0.027, +0.053] | 314 / 135 | +0.014 | <0.001 | <0.001 | holds |
+| 5 | `lewm`, trained, `pred` | `lejepa`, trained, `pred` | M-Tuning | 20 | 0.441 / 0.363 | +0.078 [+0.035, +0.126] | 16 / 4 | +0.036 | <0.001 | 0.005 | holds |
+| 5 | `lewm`, trained, `pred` | `lejepa`, trained, `pred` | U-Tuning | 48 | 0.398 / 0.337 | +0.062 [+0.019, +0.111] | 32 / 15 | +0.016 | 0.007 | 0.050 | same direction |
+| 5 | `lewm`, trained, `pred` | `lejepa`, trained, `pred` | U-Rest | 472 | 0.213 / 0.177 | +0.035 [+0.018, +0.054] | 280 / 188 | +0.016 | <0.001 | <0.001 | holds |
+| 6 | `lejepa`, trained, `pred` | `lejepa`, untrained, `pred` | M-Tuning | 20 | 0.363 / 0.353 | +0.010 [-0.003, +0.031] | 11 / 9 | +0.004 | 0.869 | 0.869 | same direction |
+| 6 | `lejepa`, trained, `pred` | `lejepa`, untrained, `pred` | U-Tuning | 48 | 0.337 / 0.304 | +0.033 [+0.010, +0.063] | 35 / 10 | +0.032 | <0.001 | <0.001 | holds |
+| 6 | `lejepa`, trained, `pred` | `lejepa`, untrained, `pred` | U-Rest | 472 | 0.177 / 0.146 | +0.031 [+0.024, +0.038] | 367 / 92 | +0.032 | <0.001 | <0.001 | holds |
+
+#### Further comparisons named in the plan, outside the 18 tests
+
+| A | B | list | series | VUS-PR A / B | A − B [95 % CI] | A / B better | A − B on the evaluation list | p (not corrected) |
+|---|---|---|---|---|---|---|---|---|
+| `kerjepa`, trained, `pred` | `lejepa`, trained, `pred` | M-Tuning | 20 | 0.363 / 0.363 | -0.000 [-0.003, +0.003] | 11 / 9 | -0.001 | 1.000 |
+| `kerjepa`, trained, `pred` | `lejepa`, trained, `pred` | U-Tuning | 48 | 0.336 / 0.337 | -0.000 [-0.013, +0.010] | 25 / 18 | +0.001 | 0.310 |
+| `kerjepa`, trained, `pred` | `lejepa`, trained, `pred` | U-Rest | 472 | 0.177 / 0.177 | +0.000 [-0.003, +0.004] | 171 / 264 | +0.001 | <0.001 |
+| `cfjepa`, trained, `embed` | `cfjepa`, untrained, `embed` | M-Tuning | 20 | 0.528 / 0.513 | +0.015 [-0.005, +0.045] | 8 / 12 | -0.002 | 0.784 |
+| `cfjepa`, trained, `embed` | `cfjepa`, untrained, `embed` | U-Tuning | 48 | 0.508 / 0.464 | +0.044 [+0.005, +0.090] | 26 / 21 | +0.031 | 0.128 |
+| `cfjepa`, trained, `embed` | `cfjepa`, untrained, `embed` | U-Rest | 472 | 0.333 / 0.245 | +0.088 [+0.068, +0.110] | 288 / 168 | +0.031 | <0.001 |
+| `cfjepa`, trained, `embed` | `lejepa`, trained, `embed` | M-Tuning | 20 | 0.528 / 0.373 | +0.156 [+0.046, +0.277] | 14 / 6 | +0.081 | 0.053 |
+| `cfjepa`, trained, `embed` | `lejepa`, trained, `embed` | U-Tuning | 48 | 0.508 / 0.449 | +0.059 [-0.029, +0.147] | 29 / 18 | +0.068 | 0.122 |
+| `cfjepa`, trained, `embed` | `lejepa`, trained, `embed` | U-Rest | 472 | 0.333 / 0.432 | -0.099 [-0.131, -0.068] | 171 / 292 | +0.068 | <0.001 |
+| `tsjepa`, trained, `embed` | `lejepa`, trained, `pred` | M-Tuning | 20 | 0.393 / 0.363 | +0.030 [-0.031, +0.099] | 9 / 11 | -0.009 | 0.729 |
+| `tsjepa`, trained, `embed` | `lejepa`, trained, `pred` | U-Tuning | 48 | 0.497 / 0.337 | +0.160 [+0.068, +0.254] | 31 / 16 | +0.152 | 0.002 |
+| `tsjepa`, trained, `embed` | `lejepa`, trained, `pred` | U-Rest | 472 | 0.469 / 0.177 | +0.291 [+0.260, +0.324] | 374 / 93 | +0.152 | <0.001 |
+
+#### Mean VUS-PR of the sixteen trained versions, score `pred`, on the evaluation lists (section 7.9) and on the three lists of the confirmation. Rank correlation: Spearman, over the sixteen means.
+
+| version | M-Eva | M-Tuning | U-Eva | U-Tuning | U-Rest |
+|---|---|---|---|---|---|
+| lejepa | 0.351 | 0.363 | 0.378 | 0.337 | 0.177 |
+| ijepa | 0.288 | 0.359 | 0.315 | 0.305 | 0.144 |
+| tsjepa | 0.333 | 0.343 | 0.354 | 0.329 | 0.171 |
+| tjepa | 0.306 | 0.357 | 0.369 | 0.345 | 0.160 |
+| vjepa | 0.279 | 0.349 | 0.305 | 0.295 | 0.135 |
+| vjepa21 | 0.292 | 0.345 | 0.295 | 0.306 | 0.133 |
+| cjepa | 0.294 | 0.371 | 0.317 | 0.301 | 0.147 |
+| sjepa | 0.293 | 0.376 | 0.313 | 0.302 | 0.141 |
+| salt | 0.308 | 0.335 | 0.337 | 0.332 | 0.146 |
+| vicreg | 0.360 | 0.390 | 0.417 | 0.410 | 0.242 |
+| kerjepa | 0.350 | 0.363 | 0.379 | 0.336 | 0.177 |
+| lpjepa | 0.353 | 0.378 | 0.367 | 0.317 | 0.179 |
+| lambdajepa | 0.355 | 0.372 | 0.392 | 0.367 | 0.216 |
+| lenepa | 0.346 | 0.365 | 0.356 | 0.342 | 0.342 |
+| lewm | 0.386 | 0.441 | 0.394 | 0.398 | 0.213 |
+| cfjepa | 0.255 | 0.348 | 0.335 | 0.328 | 0.163 |
+| rank correlation with the evaluation list |  | 0.64 |  | 0.90 | 0.86 |
+| three highest | lewm, vicreg, lambdajepa | lewm, vicreg, lpjepa | vicreg, lewm, lambdajepa | vicreg, lewm, lambdajepa | lenepa, vicreg, lambdajepa |
+
+#### Mean VUS-PR of the sixteen trained versions, score `embed`, on the evaluation lists (section 7.9) and on the three lists of the confirmation. Rank correlation: Spearman, over the sixteen means.
+
+| version | M-Eva | M-Tuning | U-Eva | U-Tuning | U-Rest |
+|---|---|---|---|---|---|
+| lejepa | 0.353 | 0.373 | 0.461 | 0.449 | 0.432 |
+| ijepa | 0.288 | 0.328 | 0.299 | 0.287 | 0.404 |
+| tsjepa | 0.342 | 0.393 | 0.530 | 0.497 | 0.469 |
+| tjepa | 0.280 | 0.330 | 0.375 | 0.400 | 0.490 |
+| vjepa | 0.279 | 0.328 | 0.298 | 0.287 | 0.403 |
+| vjepa21 | 0.275 | 0.320 | 0.293 | 0.295 | 0.398 |
+| cjepa | 0.286 | 0.330 | 0.300 | 0.288 | 0.402 |
+| sjepa | 0.286 | 0.327 | 0.300 | 0.288 | 0.403 |
+| salt | 0.353 | 0.375 | 0.467 | 0.458 | 0.435 |
+| vicreg | 0.359 | 0.387 | 0.462 | 0.449 | 0.428 |
+| kerjepa | 0.353 | 0.372 | 0.458 | 0.446 | 0.429 |
+| lpjepa | 0.358 | 0.379 | 0.432 | 0.430 | 0.376 |
+| lambdajepa | 0.352 | 0.367 | 0.425 | 0.402 | 0.395 |
+| lenepa | 0.378 | 0.417 | 0.496 | 0.472 | 0.446 |
+| lewm | 0.367 | 0.386 | 0.462 | 0.435 | 0.438 |
+| cfjepa | 0.434 | 0.528 | 0.530 | 0.508 | 0.333 |
+| rank correlation with the evaluation list |  | 0.88 |  | 0.95 | 0.39 |
+| three highest | cfjepa, lenepa, lewm | cfjepa, lenepa, tsjepa | tsjepa, cfjepa, lenepa | cfjepa, tsjepa, lenepa | tjepa, tsjepa, lenepa |
+
+#### The reference detectors: TSB-AD's code of today against TSB-AD's published per-series VUS-PR, on the evaluation lists
+
+| detector | evaluation list | series | published mean | re-run mean | series within 0.01 | series more than 0.1 apart | largest difference | rank correlation |
+|---|---|---|---|---|---|---|---|---|
+| PCA (window 1) | M-Eva | 180 | 0.310 | 0.307 | 150 | 0 | 0.073 | 0.996 |
+| Sub-PCA | U-Eva | 350 | 0.423 | 0.417 | 317 | 17 | 0.545 | 0.984 |
+
+#### Against the re-run reference detector of the set, on the evaluation lists and on the three lists of the confirmation (the same series, the same VUS-PR code on both sides)
+
+| A | B: reference, re-run | list | series | VUS-PR A / B | A − B [95 % CI] | A / B better | p (not corrected) |
+|---|---|---|---|---|---|---|---|
+| `lejepa`, trained, `pred` | PCA (window 1) | M-Eva | 180 | 0.351 / 0.307 | +0.044 [+0.014, +0.075] | 129 / 51 | <0.001 |
+| `lejepa`, trained, `embed` | PCA (window 1) | M-Eva | 180 | 0.353 / 0.307 | +0.046 [+0.015, +0.078] | 121 / 59 | <0.001 |
+| `vicreg`, trained, `pred` | PCA (window 1) | M-Eva | 180 | 0.360 / 0.307 | +0.053 [+0.022, +0.085] | 127 / 53 | <0.001 |
+| `cfjepa`, trained, `embed` | PCA (window 1) | M-Eva | 180 | 0.434 / 0.307 | +0.127 [+0.080, +0.175] | 127 / 53 | <0.001 |
+| `lejepa`, trained, `pred` | PCA (window 1) | M-Tuning | 20 | 0.363 / 0.323 | +0.040 [-0.046, +0.121] | 13 / 7 | 0.231 |
+| `lejepa`, trained, `embed` | PCA (window 1) | M-Tuning | 20 | 0.373 / 0.323 | +0.049 [-0.038, +0.133] | 12 / 8 | 0.231 |
+| `vicreg`, trained, `pred` | PCA (window 1) | M-Tuning | 20 | 0.390 / 0.323 | +0.067 [-0.023, +0.155] | 13 / 7 | 0.143 |
+| `cfjepa`, trained, `embed` | PCA (window 1) | M-Tuning | 20 | 0.528 / 0.323 | +0.205 [+0.045, +0.377] | 15 / 5 | 0.027 |
+| `lejepa`, trained, `pred` | Sub-PCA | U-Eva | 350 | 0.378 / 0.417 | -0.039 [-0.061, -0.016] | 200 / 149 | 0.920 |
+| `lejepa`, trained, `embed` | Sub-PCA | U-Eva | 350 | 0.461 / 0.417 | +0.044 [+0.008, +0.081] | 216 / 133 | 0.003 |
+| `vicreg`, trained, `pred` | Sub-PCA | U-Eva | 350 | 0.417 / 0.417 | -0.000 [-0.028, +0.028] | 216 / 133 | 0.155 |
+| `cfjepa`, trained, `embed` | Sub-PCA | U-Eva | 350 | 0.530 / 0.417 | +0.113 [+0.083, +0.143] | 267 / 83 | <0.001 |
+| `lejepa`, trained, `pred` | Sub-PCA | U-Tuning | 48 | 0.337 / 0.326 | +0.011 [-0.047, +0.073] | 30 / 18 | 0.226 |
+| `lejepa`, trained, `embed` | Sub-PCA | U-Tuning | 48 | 0.449 / 0.326 | +0.123 [+0.031, +0.223] | 30 / 18 | 0.016 |
+| `vicreg`, trained, `pred` | Sub-PCA | U-Tuning | 48 | 0.410 / 0.326 | +0.084 [+0.004, +0.170] | 32 / 16 | 0.028 |
+| `cfjepa`, trained, `embed` | Sub-PCA | U-Tuning | 48 | 0.508 / 0.326 | +0.182 [+0.091, +0.280] | 35 / 13 | <0.001 |
+| `lejepa`, trained, `pred` | Sub-PCA | U-Rest | 472 | 0.177 / 0.146 | +0.031 [+0.013, +0.050] | 307 / 165 | <0.001 |
+| `lejepa`, trained, `embed` | Sub-PCA | U-Rest | 472 | 0.432 / 0.146 | +0.286 [+0.251, +0.321] | 374 / 98 | <0.001 |
+| `vicreg`, trained, `pred` | Sub-PCA | U-Rest | 472 | 0.242 / 0.146 | +0.096 [+0.072, +0.121] | 340 / 132 | <0.001 |
+| `cfjepa`, trained, `embed` | Sub-PCA | U-Rest | 472 | 0.333 / 0.146 | +0.187 [+0.160, +0.215] | 362 / 110 | <0.001 |
+
+#### M-Tuning by source dataset: mean VUS-PR (all trained)
+
+| dataset | series | default: `lejepa` `pred` | `lejepa` `embed` | `vicreg` `pred` | `cfjepa` `embed` | raw patches | PCA (window 1), re-run |
+|---|---|---|---|---|---|---|---|
+| SVDB | 3 | 0.231 | 0.253 | 0.334 | 0.707 | 0.244 | 0.108 |
+| Exathlon | 2 | 0.742 | 0.742 | 0.742 | 0.743 | 0.739 | 0.954 |
+| GHL | 2 | 0.019 | 0.019 | 0.019 | 0.023 | 0.018 | 0.015 |
+| MITDB | 2 | 0.018 | 0.032 | 0.040 | 0.157 | 0.017 | 0.066 |
+| MSL | 2 | 0.345 | 0.341 | 0.347 | 0.628 | 0.342 | 0.130 |
+| SMAP | 2 | 0.153 | 0.151 | 0.152 | 0.548 | 0.168 | 0.048 |
+| SMD | 2 | 0.798 | 0.799 | 0.790 | 0.619 | 0.781 | 0.490 |
+| TAO | 2 | 0.981 | 0.980 | 0.981 | 0.962 | 0.979 | 1.000 |
+| CATSv2 | 1 | 0.140 | 0.135 | 0.164 | 0.119 | 0.294 | 0.352 |
+| LTDB | 1 | 0.272 | 0.384 | 0.454 | 0.930 | 0.337 | 0.233 |
+| OPPORTUNITY | 1 | 0.044 | 0.047 | 0.045 | 0.032 | 0.032 | 0.153 |
+| all series | 20 | 0.363 | 0.373 | 0.390 | 0.528 | 0.374 | 0.323 |
+| mean of the dataset means | 20 | 0.340 | 0.353 | 0.370 | 0.497 | 0.359 | 0.323 |
+
+#### U-Tuning by source dataset: mean VUS-PR (all trained)
+
+| dataset | series | default: `lejepa` `pred` | `lejepa` `embed` | `vicreg` `pred` | `cfjepa` `embed` | raw patches | Sub-PCA, re-run |
+|---|---|---|---|---|---|---|---|
+| UCR | 6 | 0.015 | 0.018 | 0.024 | 0.231 | 0.057 | 0.109 |
+| YAHOO | 5 | 0.290 | 0.594 | 0.295 | 0.223 | 0.766 | 0.076 |
+| WSD | 5 | 0.221 | 0.515 | 0.505 | 0.445 | 0.520 | 0.209 |
+| NAB | 5 | 0.195 | 0.208 | 0.196 | 0.474 | 0.216 | 0.215 |
+| SMD | 5 | 0.379 | 0.638 | 0.613 | 0.872 | 0.669 | 0.196 |
+| SMAP | 2 | 0.523 | 0.606 | 0.560 | 0.956 | 0.618 | 0.645 |
+| TODS | 2 | 0.589 | 0.965 | 0.750 | 0.932 | 0.778 | 0.512 |
+| Stock | 2 | 0.663 | 0.676 | 0.666 | 0.556 | 0.697 | 0.721 |
+| SVDB | 2 | 0.154 | 0.150 | 0.197 | 0.542 | 0.115 | 0.389 |
+| Exathlon | 2 | 0.876 | 0.882 | 0.974 | 0.998 | 0.883 | 0.836 |
+| IOPS | 2 | 0.203 | 0.231 | 0.262 | 0.348 | 0.363 | 0.160 |
+| OPPORTUNITY | 2 | 0.964 | 0.954 | 0.965 | 0.966 | 0.596 | 0.971 |
+| MSL | 2 | 0.374 | 0.387 | 0.386 | 0.388 | 0.358 | 0.572 |
+| NEK | 1 | 0.882 | 0.912 | 0.887 | 0.685 | 0.904 | 0.949 |
+| TAO | 1 | 0.791 | 0.786 | 0.789 | 0.512 | 0.786 | 0.656 |
+| MITDB | 1 | 0.007 | 0.007 | 0.010 | 0.034 | 0.004 | 0.037 |
+| MGAB | 1 | 0.005 | 0.003 | 0.006 | 0.006 | 0.004 | 0.003 |
+| LTDB | 1 | 0.215 | 0.225 | 0.216 | 0.214 | 0.230 | 0.220 |
+| SED | 1 | 0.044 | 0.045 | 0.049 | 0.117 | 0.051 | 0.028 |
+| all series | 48 | 0.337 | 0.449 | 0.410 | 0.508 | 0.458 | 0.326 |
+| mean of the dataset means | 48 | 0.389 | 0.463 | 0.439 | 0.500 | 0.453 | 0.395 |
+
+#### U-Rest by source dataset: mean VUS-PR (all trained)
+
+| dataset | series | default: `lejepa` `pred` | `lejepa` `embed` | `vicreg` `pred` | `cfjepa` `embed` | raw patches | Sub-PCA, re-run |
+|---|---|---|---|---|---|---|---|
+| YAHOO | 224 | 0.215 | 0.598 | 0.235 | 0.301 | 0.812 | 0.145 |
+| UCR | 152 | 0.036 | 0.085 | 0.068 | 0.239 | 0.107 | 0.110 |
+| WSD | 86 | 0.267 | 0.582 | 0.516 | 0.557 | 0.603 | 0.145 |
+| Stock | 10 | 0.709 | 0.717 | 0.711 | 0.575 | 0.728 | 0.732 |
+| all series | 472 | 0.177 | 0.432 | 0.242 | 0.333 | 0.545 | 0.146 |
+| mean of the dataset means | 472 | 0.307 | 0.495 | 0.382 | 0.418 | 0.563 | 0.283 |
+
+#### Not in the plan: the four source datasets of U-Rest, on the evaluation list and on U-Rest (mean VUS-PR, all trained). The last column is the best of the 32 published detectors on the series of that dataset in the evaluation list; nothing is published for U-Rest.
+
+| dataset | list | series | default: `lejepa` `pred` | `lejepa` `embed` | `vicreg` `pred` | `cfjepa` `embed` | raw patches | Sub-PCA, re-run | best published on the dataset |
+|---|---|---|---|---|---|---|---|---|---|
+| Stock | U-Eva | 8 | 0.745 | 0.754 | 0.746 | 0.642 | 0.765 | 0.763 | 0.998 (SR) |
+| Stock | U-Rest | 10 | 0.709 | 0.717 | 0.711 | 0.575 | 0.728 | 0.732 |  |
+| UCR | U-Eva | 70 | 0.037 | 0.101 | 0.082 | 0.258 | 0.168 | 0.124 | 0.381 (KMeansAD) |
+| UCR | U-Rest | 152 | 0.036 | 0.085 | 0.068 | 0.239 | 0.107 | 0.110 |  |
+| WSD | U-Eva | 20 | 0.266 | 0.596 | 0.545 | 0.558 | 0.642 | 0.123 | 0.500 (MOMENT (FT)) |
+| WSD | U-Rest | 86 | 0.267 | 0.582 | 0.516 | 0.557 | 0.603 | 0.145 |  |
+| YAHOO | U-Eva | 30 | 0.209 | 0.624 | 0.211 | 0.216 | 0.825 | 0.155 | 0.813 (TimesFM) |
+| YAHOO | U-Rest | 224 | 0.215 | 0.598 | 0.235 | 0.301 | 0.812 | 0.145 |  |
+
+#### Not in the plan: the three score types of the default version `lejepa` (trained), the control without a network, and the highest of the 96 cells (version, trained or not, score type) of each list. Differences: mean, series better / worse, two-sided Wilcoxon signed-rank p, not corrected.
+
+| list | series | `pred` | `embed` | `combined` | raw patches | `embed` − `pred` | `combined` − `pred` | highest of the 96 cells |
+|---|---|---|---|---|---|---|---|---|
+| M-Eva | 180 | 0.351 | 0.353 | 0.352 | 0.345 | +0.002, 87 / 89 series, p 0.832 | +0.002, 87 / 89 series, p 0.955 | 0.436 (cfjepa, untrained, embed) |
+| M-Tuning | 20 | 0.363 | 0.373 | 0.368 | 0.374 | +0.010, 11 / 9 series, p 0.648 | +0.005, 11 / 9 series, p 0.674 | 0.528 (cfjepa, trained, embed) |
+| U-Eva | 350 | 0.378 | 0.461 | 0.455 | 0.465 | +0.083, 208 / 137 series, p <0.001 | +0.077, 211 / 134 series, p <0.001 | 0.530 (tsjepa, trained, embed) |
+| U-Tuning | 48 | 0.337 | 0.449 | 0.443 | 0.458 | +0.113, 28 / 18 series, p 0.002 | +0.106, 27 / 18 series, p <0.001 | 0.508 (cfjepa, trained, embed) |
+| U-Rest | 472 | 0.177 | 0.432 | 0.401 | 0.545 | +0.255, 360 / 103 series, p <0.001 | +0.224, 359 / 104 series, p <0.001 | 0.511 (tjepa, trained, combined) |
+
+<!-- TSBC:END -->
+
 ---
 
 ## 8. Limitations and next steps
@@ -1279,12 +1569,12 @@ Coverage: TSB-AD-M-Eva 180 series, TSB-AD-U-Eva 350 series; every run has every 
 * **Training has no demonstrated benefit on tabular data.** On all 47 ADBench datasets the zero-epoch controls score at least as high as the trained detectors (Section 7.6). For time series, training helps the default score on synthetic series only. One training budget was tested; a claim that JEPA training helps outlier detection under another budget needs the same control.
 * **The JEPA versions of `TSJEPAOD` share the detector's masking, sizes and budget.** They are re-implementations of each paper's network, target mechanism and loss, not of its full training setup (Section 4.8), so Sections 7.7 and 7.8 compare recipes inside this detector and say nothing about the papers' own results. The repair of `tjepa` by `encoder_norm=False` was checked on SKAB only. For the twelve versions of Section 4.9 some constants and steps are not fixed by the papers and were set here (the pooling of CF-JEPA's predictions, the weights of `sjepa` and `lambdajepa`, the two mask draws of `cjepa`); `lewm` runs LeWorldModel's objective without the action input its paper always uses, and `lenepa` has 10 to 12 patches per window where its paper has 200. Each version was run at one setting, and the best of twelve (`kerjepa`) has not been confirmed on other series.
 * **The T-JEPA comparison is a re-implementation at a small budget.** `TJEPAOD` uses the released code's default architecture and `JEPAOD`'s training budget, not the authors' code or their per-dataset tuned configurations, and T-JEPA itself has no outlier score. τ-JEPA was not read and is not implemented.
-* **The time-series benchmarks are modest** (7 NAB series, SKAB valve1, synthetic series). The tabular side now covers the 47 ADBench classical datasets (Section 7.6). TSB-AD with VUS-PR has since been run (Section 7.9), with one seed for fifteen of the sixteen versions, without tuning, and against published numbers that were not re-run and could not be reproduced from the benchmark's current code; PyOD's own time-series detectors were not run on it. The ablations of Section 7.3, including the SIGReg-against-EMA comparison, were run on small subsets only.
+* **The time-series benchmarks are modest** (7 NAB series, SKAB valve1, synthetic series). The tabular side now covers the 47 ADBench classical datasets (Section 7.6). TSB-AD with VUS-PR has since been run (Sections 7.9 and 7.10), with one seed for fifteen of the sixteen versions, without tuning, and against published numbers that were not re-run, except PCA and Sub-PCA in Section 7.10; PyOD's own time-series detectors were not run on it, and TSB-AD's best multivariate detectors (CNN, OmniAnomaly) were not re-run on the series outside its evaluation list. The ablations of Section 7.3, including the SIGReg-against-EMA comparison, were run on small subsets only.
 * **Transductive contamination.** Like every unsupervised deep detector, training outliers are Gaussianised along with inliers by SIGReg. The `embed` score is more sensitive to this than `pred`.
 * **Hyper-parameters** were fixed at LeJEPA / I-JEPA defaults; LeJEPA's observation that the training loss tracks downstream quality could give label-free model selection for OD and deserves a test.
 * **Categorical features** are treated as numeric; a per-token embedding table would be the natural extension.
 * **Pre-training / transfer**: MTS-JEPA shows cross-domain pre-training transfers; a pre-trained TS-JEPA encoder with a frozen Gaussian head would make `TSJEPAOD` fit in milliseconds.
-* **Selection on the evaluation series.** Section 7.9 reports 96 cells per list (sixteen versions, three scores, trained and untrained) on TSB-AD's evaluation series, and its tuning series were not used. The tests fixed in advance concern the `pred` score only; the best cell (`cfjepa`, `embed`) and the remarks on the default version and score are selections after the fact and need a run on other series.
+* **Selection on the evaluation series.** Section 7.9 reports 96 cells per list (sixteen versions, three scores, trained and untrained) on TSB-AD's evaluation series, and its tuning series were not used. The tests fixed in advance concern the `pred` score only; the best cell (`cfjepa`, `embed`) and the remarks on the default version and score are selections after the fact. Section 7.10 is the run on other series: the version comparison holds there, the best cell does not hold as a general choice, and the comparison of score types was again not among the tests fixed in advance. The multivariate part of that confirmation has 20 series.
 * **Not evaluated**: MPS throughput, very long windows (>1 000 steps), streaming updates. GPU throughput was measured on one H100 (Section 7.9): at the class defaults the GPU is slower than 8 CPU threads.
 
 ---

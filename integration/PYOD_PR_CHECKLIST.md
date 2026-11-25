@@ -178,7 +178,7 @@ epochs: 75 runs of a whole list, all complete (`REPORT.md` section 7.9 of the pr
 | minutes for the whole list, default version, one shared H100 | 46 | 49 |
 
 * It is a result the proposal can cite, with its limits stated: the published numbers are TSB-AD's own
-  and tuned, they were not re-run and could not be reproduced from TSB-AD's current code; the lead on the
+  and tuned, and they were not re-run (the confirmation below re-runs PCA and Sub-PCA); the lead on the
   multivariate list is in the mean and not per series (better than CNN on 87 of 180, p = 0.11); 0.011
   of it is the accident of item 4 above.
 * It does not show that JEPA training is the reason. Training adds +0.004 and +0.032 to the default
@@ -189,6 +189,44 @@ epochs: 75 runs of a whole list, all complete (`REPORT.md` section 7.9 of the pr
   earlier benchmarks) and `score` (`combined` is level with `pred` on TSB-AD-M and 0.077 ahead on
   TSB-AD-U).
 * Nothing about this benchmark has been posted on issue 795.
+
+### Confirmation on 540 series no run had used (2026-11-24)
+
+The same code was then run on the rest of TSB-AD, with the lists, the 99 runs and 18 tests fixed and
+committed beforehand (`results/tsb_confirm_plan.md`, `REPORT.md` section 7.10): the tuning lists (20
+multivariate, 48 univariate series) and the 472 univariate series outside the evaluation and tuning lists
+("U-Rest": YAHOO, UCR, WSD and Stock only). Mean VUS-PR:
+
+| | M-Tuning (20) | U-Tuning (48) | U-Rest (472) |
+|---|---|---|---|
+| TSB-AD's own PCA / Sub-PCA, re-run | 0.323 | 0.326 | 0.146 |
+| `TSJEPA()` trained, score `pred` (the defaults) | 0.363 | 0.337 | 0.177 |
+| `TSJEPA(epochs=0)`, `pred` | 0.353 | 0.304 | 0.146 |
+| `TSJEPA()`, score `embed` | 0.373 | 0.449 | 0.432 |
+| `TSJEPA()`, score `combined` | 0.368 | 0.443 | 0.401 |
+| no network: Mahalanobis distance of raw patches | 0.374 | 0.458 | 0.545 |
+| `TSJEPA(variant='vicreg')`, `pred` | 0.390 | 0.410 | 0.242 |
+| `TSJEPA(variant='lewm')`, `pred` | 0.441 | 0.398 | 0.213 |
+| `TSJEPA(variant='cfjepa')`, `embed` | 0.528 | 0.508 | 0.333 |
+
+* What a proposal can now say without the reservation about selection: `vicreg`, `lambdajepa` and `lewm`
+  give a higher `pred` score than the default `lejepa` on all five lists (significant after correction on
+  both new univariate lists for `vicreg` and `lambdajepa`, and on M-Tuning and U-Rest for `lewm`), and
+  `kerjepa` is level with it on all five.
+* What it should no longer say: that `cfjepa` with `embed` is the best configuration. It is ahead of the
+  default detector on every list, and on U-Rest it is 0.21 below the control without a network. It gains
+  on UCR, the ECG sets, SMAP and NAB and loses on YAHOO.
+* The default `score` matters more than the default `variant` on univariate series: `combined` is 0.077,
+  0.106 and 0.224 above `pred` on the evaluation list, U-Tuning and U-Rest, and level with it on the two
+  multivariate lists. This comparison was not among the tests fixed in advance. Changing the default
+  remains a decision for the maintainer and was not made.
+* The control without a network is level with `embed` on four lists and 0.113 above it on U-Rest. A
+  reviewer who asks what the network adds to `embed` will not find an answer in these numbers.
+* Against TSB-AD's own detectors: the default is +0.040 above re-run PCA on M-Tuning (13 of 20 series,
+  p = 0.23) and above re-run Sub-PCA on U-Tuning (+0.011, p = 0.23) and U-Rest (+0.031). Sub-PCA is not the
+  strong published detector on the four sources of U-Rest, and CNN and OmniAnomaly were not re-run, so
+  the place among published detectors is still known for the evaluation lists only.
+* Nothing about the confirmation has been posted on issue 795.
 
 ## The first port: `feature/jepa-od`
 

@@ -192,14 +192,49 @@ advance). Mean VUS-PR, the measure TSB-AD ranks by:
   univariate one. The lead on the multivariate list is a lead in the mean, not per series (better than CNN
   on 87 of 180 series, p = 0.11), and 0.011 of it comes from an accident: a channel that is constant in
   the training prefix is multiplied by 1e8 when it moves later.
-* The published numbers are TSB-AD's own, tuned by its authors, and were not re-run. A check could not
-  reproduce them from the benchmark's current code.
+* The published numbers are TSB-AD's own, tuned by its authors, and were not re-run, except PCA and
+  Sub-PCA in the confirmation below.
 * Training adds a significant but small part of the default score (+0.004 and +0.032). The untrained
   network places the same on the multivariate list, and the `embed` score is matched by a Mahalanobis
   distance on raw patches with no network.
 * `vicreg`, `lambdajepa` and `lewm` are significantly ahead of the default on both lists; `kerjepa` is
   level with it. The eight versions with an EMA or frozen-teacher target need training (their untrained
   `pred` score is 0.09 to 0.23) and mostly end below the untrained default.
+
+### TSB-AD confirmation: 540 series that no run had used
+
+The conclusions above were drawn after looking at the evaluation lists. They were then tested on the rest
+of TSB-AD, with the plan (`results/tsb_confirm_plan.md`: lists, 99 runs, 18 tests) committed before any
+run: the two tuning lists, and the 472 univariate series that are in neither the evaluation nor the tuning
+list (`REPORT.md`, section 7.10). Mean VUS-PR:
+
+| | M-Tuning (20 series) | U-Tuning (48 series) | U-Rest (472 series) |
+|---|---|---|---|
+| reference of TSB-AD's own code, re-run: PCA / Sub-PCA | 0.323 | 0.326 | 0.146 |
+| `'lejepa'`, the default, trained / untrained, score `pred` | 0.363 / 0.353 | 0.337 / 0.304 | 0.177 / 0.146 |
+| the same, score `embed` | 0.373 / 0.375 | 0.449 / 0.459 | 0.432 / 0.435 |
+| the same, score `combined` | 0.368 / 0.368 | 0.443 / 0.447 | 0.401 / 0.403 |
+| no network: Mahalanobis distance of raw patches | 0.374 | 0.458 | 0.545 |
+| `'vicreg'`, trained, `pred` | 0.390 | 0.410 | 0.242 |
+| `'lambdajepa'`, trained, `pred` | 0.372 | 0.367 | 0.216 |
+| `'lewm'`, trained, `pred` | 0.441 | 0.398 | 0.213 |
+| `'cfjepa'`, trained / untrained, `embed` | 0.528 / 0.513 | 0.508 / 0.464 | 0.333 / 0.245 |
+
+* Ten of the 18 tests hold after a Holm correction, seven have the expected sign without being significant
+  (five of them on the 20 multivariate series), one is reversed.
+* `vicreg`, `lambdajepa` and `lewm` are ahead of the default again on all three lists, by more than on the
+  evaluation lists; `kerjepa` is level again. Training again adds 0.03 to the default score on univariate
+  series.
+* `cfjepa` with the `embed` score is ahead of the default detector again, and it is not the best
+  configuration in general: on U-Rest it is 0.21 below the control without a network, which there is
+  above all sixteen versions with every score type. Per source dataset the numbers repeat those of the
+  evaluation list: it gains on UCR, the ECG sets, SMAP and NAB and loses on YAHOO, which is 224 of the
+  472 series of U-Rest.
+* On univariate series the default score `pred` is 0.08 to 0.22 below `combined` on the evaluation list
+  and on both new lists; on multivariate series the score types are level. The default was not changed.
+* U-Rest has four source datasets only (YAHOO, UCR, WSD, Stock), and Sub-PCA is not the strong published
+  detector on them, so its numbers say little about the standing among published detectors. TSB-AD's best
+  multivariate detectors (CNN, OmniAnomaly) were not re-run.
 * The highest scores come from the `embed` score of the `cfjepa` encoder, on the multivariate list with
   or without training. That cell was picked on the evaluation series and needs a run on other series.
 * The default version takes 46 and 49 minutes for a whole list on one shared H100. At the class defaults
@@ -341,10 +376,22 @@ python benchmarks/make_tsb_tables.py                 # tables and REPORT.md sect
 `run_tsb.sh` uses a GPU only while no other job computes on it and moves when one arrives. The per-series
 measures and run logs of the committed run are in `results/tsb/`; the score vectors (16 GB) are not.
 
+The confirmation of section 7.10 uses the same folder layout (99 runs, 19 hours of fitting and scoring):
+
+```bash
+QUEUE=confirm ROOT=<work folder> GPUS=0,1 JOBS=6 sh benchmarks/run_tsb.sh   # the three further lists
+python -I benchmarks/bench_tsb_ref.py --tsb <TSB-AD clone> --data <folder with TSB-AD-M/ and TSB-AD-U/> \
+    --suite U --split Rest --detector Sub_PCA --out <work folder>/results/tsb   # also Eva and Tuning; for
+    # the multivariate lists: --suite M --detector PCA --params slidingWindow=1
+python -I benchmarks/eval_tsb.py --tsb <TSB-AD clone> --data <folder with TSB-AD-M/ and TSB-AD-U/> \
+    --results <work folder>/results/tsb --jobs 64
+python benchmarks/make_tsb_confirm_tables.py         # tables and REPORT.md section 7.10
+```
+
 Result tables for the committed runs are in `results/report_tables.md`, `results/tjepa_tables.md`,
 `results/extended_tables.md`, `results/ts_control_tables.md`, `results/ts_variant_tables.md`,
-`results/ts_versions_tables.md` and `results/tsb_tables.md`
-(`benchmarks/make_tjepa_tables.py` builds the latter; the committed run was five parallel jobs with
+`results/ts_versions_tables.md`, `results/tsb_tables.md` and `results/tsb_confirm_tables.md`
+(`benchmarks/make_tjepa_tables.py` builds `results/tjepa_tables.md`; the committed run was five parallel jobs with
 3 threads each, see the header of `bench_tjepa.py`). Runs are deterministic for a fixed seed and thread count; a different thread count
 changes single results (by up to 0.08 ROC-AUC between one and three threads) and leaves the means over datasets within 0.002.
 
@@ -360,7 +407,7 @@ A second branch, [`feature/ts-jepa`](https://github.com/kishordgupta/pyod/tree/f
 narrowed proposal: `TSJEPA` alone, with the `variant` option, as three commits on top of PyOD 3.6.9 (patches in
 `integration/pyod-patches-ts-jepa/`). The first commit has the first four versions, the second the twelve
 further ones, the third makes six tests pass on a machine with a GPU. It is ready for a pull request if the
-maintainer accepts. The TSB-AD benchmark of section 7.9 ran this branch; the four speed and scaling issues it
+maintainer accepts. The TSB-AD benchmark of sections 7.9 and 7.10 ran this branch; the four speed and scaling issues it
 showed on long series are listed in `integration/PYOD_PR_CHECKLIST.md` and are not changed in the branch.
 
 `JEPA_VERSIONS_SURVEY.md` lists the further JEPA recipes that fit the `variant` family and the ones

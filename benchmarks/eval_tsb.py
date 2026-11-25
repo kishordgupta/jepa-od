@@ -16,6 +16,7 @@ extension, and ``--check-vus N`` compares it with TSB-AD's function on N of the 
         --results <results folder> --jobs 64
 
 Output: <results>/metrics/<suite>-<split>/<tag>.csv, one row per file and score type; finished rows are kept.
+The score files of benchmarks/bench_tsb_ref.py (one vector, named ``score``) are evaluated the same way.
 """
 import argparse, csv, glob, os, sys, time
 from multiprocessing import Pool
@@ -113,6 +114,11 @@ def scaled(score):
     return (score - low) / (high - low) if high > low else np.zeros_like(score), nonfinite, int(high <= low)
 
 
+def names(saved):
+    """The score vectors of one file: the three score types, or whatever a reference detector saved."""
+    return [name for name in SCORES if name in saved.files] or list(saved.files)
+
+
 def measures(score, label, window):
     """TSB-AD's threshold-free measures of one score vector."""
     score, nonfinite, constant = scaled(score)
@@ -132,7 +138,7 @@ def check_vus(job):
     label, window = labels(group.split('-')[0], stem)
     saved = np.load(os.path.join(args.results, 'scores', group, tag, stem + '.npz'))
     worst, slow_s, fast_s = 0.0, 0.0, 0.0
-    for name in SCORES:
+    for name in names(saved):
         score = scaled(saved[name])[0]
         start = time.perf_counter()
         ref = generate_curve(label.astype(int), score, window, 'opt', 250)[-2:]
@@ -149,7 +155,7 @@ def task(job):
     label, window = labels(group.split('-')[0], stem)
     saved = np.load(os.path.join(args.results, 'scores', group, tag, stem + '.npz'))
     rows = []
-    for name in SCORES:
+    for name in names(saved):
         start = time.perf_counter()
         row = dict(file=stem + '.csv', score=name)
         try:

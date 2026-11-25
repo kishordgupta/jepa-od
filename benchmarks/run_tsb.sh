@@ -9,13 +9,17 @@
 # can be restarted. The queue is in order of interest: the default version first, the untrained controls last.
 # It also holds the runs of the default version with other seeds, fitted on the whole series, and with constant
 # training channels scaled by 1 (--unit-const).
+#   QUEUE=confirm ROOT=<work folder> GPUS=2,5,6,7 JOBS=12 sh benchmarks/run_tsb.sh
+# runs the confirmation of results/tsb_confirm_plan.md instead (REPORT.md section 7.10): every version, trained and
+# untrained, and the control without a network, on the lists M-Tuning, U-Tuning and U-Rest.
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=${ROOT:-$HOME/jepa-od-gpu}
 GPUS=${GPUS:-0}
 OUT=$ROOT/results/tsb
 mkdir -p "$OUT/logs"
-if [ "$1" = --one ]; then   # one run: suite, version, kind
-    suite=$2; v=$3; kind=$4
+if [ "$1" = --one ]; then   # one run: list (M or U: the evaluation list; or M-Tuning, U-Tuning, U-Rest), version, kind
+    suite=${2%%-*}; split=Eva; v=$3; kind=$4; gpu="--gpus $GPUS"
+    case $2 in *-*) split=${2#*-};; esac
     case $kind in
         trained)   opts="";               tag=${v}_trained_s42_semi;;
         untrained) opts="--epochs 0";     tag=${v}_e0_s42_semi;;
@@ -23,14 +27,15 @@ if [ "$1" = --one ]; then   # one run: suite, version, kind
         unsup)     opts="--mode unsup";   tag=${v}_trained_s42_unsup;;
         unitconst)  opts="--unit-const";            tag=${v}_trained_s42_semi_unitconst;;
         unitconst0) opts="--epochs 0 --unit-const"; tag=${v}_e0_s42_semi_unitconst;;
+        rawpatch)  opts="--rawpatch --device cpu"; tag=rawpatch_s42_semi; gpu="";;   # no network, on the CPU
         *) echo "unknown kind $kind"; exit 1;;
     esac
-    log=$OUT/logs/${suite}_${tag}.log
+    log=$OUT/logs/$2_${tag}.log
     if tail -n 1 "$log" 2>/dev/null | grep -q 'ALL DONE'; then exit 0; fi
     while :; do
         "$ROOT/.venv/bin/python" -I "$HERE/bench_tsb.py" --pyod "$ROOT/pyod" --data "$ROOT/data/tsb/sets" \
-            --lists "$ROOT/ref/TSB-AD/Datasets/File_List" --suite "$suite" --variant "$v" --gpus "$GPUS" \
-            $opts --out "$OUT" >> "$log" 2>&1
+            --lists "$ROOT/ref/TSB-AD/Datasets/File_List" --suite "$suite" --split "$split" --variant "$v" \
+            $gpu $opts --out "$OUT" >> "$log" 2>&1
         [ $? -eq 75 ] || exit 0
         sleep 10
     done
@@ -38,6 +43,18 @@ fi
 JOBS=${JOBS:-3}
 FIRST="lejepa kerjepa vicreg lambdajepa ijepa tsjepa tjepa"
 REST="vjepa vjepa21 cjepa sjepa salt lpjepa lenepa lewm cfjepa"
+if [ "$QUEUE" = confirm ]; then   # the runs the tests of the plan need first, the longest list first
+    LISTS="U-Rest U-Tuning M-Tuning"
+    OTHER="kerjepa ijepa tsjepa tjepa vjepa vjepa21 cjepa sjepa salt lpjepa lenepa"
+    {
+        for l in $LISTS; do
+            for v in cfjepa lejepa vicreg lambdajepa lewm; do echo "$l $v trained"; done
+            echo "$l lejepa untrained"; echo "$l lejepa rawpatch"
+        done
+        for l in $LISTS; do for v in $OTHER; do echo "$l $v trained"; done; done
+        for l in $LISTS; do for v in cfjepa vicreg lambdajepa lewm $OTHER; do echo "$l $v untrained"; done; done
+    } > "$OUT/.queue"
+else
 {
     for s in M U; do echo "$s lejepa trained"; done
     for s in M U; do echo "$s lejepa untrained"; done
@@ -46,6 +63,7 @@ REST="vjepa vjepa21 cjepa sjepa salt lpjepa lenepa lewm cfjepa"
     for s in M U; do echo "$s lejepa seed0"; echo "$s lejepa seed1"; echo "$s lejepa unsup"; done
     for v in kerjepa vicreg lambdajepa ijepa tsjepa tjepa $REST; do for s in M U; do echo "$s $v untrained"; done; done
 } > "$OUT/.queue"
+fi
 xargs -P "$JOBS" -n 3 sh "$0" --one < "$OUT/.queue"
 rm -f "$OUT/.queue"
 echo "all runs finished"

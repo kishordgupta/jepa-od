@@ -7,6 +7,10 @@ file name gives (``..._tr_<n>_1st_<m>.csv``; it ends before the first anomaly in
 the whole series. It writes the scores of the three
 score types; ``benchmarks/eval_tsb.py`` turns them into TSB-AD's metrics.
 
+``--split`` takes another list than the evaluation list: ``Tuning`` (20 multivariate and 48 univariate series, on
+which TSB-AD's authors tuned their detectors) and, for the univariate set, ``Rest`` (the 472 series that are in
+neither list: ``TSB-AD-U-Eva-Full.csv`` without the evaluation list). ``results/tsb_confirm_plan.md`` uses them.
+
 The detector is the PyOD port (``pyod.models.ts_jepa.TSJEPA`` of the checkout given with ``--pyod``), with the
 class defaults: no parameter is tuned on TSB-AD. Three things differ from the class, for speed on long series
 (``Detector`` below): windows are scored ``--score-batch`` at a time instead of ``batch_size`` (64) at a time, they
@@ -28,7 +32,7 @@ ap.add_argument('--pyod', required=True, help='PyOD checkout that has pyod/model
 ap.add_argument('--data', required=True, help='folder with TSB-AD-M/ and TSB-AD-U/')
 ap.add_argument('--lists', required=True, help="TSB-AD's Datasets/File_List folder")
 ap.add_argument('--suite', choices=('M', 'U'), required=True)
-ap.add_argument('--split', default='Eva', choices=('Eva', 'Tuning'))
+ap.add_argument('--split', default='Eva', choices=('Eva', 'Tuning', 'Rest'))
 ap.add_argument('--variant', default='lejepa')
 ap.add_argument('--epochs', type=int, default=None, help='default: the class default (10); 0 = untrained control')
 ap.add_argument('--seed', type=int, default=None, help='random_state; default: the class default (42)')
@@ -120,7 +124,17 @@ tag = args.tag or '_'.join(filter(None, [
     'unitconst' if args.unit_const else None]))
 out_dir = os.path.join(args.out, 'scores', f'{args.suite}-{args.split}', tag)
 os.makedirs(out_dir, exist_ok=True)
-files = pd.read_csv(os.path.join(args.lists, f'TSB-AD-{args.suite}-{args.split}.csv'))['file_name'].tolist()
+
+
+def file_list(split):
+    return pd.read_csv(os.path.join(args.lists, f'TSB-AD-{args.suite}-{split}.csv'))['file_name'].tolist()
+
+
+if args.split == 'Rest':
+    evaluation = set(file_list('Eva'))
+    files = [f for f in file_list('Eva-Full') if f not in evaluation]
+else:
+    files = file_list(args.split)
 if args.only:
     files = [f for f in files if args.only in f]
 files = files[:args.limit]

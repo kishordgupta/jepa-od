@@ -5,9 +5,9 @@ VUS-ROC, AUC-PR (average precision), AUC-ROC, and the best F over thresholds in 
 Event-based-F1, R-based-F1, Affiliation-F). They are computed the way TSB-AD's ``benchmark_exp/Run_Detector_M.py``
 does: scores are min-max scaled, and the window of the VUS measures is ``find_length_rank`` of the first channel.
 
-TSB-AD's functions loop in Python over thresholds, anomalies and timestamps: minutes for one long series, and for
-some series hours. The measures are therefore taken from ``jepa_od/metrics.py``, which computes the same numbers
-with numpy (``benchmarks/check_metrics_tsb.py`` compares the two; ``--slow`` uses TSB-AD's functions here).
+TSB-AD's functions loop in Python over thresholds, anomalies and timestamps, which takes minutes for one long
+series with many anomalies. The measures are therefore taken from ``jepa_od/metrics.py``, which computes the same
+numbers with numpy (``benchmarks/check_metrics_tsb.py`` compares the two; ``--slow`` uses TSB-AD's functions here).
 
 ``--validate`` runs detectors of TSB-AD itself on a few files and compares with the numbers TSB-AD published.
 

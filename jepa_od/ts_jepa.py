@@ -18,9 +18,9 @@ second score is the Mahalanobis distance of every patch embedding to the
 training embeddings (``score='embed'``).
 
 The detector is a family: ``variant`` selects which JEPA trains the
-network (LeJEPA, I-JEPA, TS-JEPA, T-JEPA and twelve further versions, see
-:class:`TSJEPAOD`). Scores, training budget and the PyOD interface are the
-same for all of them.
+network (LeJEPA, I-JEPA, TS-JEPA, T-JEPA and twenty-two further versions,
+see :class:`TSJEPAOD`). Scores, training budget and the PyOD interface are
+the same for all of them.
 """
 # License: BSD 2 clause
 
@@ -127,6 +127,42 @@ class TSJEPAOD(BaseDetector):
     the error of predicting a patch from the patches before it, and the
     first patch of a window (for ``'cfjepa'`` the leading crop) gets none.
 
+    Ten more versions were added in version 0.5.0 (constants and what was
+    adapted: ``jepa_od/_recipes2.py``; benchmark: REPORT.md, section
+    7.11):
+
+    =================  ===================================================
+    ``variant``        what trains the network
+    =================  ===================================================
+    ``'ststjepa'``     STST-JEPA: the targets come from an EMA copy of the
+                       tokenizer, not of the encoder; a reconstruction
+                       term on the predictions
+    ``'hepa'``         HEPA: a causal encoder and a predictor conditioned
+                       on the horizon predict the embedding of the next
+                       ``dt`` patches; SIGReg on the predictions; no masks
+    ``'subjepa'``      Sub-JEPA: ``'lewm'`` with SIGReg in frozen random
+                       subspaces; no masks
+    ``'straight'``     temporal straightening: next-patch prediction with
+                       a stop-gradient and a curvature term; no masks
+    ``'motionjepa'``   MotionJEPA: ``'lewm'`` plus an embedding of patch
+                       differences (DISReg); no masks
+    ``'njepa'``        N-JEPA: ``'ijepa'`` with a second predictor whose
+                       mask tokens carry Gaussian noise
+    ``'gmmjepa'``      GMM-anchored JEPA: ``'ijepa'`` plus a cluster head
+                       trained on the soft posteriors of a frozen Gaussian
+                       mixture of the patches
+    ``'variational'``  variational JEPA (VJEPA): the predictor returns a
+                       Gaussian; ``pred`` is a negative log-likelihood
+    ``'phijepa'``      PhiJEPA: two prediction stages, towards a corrupted
+                       and then the clean view; cosine distance
+    ``'harjepa'``      HAR-JEPA: an EMA target that is not normalised, and
+                       VICReg terms with a norm term on the predictions
+    =================  ===================================================
+
+    ``'hepa'``, ``'subjepa'``, ``'straight'`` and ``'motionjepa'`` do not
+    hide patches either. The untrained networks of the last three are
+    that of ``'lewm'``.
+
     Parameters
     ----------
     window_size : int, optional (default=100)
@@ -164,27 +200,32 @@ class TSJEPAOD(BaseDetector):
         position (deterministic, complete coverage).
 
     variant : str, optional (default='lejepa')
-        The JEPA version, one of the sixteen names in the tables above.
+        The JEPA version, one of the twenty-six names in the tables above.
 
     variant_params : dict or None, optional (default=None)
-        Overrides of the constants of a version of the second table, e.g.
-        ``{'var_weight': 1.0, 'cov_weight': 40.0}`` for ``'vicreg'``.
-        The names and published values are in ``jepa_od/_recipes.py``;
-        the resolved values are in ``variant_params_`` after ``fit``.
+        Overrides of the constants of a version of the second or third
+        table, e.g. ``{'var_weight': 1.0, 'cov_weight': 40.0}`` for
+        ``'vicreg'``. The names and published values are in
+        ``jepa_od/_recipes.py`` and ``jepa_od/_recipes2.py``; the resolved
+        values are in ``variant_params_`` after ``fit``.
 
     sigreg_weight, sigreg_slices
         SIGReg settings of ``variant='lejepa'``, see
         :class:`jepa_od.JEPAOD`. ``sigreg_slices`` is also the number of
-        random projections of ``'lenepa'``, ``'lewm'`` and ``'lpjepa'``;
-        the other versions ignore both.
+        random projections of ``'lenepa'``, ``'lewm'``, ``'lpjepa'``,
+        ``'hepa'``, ``'subjepa'`` and ``'motionjepa'``; the other versions
+        ignore both.
 
     ema_momentum : float or None, optional (default=None)
         Start value of the target-encoder momentum of the EMA versions; it
         rises linearly to 1 during training. ``None`` is the published
         value: 0.996 for ``'ijepa'``, ``'tjepa'``, ``'cjepa'`` and
         ``'sjepa'``, 0.998 for ``'tsjepa'`` and ``'vjepa'``, 0.99925 (held
-        fixed) for ``'vjepa21'`` and 0.983 (cosine schedule) for
-        ``'cfjepa'``. Ignored by the versions without an EMA target.
+        fixed) for ``'vjepa21'``, 0.983 (cosine schedule) for
+        ``'cfjepa'`` and 0.9996 (rising to 0.9999) for ``'ststjepa'``;
+        ``'njepa'``, ``'gmmjepa'``, ``'variational'``, ``'phijepa'`` and
+        ``'harjepa'`` use 0.996. Ignored by the versions without an EMA
+        target.
 
     recon_weight : float, optional (default=0.0)
         Weight of the reconstruction anchor, see :class:`jepa_od.JEPAOD`.
@@ -509,7 +550,8 @@ class TSJEPAOD(BaseDetector):
                 opt.step()
                 if ema_pairs:
                     m = momentum_at(self.ema_momentum_,
-                                    min(1.0, step / total_steps), schedule)
+                                    min(1.0, step / total_steps), schedule,
+                                    1.0 if recipe is None else recipe.ema_end)
                     for target, online in ema_pairs:
                         ema_update(target, online, m)
                 step += 1

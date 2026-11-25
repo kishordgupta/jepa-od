@@ -1,14 +1,13 @@
 """TSB-AD metrics of the scores that benchmarks/bench_tsb.py wrote.
 
-The measures are TSB-AD's (``TSB_AD.evaluation`` of the clone given with ``--tsb``), computed the way its
-``benchmark_exp/Run_Detector_M.py`` does: scores are min-max scaled, and the window of the VUS measures is
-``find_length_rank`` of the first channel. VUS-PR is the measure the benchmark ranks by; VUS-ROC, AUC-PR (average
-precision) and AUC-ROC are written too.
+The nine measures TSB-AD reports (``TSB_AD.evaluation.metrics.get_metrics``): VUS-PR, which the benchmark ranks by,
+VUS-ROC, AUC-PR (average precision), AUC-ROC, and the best F over thresholds in five forms (Standard-F1, PA-F1,
+Event-based-F1, R-based-F1, Affiliation-F). They are computed the way TSB-AD's ``benchmark_exp/Run_Detector_M.py``
+does: scores are min-max scaled, and the window of the VUS measures is ``find_length_rank`` of the first channel.
 
-TSB-AD's VUS function (``basic_metricor.RangeAUC_volume_opt``) loops in Python over 250 thresholds and over every
-anomaly for each of up to 300 windows: minutes for one series with a thousand anomalies. ``vus`` below computes the
-same two numbers from one sort and a cumulative sum per window. It uses TSB-AD's own helpers for the label
-extension, and ``--check-vus N`` compares it with TSB-AD's function on N of the saved score vectors.
+TSB-AD's functions loop in Python over thresholds, anomalies and timestamps: minutes for one long series, and for
+some series hours. The measures are therefore taken from ``jepa_od/metrics.py``, which computes the same numbers
+with numpy (``benchmarks/check_metrics_tsb.py`` compares the two; ``--slow`` uses TSB-AD's functions here).
 
 ``--validate`` runs detectors of TSB-AD itself on a few files and compares with the numbers TSB-AD published.
 
@@ -18,7 +17,7 @@ extension, and ``--check-vus N`` compares it with TSB-AD's function on N of the 
 Output: <results>/metrics/<suite>-<split>/<tag>.csv, one row per file and score type; finished rows are kept.
 The score files of benchmarks/bench_tsb_ref.py (one vector, named ``score``) are evaluated the same way.
 """
-import argparse, csv, glob, os, sys, time
+import argparse, csv, glob, importlib.util, os, sys, time, warnings
 from multiprocessing import Pool
 import numpy as np, pandas as pd
 
@@ -30,15 +29,20 @@ ap.add_argument('--tags', default='*', help='pattern of the score folders to eva
 ap.add_argument('--jobs', type=int, default=8)
 ap.add_argument('--validate', default=None, help='M or U: run TSB-AD detectors and compare with its published table')
 ap.add_argument('--n-files', type=int, default=12)
-ap.add_argument('--check-vus', type=int, default=0, help="compare vus() with TSB-AD's function on this many scores")
-ap.add_argument('--slow', action='store_true', help="use TSB-AD's VUS function instead of vus()")
+ap.add_argument('--slow', action='store_true', help="use TSB-AD's functions instead of jepa_od/metrics.py")
+ap.add_argument('--module', default=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'jepa_od',
+                                                 'metrics.py'), help='path of jepa_od/metrics.py')
 args = ap.parse_args()
 sys.path.insert(0, os.path.abspath(args.tsb))
-from TSB_AD.evaluation.basic_metrics import basic_metricor, generate_curve
+from TSB_AD.evaluation.metrics import get_metrics
 from TSB_AD.utils.slidingWindows import find_length_rank
+# loaded by its path: importing the package would also load the detectors
+spec = importlib.util.spec_from_file_location('jepa_od_metrics', os.path.abspath(args.module))
+fast = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(fast)
 
 SCORES = ('pred', 'embed', 'combined')
-FIELDS = ['file', 'score', 'VUS-PR', 'VUS-ROC', 'AUC-PR', 'AUC-ROC', 'window', 'nonfinite', 'constant', 'seconds']
+FIELDS = ['file', 'score'] + list(fast.METRICS) + ['window', 'nonfinite', 'constant', 'seconds']
 
 
 def series(suite, name):
@@ -61,46 +65,6 @@ def labels(suite, stem):
     return cached['label'].astype(int), int(cached['window'])
 
 
-def vus(label, score, window_size, thre=250):
-    """VUS-ROC and VUS-PR, equal to ``generate_curve(label, score, window_size, 'opt', thre)[-2:]``.
-
-    For a threshold, TSB-AD's loop multiplies the extended label by the prediction inside the extended anomalies,
-    sets it to one inside the anomalies, and sums over the anomalies extended by the full window. With e the
-    extended label (one inside an anomaly, zero outside the extended ones) and p the prediction, that is
-
-        TP = sum(e * p),   N_labels = TP - sum(label * p) + P,   existence = extended anomalies with any p.
-
-    The predictions of the thresholds are nested (the highest scores first), so one cumulative sum over the
-    timestamps in the order of the scores gives TP for every threshold, and an extended anomaly exists for a
-    threshold when its highest score reaches it.
-    """
-    grader = basic_metricor()
-    label = np.asarray(label).astype(int)
-    n, P = len(score), label.sum()
-    seq = grader.range_convers_new(label)
-    order = np.argsort(-score, kind='stable')
-    ascending = score[order][::-1]
-    thresholds = score[order][np.linspace(0, n - 1, thre).astype(int)]
-    n_pred = n - np.searchsorted(ascending, thresholds, side='left')    # sum(score >= threshold)
-    inside = np.cumsum(label[order])[n_pred - 1]                        # sum(label * p)
-    auc, ap = np.zeros(window_size + 1), np.zeros(window_size + 1)
-    for window in range(window_size + 1):
-        extended = grader.sequencing(label, seq, window)
-        segments = np.asarray(grader.new_sequence(extended, seq, window))
-        bounds = np.stack([segments[:, 0], segments[:, 1] + 1], axis=1).ravel()
-        highest = np.maximum.reduceat(score, bounds[bounds < n])[::2]   # highest score of every extended anomaly
-        existence = len(highest) - np.searchsorted(np.sort(highest), thresholds, side='left')
-        TP = np.cumsum(extended[order])[n_pred - 1]
-        P_new = (P + TP - inside + P) / 2
-        tpr = np.minimum(TP / P_new, 1) * existence / len(segments)
-        fpr = (n_pred - TP) / (n - P_new)
-        tpr, fpr = np.concatenate([[0.0], tpr, [1.0]]), np.concatenate([[0.0], fpr, [1.0]])
-        precision = np.concatenate([[1.0], TP / n_pred])
-        auc[window] = np.dot(fpr[1:] - fpr[:-1], (tpr[1:] + tpr[:-1]) / 2)
-        ap[window] = np.dot(tpr[1:-1] - tpr[:-2], precision[1:])
-    return auc.sum() / (window_size + 1), ap.sum() / (window_size + 1)
-
-
 def scaled(score):
     """Min-max scaled score with the non-finite values replaced; also their number and whether it is constant."""
     score = np.asarray(score, dtype=np.float64).copy()
@@ -120,34 +84,13 @@ def names(saved):
 
 
 def measures(score, label, window):
-    """TSB-AD's threshold-free measures of one score vector."""
+    """TSB-AD's nine measures of one score vector."""
     score, nonfinite, constant = scaled(score)
-    grader = basic_metricor()
-    out = {'AUC-ROC': grader.metric_ROC(label, score), 'AUC-PR': grader.metric_PR(label, score)}
-    if args.slow:
-        out['VUS-ROC'], out['VUS-PR'] = generate_curve(label.astype(int), score, window, 'opt', 250)[-2:]
-    else:
-        out['VUS-ROC'], out['VUS-PR'] = vus(label, score, window)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        out = get_metrics(score, label, slidingWindow=window) if args.slow else fast.ts_metrics(label, score, window)
     out.update(window=window, nonfinite=nonfinite, constant=constant)
     return out
-
-
-def check_vus(job):
-    """Largest difference between vus() and TSB-AD's function over the three scores of one file."""
-    group, tag, stem = job
-    label, window = labels(group.split('-')[0], stem)
-    saved = np.load(os.path.join(args.results, 'scores', group, tag, stem + '.npz'))
-    worst, slow_s, fast_s = 0.0, 0.0, 0.0
-    for name in names(saved):
-        score = scaled(saved[name])[0]
-        start = time.perf_counter()
-        ref = generate_curve(label.astype(int), score, window, 'opt', 250)[-2:]
-        slow_s += time.perf_counter() - start
-        start = time.perf_counter()
-        fast = vus(label, score, window)
-        fast_s += time.perf_counter() - start
-        worst = max(worst, abs(ref[0] - fast[0]), abs(ref[1] - fast[1]))
-    return stem, len(label), window, worst, slow_s, fast_s
 
 
 def task(job):
@@ -193,19 +136,6 @@ def validate():
 if __name__ == '__main__':
     if args.validate:
         validate()
-        sys.exit()
-    if args.check_vus:
-        found = sorted(glob.glob(os.path.join(args.results, 'scores', '*', args.tags, '*.npz')))
-        # the files with the most anomalies are the slow ones for TSB-AD's function: a spread of sizes instead
-        found.sort(key=os.path.getsize)
-        pick = [found[i] for i in np.linspace(0, len(found) * 0.9, args.check_vus).astype(int)]
-        todo = [tuple(p[:-4].split(os.sep)[-3:]) for p in pick]
-        with Pool(args.jobs) as pool:
-            out = pool.map(check_vus, todo, chunksize=1)
-        for stem, n, window, worst, slow_s, fast_s in out:
-            print(f'{stem[:50]:50s} n={n:6d} window={window:3d} largest difference {worst:.1e}  '
-                  f'TSB-AD {slow_s:7.1f} s, here {fast_s:5.2f} s', flush=True)
-        print('largest difference over %d files: %.1e' % (len(out), max(o[3] for o in out)))
         sys.exit()
     jobs, done = [], {}
     for folder in sorted(glob.glob(os.path.join(args.results, 'scores', '*', args.tags))):

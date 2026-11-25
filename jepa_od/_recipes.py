@@ -39,7 +39,11 @@ class Recipe(object):
         What ``ema_momentum=None`` means; None for versions without an
         EMA target.
     ema_schedule : {None, 'linear', 'cosine', 'fixed'}
-        How the momentum goes from its start value to 1 during training.
+        How the momentum goes from its start value to ``ema_end`` during
+        training.
+    ema_end : float
+        The momentum at the end of training (1 for all versions but
+        ``'ststjepa'``).
     masked : bool
         False for versions that do not hide patches (``mask_mode`` and
         ``mask_ratio`` are then ignored).
@@ -49,6 +53,7 @@ class Recipe(object):
     encoder_norm = False
     ema_momentum = None
     ema_schedule = None
+    ema_end = 1.0
     masked = True
     params = {}
 
@@ -74,13 +79,13 @@ class Recipe(object):
         return [(model.target_encoder, model.encoder)]
 
 
-def momentum_at(start, frac, schedule):
+def momentum_at(start, frac, schedule, end=1.0):
     """Target momentum after a share ``frac`` of the training steps."""
     if schedule == 'fixed':
         return start
     if schedule == 'cosine':
-        return 1.0 - (1.0 - start) * 0.5 * (1.0 + math.cos(math.pi * frac))
-    return start + (1.0 - start) * frac
+        return end - (end - start) * 0.5 * (1.0 + math.cos(math.pi * frac))
+    return start + (end - start) * frac
 
 
 def _token_dim(det, n_channels):
@@ -402,3 +407,8 @@ RECIPES = {
     'kerjepa': KerJEPA(), 'lpjepa': LpJEPA(), 'lambdajepa': LambdaJEPA(),
     'lenepa': LeNEPA(), 'lewm': LeWM(), 'cfjepa': CFJEPA(),
 }
+
+# the ten versions of version 0.5.0 (the module needs the classes above)
+from ._recipes2 import MORE_RECIPES  # noqa: E402
+
+RECIPES.update(MORE_RECIPES)

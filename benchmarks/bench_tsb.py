@@ -12,7 +12,8 @@ which TSB-AD's authors tuned their detectors) and, for the univariate set, ``Res
 neither list: ``TSB-AD-U-Eva-Full.csv`` without the evaluation list). ``results/tsb_confirm_plan.md`` uses them.
 
 The detector is the PyOD port (``pyod.models.ts_jepa.TSJEPA`` of the checkout given with ``--pyod``), with the
-class defaults: no parameter is tuned on TSB-AD. Three things differ from the class, for speed on long series
+class defaults: no parameter is tuned on TSB-AD. With ``--jepa-od <this repository>`` it is ``jepa_od.TSJEPAOD``
+instead, which also has the ten versions of 0.5.0 (REPORT.md section 7.11). Three things differ from the class, for speed on long series
 (``Detector`` below): windows are scored ``--score-batch`` at a time instead of ``batch_size`` (64) at a time, they
 are cut from a view of the series, and the Mahalanobis distance is one matrix product. Training is the class's own,
 and the scores change by rounding only (``--check`` measures it against the class).
@@ -29,6 +30,9 @@ from numpy.lib.stride_tricks import sliding_window_view
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--pyod', required=True, help='PyOD checkout that has pyod/models/ts_jepa.py')
+ap.add_argument('--jepa-od', default=None,
+                help='checkout of this repository: run jepa_od.TSJEPAOD instead of the PyOD port. The ten versions of '
+                     '0.5.0 exist in the prototype only; for the sixteen older ones the two classes give the same scores')
 ap.add_argument('--data', required=True, help='folder with TSB-AD-M/ and TSB-AD-U/')
 ap.add_argument('--lists', required=True, help="TSB-AD's Datasets/File_List folder")
 ap.add_argument('--suite', choices=('M', 'U'), required=True)
@@ -70,7 +74,16 @@ if args.gpus:
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpus
 import torch
-from pyod.models.ts_jepa import TSJEPA
+if args.jepa_od:
+    # only the time-series modules: importing the package also loads the tabular detectors, which need tqdm
+    # through PyOD's base_dl
+    import types
+    package = types.ModuleType('jepa_od')
+    package.__path__ = [os.path.join(os.path.abspath(args.jepa_od), 'jepa_od')]
+    sys.modules['jepa_od'] = package
+    from jepa_od.ts_jepa import TSJEPAOD as TSJEPA
+else:
+    from pyod.models.ts_jepa import TSJEPA
 from pyod.models._ts_utils import validate_ts_input
 
 torch.set_num_threads(args.threads)
@@ -102,6 +115,8 @@ class Detector(TSJEPA):
         # the class contracts three arrays in one einsum, which does not use BLAS
         diff = h_all - self.emb_mean_
         return np.einsum('...i,...i->...', diff @ self.emb_prec_, diff)
+
+    _mahal = _mahalanobis   # the name of the method in jepa_od.TSJEPAOD
 
 
 KW = dict(variant=args.variant, device=args.device)

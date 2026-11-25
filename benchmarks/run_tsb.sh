@@ -12,8 +12,13 @@
 #   QUEUE=confirm ROOT=<work folder> GPUS=2,5,6,7 JOBS=12 sh benchmarks/run_tsb.sh
 # runs the confirmation of results/tsb_confirm_plan.md instead (REPORT.md section 7.10): every version, trained and
 # untrained, and the control without a network, on the lists M-Tuning, U-Tuning and U-Rest.
+#   QUEUE=more ROOT=<work folder> GPUS=2,5,6,7 JOBS=12 sh benchmarks/run_tsb.sh
+# runs the ten versions of 0.5.0 on all five lists (REPORT.md section 7.11). They are run with jepa_od.TSJEPAOD of
+# ROOT/jepa-od (a copy of this repository), since the PyOD port does not have them. The zero-epoch controls of
+# subjepa, straight and motionjepa are not run: they have the network of lewm and the same scores.
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=${ROOT:-$HOME/jepa-od-gpu}
+MORE="ststjepa hepa subjepa straight motionjepa njepa gmmjepa variational phijepa harjepa"
 GPUS=${GPUS:-0}
 OUT=$ROOT/results/tsb
 mkdir -p "$OUT/logs"
@@ -30,12 +35,14 @@ if [ "$1" = --one ]; then   # one run: list (M or U: the evaluation list; or M-T
         rawpatch)  opts="--rawpatch --device cpu"; tag=rawpatch_s42_semi; gpu="";;   # no network, on the CPU
         *) echo "unknown kind $kind"; exit 1;;
     esac
+    pkg=""   # the ten versions of 0.5.0 are in the prototype only
+    case " $MORE " in *" $v "*) pkg="--jepa-od $ROOT/jepa-od";; esac
     log=$OUT/logs/$2_${tag}.log
     if tail -n 1 "$log" 2>/dev/null | grep -q 'ALL DONE'; then exit 0; fi
     while :; do
         "$ROOT/.venv/bin/python" -I "$HERE/bench_tsb.py" --pyod "$ROOT/pyod" --data "$ROOT/data/tsb/sets" \
             --lists "$ROOT/ref/TSB-AD/Datasets/File_List" --suite "$suite" --split "$split" --variant "$v" \
-            $gpu $opts --out "$OUT" >> "$log" 2>&1
+            $pkg $gpu $opts --out "$OUT" >> "$log" 2>&1
         [ $? -eq 75 ] || exit 0
         sleep 10
     done
@@ -43,7 +50,14 @@ fi
 JOBS=${JOBS:-3}
 FIRST="lejepa kerjepa vicreg lambdajepa ijepa tsjepa tjepa"
 REST="vjepa vjepa21 cjepa sjepa salt lpjepa lenepa lewm cfjepa"
-if [ "$QUEUE" = confirm ]; then   # the runs the tests of the plan need first, the longest list first
+if [ "$QUEUE" = more ]; then
+    {
+        for l in M U U-Rest U-Tuning M-Tuning; do for v in $MORE; do echo "$l $v trained"; done; done
+        for l in M U U-Rest U-Tuning M-Tuning; do
+            for v in ststjepa hepa njepa gmmjepa variational phijepa harjepa; do echo "$l $v untrained"; done
+        done
+    } > "$OUT/.queue"
+elif [ "$QUEUE" = confirm ]; then   # the runs the tests of the plan need first, the longest list first
     LISTS="U-Rest U-Tuning M-Tuning"
     OTHER="kerjepa ijepa tsjepa tjepa vjepa vjepa21 cjepa sjepa salt lpjepa lenepa"
     {

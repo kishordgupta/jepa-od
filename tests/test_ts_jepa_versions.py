@@ -20,7 +20,7 @@ from jepa_od._variant_nets import (DenseJEPACore, NextLatentCore,
                                    CFJEPACore, _DilatedBlock)
 from jepa_od.ts_jepa import _VARIANTS
 
-NEW = tuple(RECIPES)
+NEW = tuple(RECIPES)[:12]   # the versions of 0.4.0; later ones: test_ts_jepa_more.py
 EMA = ('vjepa', 'vjepa21', 'cjepa', 'sjepa', 'cfjepa')
 MASK_FREE = ('lenepa', 'lewm', 'cfjepa')
 # (encoder_norm_, ema_momentum_) after fit with both left at None
@@ -42,9 +42,10 @@ class TestTSJEPAODMoreVersions(unittest.TestCase):
 
     def test_registry(self):
         self.assertEqual(_VARIANTS[:4], ('lejepa', 'ijepa', 'tsjepa', 'tjepa'))
-        self.assertEqual(_VARIANTS[4:], NEW)
-        self.assertEqual(len(set(_VARIANTS)), 16)
-        for v, recipe in RECIPES.items():
+        self.assertEqual(_VARIANTS[4:16], NEW)
+        self.assertEqual(len(set(_VARIANTS[:16])), 16)
+        for v in NEW:
+            recipe = RECIPES[v]
             self.assertTrue(recipe.__doc__, v)
             self.assertIsInstance(recipe.params, dict)
             self.assertEqual(recipe.masked, v not in MASK_FREE)

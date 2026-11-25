@@ -169,6 +169,45 @@ if rows:
                'version among the twenty-six, and the highest of the 156 cells (version, trained or not, score '
                'type). The cell is picked after the results.\n\n' + md(pd.DataFrame(rows).set_index('list')))
 
+# per source dataset (not in the plan) ---------------------------------------------------------------------------------
+SHOWN = ['lejepa', 'lewm', 'subjepa', 'motionjepa', 'straight', 'hepa']
+for s, lists in (('M', ['M-Eva', 'M-Tuning']), ('U', ['U-Eva', 'U-Tuning', 'U-Rest'])):
+    cols = {v: pd.concat([metric(lst, run(v)) for lst in lists]) for v in SHOWN}
+    if any(c is None for c in cols.values()):
+        continue
+    d = pd.DataFrame(cols)
+    d['dataset'] = d.index.str.split('_').str[1]
+    g = d.groupby('dataset')
+    t = g[SHOWN].mean()
+    t.insert(0, 'series', g.size())
+    for v in ('straight', 'hepa'):
+        t[f'{v} better / worse than lejepa'] = [f'{int((x[v] > x.lejepa).sum())} / {int((x[v] < x.lejepa).sum())}'
+                                                for _, x in g]
+    t = t.sort_values('series', ascending=False)
+    for v in SHOWN:
+        t[v] = t[v].map(lambda x: f'{x:.3f}')
+    n = len(d)
+    out.append(f'#### Not in the plan: mean VUS-PR of trained `pred` per source dataset, all {n} '
+               f'{"multivariate" if s == "M" else "univariate"} series (the lists pooled); `lewm`, `subjepa`, '
+               '`motionjepa` and `straight` share one network\n\n' + md(t))
+
+# other seeds of `straight` (not in the plan) ------------------------------------------------------------------------
+rows = []
+for lst in LISTS:
+    row = {'list': lst, 'lejepa, seed 42': mean(metric(lst, run('lejepa')))}
+    for seed in (42, 0, 1):
+        x = metric(lst, f'straight_trained_s{seed}_semi')
+        row[f'straight, seed {seed}'] = mean(x)
+        if x is not None and seed != 42:
+            d = x - metric(lst, run('lejepa'))
+            row[f'seed {seed} against lejepa'] = (f'{d.mean():+.3f}, {int((d > 0).sum())} / {int((d < 0).sum())}, '
+                                                  f'p {fmt_p(signed_rank(d))}')
+    rows.append(row)
+if all('missing' not in str(v) for r in rows for v in r.values()):
+    out.append('#### Not in the plan: `straight` with two more seeds (trained, `pred`, mean VUS-PR; difference to '
+               'the default version with seed 42, series better / worse, uncorrected p)\n\n'
+               + md(pd.DataFrame(rows).set_index('list')))
+
 # small benchmarks ----------------------------------------------------------------------------------------------------
 V = os.path.join(ROOT, 'results', 'ts_variants')
 GROUPS = ['synthetic', 'SKAB', 'NAB']

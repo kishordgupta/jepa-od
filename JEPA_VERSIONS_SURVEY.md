@@ -18,6 +18,18 @@ shared-encoder target, not from SIGReg. `cjepa` does not repair the EMA version.
 are numerically ahead on NAB only. `lenepa` and `cfjepa` have no usable prediction-error score in
 this detector. Numbers and tests: `REPORT.md` section 7.8.
 
+**Status, 2026-11-25 (version 0.5.0).** A second pass over the larger list (404 entries by then) read 24
+abstracts and 11 method sections of papers the first pass had judged from their titles. Ten more recipes are
+implemented as `variant` values, in the prototype only: `ststjepa` (STST-JEPA, arXiv 2607.06629), `hepa` (HEPA,
+2605.11130), `subjepa` (Sub-JEPA, 2605.09241), `straight` (temporal straightening, 2603.12231), `motionjepa`
+(MotionJEPA, 2609.23881), `njepa` (N-JEPA, 2507.15216), `gmmjepa` (GMM-anchored JEPA, 2602.09040), `variational`
+(VJEPA, 2601.14354), `phijepa` (PhiJEPA, 2611.27516) and `harjepa` (HAR-JEPA, 2607.16350). `REPORT.md` section 4.10
+says for each what is the paper's and what is ours; section 7.11 has the benchmark. Of the papers in "Not read"
+below, STST-JEPA is now implemented and W-JEPA was read (wavelet tokens that cover different time spans: not a
+version). SC-JEPA (MTS-JEPA) was read again and is still in group D: besides what the table says, the text read
+gives none of its nine loss weights, its codebook size or its temperature. Var-JEPA (2603.20111) and VJEPA
+(2601.14354, implemented as `variational`) are two different papers.
+
 ## How the candidates were found and judged
 
 * Two curated lists were read in full: [AbdelStark/awesome-jepa](https://github.com/AbdelStark/awesome-jepa)

@@ -30,7 +30,7 @@ embedding** to the training Gaussian, usable alone (`score='embed'`) or fused (`
 
 | | `JEPAOD` | `TJEPAOD` | `TSJEPAOD` |
 |---|---|---|---|
-| origin | this project, built on I-JEPA and LeJEPA | training recipe of T-JEPA (Thimonier et al., ICLR 2025, [arXiv 2410.05016](https://arxiv.org/abs/2410.05016)) | this project; sixteen selectable JEPA versions (below) |
+| origin | this project, built on I-JEPA and LeJEPA | training recipe of T-JEPA (Thimonier et al., ICLR 2025, [arXiv 2410.05016](https://arxiv.org/abs/2410.05016)) | this project; twenty-six selectable JEPA versions (below) |
 | collapse prevention | SIGReg, one shared encoder | EMA target encoder and a [REG] token | SIGReg by default, an EMA target encoder in the other versions |
 | context / targets | 70 % of the tokens visible, one mask per row | 20-40 % visible, four target subsets per row | block or causal patch masks |
 | encoder output | not normalised | LayerNorm'ed | not normalised (`lejepa`, `ijepa`), normalised (`tsjepa`, `tjepa`) |
@@ -44,9 +44,10 @@ implemented, because its text could not be read (login required).
 
 ### JEPA versions of `TSJEPAOD`
 
-`TSJEPAOD(variant=...)` selects which JEPA trains the time-series network: sixteen versions, the
-four below and twelve more in the next table. Scores, model sizes, training budget and the PyOD
-interface are the same for all of them.
+`TSJEPAOD(variant=...)` selects which JEPA trains the time-series network: twenty-six versions, the
+four below, twelve more in the second table and ten more in the third. Scores, model sizes, training
+budget and the PyOD interface are the same for all of them. [LEADERBOARD.md](LEADERBOARD.md) has
+every version on all of TSB-AD with nine evaluation measures.
 
 | `variant` | network | target and collapse prevention | loss | source |
 |---|---|---|---|---|
@@ -84,6 +85,28 @@ step open, it was fixed here before the benchmark was run; `REPORT.md` section 4
 choice, and `variant_params` overrides any constant, e.g.
 `TSJEPAOD(variant='vicreg', variant_params={'cov_weight': 40.0})`. `'lenepa'`, `'lewm'` and `'cfjepa'`
 do not hide patches, so `mask_mode` and `mask_ratio` do not apply to them.
+
+Ten more versions (added in 0.5.0; `REPORT.md` section 4.10 has the details and every choice that is
+ours, section 7.11 the results). They are in this package only, not in the PyOD branch:
+
+| `variant` | what trains the network | source |
+|---|---|---|
+| `'ststjepa'` | the targets come from an EMA copy of the tokenizer, not of the encoder; a reconstruction term on the predictions | [STST-JEPA](https://arxiv.org/abs/2607.06629) (EEG) |
+| `'hepa'` | a causal encoder and a horizon-conditioned predictor predict the embedding of the next 1, 2, 4, ... patches; SIGReg on the predictions; no masks | [HEPA](https://arxiv.org/abs/2605.11130) (event prediction in time series) |
+| `'subjepa'` | `'lewm'` with SIGReg in frozen random subspaces; no masks | [Sub-JEPA](https://arxiv.org/abs/2605.09241) |
+| `'straight'` | next-patch prediction with a stop-gradient and a curvature term on the embedding path; no masks | [temporal straightening](https://arxiv.org/abs/2603.12231) |
+| `'motionjepa'` | `'lewm'` plus an embedding of the difference of consecutive patches (DISReg); no masks | [MotionJEPA](https://arxiv.org/abs/2609.23881) |
+| `'njepa'` | `'ijepa'` with a second predictor whose mask tokens carry Gaussian noise | [N-JEPA](https://arxiv.org/abs/2507.15216) |
+| `'gmmjepa'` | `'ijepa'` plus a cluster head trained on the soft posteriors of a frozen Gaussian mixture of the patches | [GMM-anchored JEPA](https://arxiv.org/abs/2602.09040) (speech) |
+| `'variational'` | the predictor returns a Gaussian; `pred` is a negative log-likelihood | [VJEPA](https://arxiv.org/abs/2601.14354) |
+| `'phijepa'` | two prediction stages, towards a corrupted and then the clean view; cosine distance | [PhiJEPA](https://arxiv.org/abs/2611.27516) |
+| `'harjepa'` | an EMA target that is not normalised; VICReg terms and a norm term on the predictions | [HAR-JEPA](https://arxiv.org/abs/2607.16350) (wearable sensors) |
+
+Several of these papers leave more open than the earlier twelve did, `'variational'` most of all (its
+paper is a framework without fixed networks or constants); `REPORT.md` section 4.10 says what is the
+paper's and what is ours for each. SC-JEPA (MTS-JEPA), the one JEPA built for anomalies in
+multivariate series, was read again and is still not implemented: the text read gives none of its nine
+loss weights.
 
 ## What the benchmarks show
 
@@ -241,6 +264,66 @@ list (`REPORT.md`, section 7.10). Mean VUS-PR:
   a GPU is slower than 8 CPU threads; it is about 3 times faster with a larger network
   (`results/gpu/gpu_check.json`).
 
+### Ten more versions (0.5.0) on all of TSB-AD
+
+`REPORT.md` section 7.11. The ten versions of 0.5.0 were run on all five lists (1070 series, 85 runs,
+no failed series). The 100 tests were fixed and pushed before any of their results was read
+(`results/tsb_more_plan.md`).
+
+Mean VUS-PR of the default score `pred`, trained:
+
+| | M-Eva (180) | M-Tuning (20) | U-Eva (350) | U-Tuning (48) | U-Rest (472) |
+|---|---|---|---|---|---|
+| `lejepa` (default) | 0.351 | 0.363 | 0.378 | 0.337 | 0.177 |
+| `lewm` (0.4.0) | 0.386 | 0.441 | 0.394 | 0.398 | 0.213 |
+| `straight` | 0.427 | 0.444 | 0.398 | 0.396 | 0.232 |
+| `hepa` | 0.414 | 0.481 | 0.418 | 0.338 | 0.134 |
+| `subjepa` | 0.380 | 0.426 | 0.397 | 0.401 | 0.203 |
+| `motionjepa` | 0.384 | 0.434 | 0.388 | 0.393 | 0.201 |
+| `ststjepa` | 0.356 | 0.370 | 0.386 | 0.346 | 0.172 |
+| `harjepa` | 0.346 | 0.349 | 0.348 | 0.306 | 0.149 |
+| `variational` | 0.297 | 0.372 | 0.323 | 0.317 | 0.186 |
+| `phijepa` | 0.299 | 0.383 | 0.316 | 0.315 | 0.154 |
+| `njepa` | 0.272 | 0.296 | 0.326 | 0.302 | 0.108 |
+| `gmmjepa` | 0.271 | 0.350 | 0.324 | 0.318 | 0.133 |
+
+* Against the default: 11 of the 50 tests ahead, 9 behind, 30 not separated. Training helps in 36 of
+  50 tests against the untrained control and hurts in none.
+* `straight` is ahead of the default on all five lists, with each of three seeds. Its lead over `lewm`,
+  whose network it has, is
+  one source dataset: on the 25 GHL series it has 0.348 and every other version 0.045 or less; without
+  them it has 0.441 and `lewm` 0.446. On a GHL series its embeddings have collapsed to an effective rank
+  of 1.7 of 64 (stop-gradient is its only protection), which is what makes it insensitive to the drift
+  after the training prefix there, and it is the weakest of that network's versions on SKAB (0.632).
+* `hepa` is ahead on both evaluation lists and behind on U-Rest. It gains on the ECG sets and SMAP and
+  loses on YAHOO, WSD, IOPS, Stock and TAO.
+* The four new versions with an EMA target and normalised targets (`njepa`, `gmmjepa`, `variational`,
+  `phijepa`) need training and end below the default on the evaluation lists, like the earlier versions
+  of that kind.
+* `ststjepa` and `harjepa` have an EMA target that is not normalised, and they keep SKAB (0.829, 0.833;
+  default 0.825): of the 19 versions that hide patches, the seven with targets that are not normalised
+  have 0.825 to 0.833 there and the twelve others 0.42 to 0.73. So the normalisation of the targets,
+  not the EMA teacher, fails under that regime shift.
+* For several of the ten, parts of the recipe are ours, so a result says how this implementation does
+  at this budget. One seed, except `straight` (three); no tuning. The default was not changed.
+
+### All nine TSB-AD measures: the leaderboard
+
+`REPORT.md` section 7.12 and [LEADERBOARD.md](LEADERBOARD.md). Every run of sections 7.9 to 7.11
+(274 runs of a list, 174,890 score vectors, all 200 multivariate and 870 univariate series) now has the nine
+measures of TSB-AD, computed with `jepa_od.metrics`.
+
+* AUC-PR and Standard-F1 rank the 26 versions like VUS-PR (rank correlation 0.94 to 1.00), the
+  event-based and range-based F1 nearly so (0.84 to 0.88). VUS-ROC and AUC-ROC do not (0.17 to 0.50).
+* PA-F1 turns the multivariate table around (rank correlation −0.38): TSB-AD's own PCA has the highest
+  PA-F1 of all rows (0.791) and is 18th of 28 by VUS-PR.
+* The comparisons the report rests on do not depend on the measure: `vicreg`, `lewm` and `straight` are
+  above the default on all nine measures on both sets, and training the default helps on all nine.
+  "The EMA versions are worse" holds for the precision-recall measures only.
+* On the 870 univariate series the control without a network (raw patches, `embed`) is first on five
+  of nine measures, VUS-PR included (0.508; the best version has 0.495).
+* The default version is 10th of 26 by VUS-PR on both sets.
+
 ## Install
 
 ```bash
@@ -273,9 +356,33 @@ ts_scores = ts.decision_function(X_test)    # shape (n_timestamps,)
 
 # the same detector trained with another JEPA version: 'lejepa' (default), 'ijepa', 'tsjepa', 'tjepa',
 # 'vjepa', 'vjepa21', 'cjepa', 'sjepa', 'salt', 'vicreg', 'kerjepa', 'lpjepa', 'lambdajepa', 'lenepa',
-# 'lewm', 'cfjepa'
+# 'lewm', 'cfjepa', 'ststjepa', 'hepa', 'subjepa', 'straight', 'motionjepa', 'njepa', 'gmmjepa',
+# 'variational', 'phijepa', 'harjepa'
 ts2 = TSJEPAOD(window_size=100, patch_len=10, variant='tsjepa').fit(X_train)
+
+# the nine evaluation measures of the TSB-AD benchmark for a score vector
+from jepa_od.metrics import ts_metrics, acf_window
+measures = ts_metrics(y_test, ts_scores, window=acf_window(X_test[:, 0]))
+# {'VUS-PR': ..., 'VUS-ROC': ..., 'AUC-PR': ..., 'AUC-ROC': ..., 'Standard-F1': ..., 'PA-F1': ...,
+#  'Event-based-F1': ..., 'R-based-F1': ..., 'Affiliation-F': ...}
 ```
+
+### Evaluation measures (`jepa_od.metrics`)
+
+`ts_metrics(labels, scores, window)` returns the nine measures TSB-AD reports for a score vector:
+VUS-PR and VUS-ROC (range-aware, averaged over label extensions up to `window`), AUC-PR, AUC-ROC, and
+the best F over thresholds in five forms (point-wise, point-adjusted, event-based, range-based,
+affiliation). Each is also a function of its own (`vus`, `pa_f1`, `range_f1`, `affiliation_f1`, ...),
+and `acf_window` gives the dominant period TSB-AD uses as the window.
+
+The definitions follow TSB-AD's evaluation code, edge cases included, so the numbers can be put next
+to that benchmark's. They are computed with numpy, where TSB-AD's functions
+loop in Python over thresholds, anomalies and timestamps: on 1000 random cases and on 120 saved score
+vectors of up to 40,000 timestamps the largest difference to TSB-AD's code is below 3e-15 for every
+measure, and the time is 28 and 55 times shorter (`benchmarks/check_metrics_tsb.py`; longer series
+were not compared, because TSB-AD's code is slow on them). The five F measures use a
+threshold chosen with the labels, as TSB-AD reports them: they say what a detector could reach, not
+what it reaches with its own threshold.
 
 Key options (`JEPAOD` and `TSJEPAOD`): `mask_mode` (`random` / `block` / `forecast` / `mixed`),
 `mask_ratio`, `n_mask_samples`, `score` (`pred` / `embed` / `combined`; tabular default `combined`, time-series default `pred`),
@@ -299,7 +406,7 @@ not occur with it (REPORT.md, section 7.5). `epoch_num=0` on either tabular clas
 ## Layout
 
 ```
-jepa_od/          package (detectors + shared network / regulariser)
+jepa_od/          package (detectors, shared networks and regularisers, metrics.py)
 tests/            PyOD-style unittest suites
 benchmarks/       bench_tabular.py (ADBench), bench_ts.py (synthetic, NAB, SKAB),
                   bench_tjepa.py (T-JEPA family and untrained controls), toy_two_features.py
@@ -350,7 +457,8 @@ python benchmarks/make_ts_variant_tables.py          # tables and REPORT.md sect
 
 The header of `bench_ts_jepa_final.py` has the two extra commands for the masking of the TS-JEPA paper.
 
-The twelve further versions of section 7.8 (24 runs, six at a time, two threads each):
+The twelve further versions of section 7.8 (24 runs, six at a time, two threads each), and the ten of
+section 7.11 with `SET=ten` (17 runs):
 
 ```bash
 sh benchmarks/run_ts_versions.sh 6                   # writes results/ts_variants/V_{trained,untrained}.csv
@@ -388,9 +496,26 @@ python -I benchmarks/eval_tsb.py --tsb <TSB-AD clone> --data <folder with TSB-AD
 python benchmarks/make_tsb_confirm_tables.py         # tables and REPORT.md section 7.10
 ```
 
+The ten versions of section 7.11 and the nine measures of section 7.12 use the same folder layout, with a
+copy of this repository in `<work folder>/jepa-od` (85 runs, 26 hours of fitting and scoring; the nine
+measures of all 274 runs take a quarter of an hour on 72 processes):
+
+```bash
+QUEUE=more ROOT=<work folder> GPUS=0,1 JOBS=6 sh benchmarks/run_tsb.sh      # the ten versions, five lists
+python -I benchmarks/check_metrics_tsb.py --tsb <TSB-AD clone> --results <work folder>/results/tsb \
+    --data <folder with TSB-AD-M/ and TSB-AD-U/>     # jepa_od/metrics.py against TSB-AD's own code
+python -I benchmarks/eval_tsb.py --tsb <TSB-AD clone> --data <folder with TSB-AD-M/ and TSB-AD-U/> \
+    --results <work folder>/results/tsb --jobs 64    # the nine measures of every saved score vector
+SET=ten sh benchmarks/run_ts_versions.sh 5           # the small benchmarks of the ten versions
+python benchmarks/make_tsb_more_tables.py            # tables and REPORT.md section 7.11
+python benchmarks/make_leaderboard.py                # LEADERBOARD.md and REPORT.md section 7.12
+python -I benchmarks/diag_ts_collapse.py --pyod <pyod checkout> <a TSB-AD csv file>   # finding 4 of 7.11
+```
+
 Result tables for the committed runs are in `results/report_tables.md`, `results/tjepa_tables.md`,
 `results/extended_tables.md`, `results/ts_control_tables.md`, `results/ts_variant_tables.md`,
-`results/ts_versions_tables.md`, `results/tsb_tables.md` and `results/tsb_confirm_tables.md`
+`results/ts_versions_tables.md`, `results/tsb_tables.md`, `results/tsb_confirm_tables.md`,
+`results/tsb_more_tables.md` and `LEADERBOARD.md`
 (`benchmarks/make_tjepa_tables.py` builds `results/tjepa_tables.md`; the committed run was five parallel jobs with
 3 threads each, see the header of `bench_tjepa.py`). Runs are deterministic for a fixed seed and thread count; a different thread count
 changes single results (by up to 0.08 ROC-AUC between one and three threads) and leaves the means over datasets within 0.002.
@@ -413,6 +538,8 @@ showed on long series are listed in `integration/PYOD_PR_CHECKLIST.md` and are n
 `JEPA_VERSIONS_SURVEY.md` lists the further JEPA recipes that fit the `variant` family and the ones
 that do not. Twelve of them are implemented in this repository (version 0.4.0, 16 versions in all) and,
 since 2026-11-22, in the PyOD branch, where `TSJEPA` returns the same scores as `TSJEPAOD` for all sixteen.
+Version 0.5.0 (2026-11-25) adds ten more versions and `jepa_od.metrics` to this repository only; the
+PyOD branch is unchanged and has neither.
 The first comment on the PyOD issue describes four versions. A second one, posted on 2026-11-22, links the
 branch and names the three versions level with the default (`kerjepa`, `vicreg`, `lambdajepa`); its text is
 in `integration/PYOD_ISSUE_COMMENT2_DRAFT.md`. It does not mention the nine other versions in the branch.

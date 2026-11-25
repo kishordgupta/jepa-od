@@ -354,3 +354,19 @@ PyOD's process (`CONTRIBUTING.md` on `development`):
 `inference_forward(batch_x, net, criterion)` -> (z, score); set `data_type='ts'` and use DeepOD's
 `seq_len` / `stride` windowing. `JEPACore` plugs in as `net` unchanged, and the SIGReg term is
 computed inside `training_forward`.
+
+### Version 0.5.0 of the prototype (2026-11-25): not in the branch
+
+At the user's request the work of 2026-11-25 went into the jepa-od repository only. The PyOD branch
+`feature/ts-jepa` is unchanged (three commits, sixteen versions).
+
+* Ten more `variant` values exist in the prototype (`REPORT.md` sections 4.10 and 7.11): `ststjepa`, `hepa`,
+  `subjepa`, `straight`, `motionjepa`, `njepa`, `gmmjepa`, `variational`, `phijepa`, `harjepa`. Porting them would
+  mean `_recipes2.py` and `_variant_nets2.py` (about 780 lines) plus `tests/test_ts_jepa_more.py`. `gmmjepa` uses
+  `sklearn.mixture`, which PyOD already depends on.
+* `jepa_od/metrics.py` (TSB-AD's nine measures) is an evaluation module, not a detector; PyOD has no place for it.
+* What a proposal could add from section 7.11: on TSB-AD the next-patch versions lead on multivariate series
+  (`straight`, `hepa`, `lewm`), each on particular kinds of series; the default is 10th of 26 by VUS-PR.
+  What it should not say: that `straight` is the best version in general (its lead over `lewm` is the GHL
+  dataset, and it is weak on SKAB).
+* Nothing about 0.5.0 has been posted on issue 795.

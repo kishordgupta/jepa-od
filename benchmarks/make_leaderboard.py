@@ -104,6 +104,7 @@ out = ['# Leaderboard: every `TSJEPAOD` version on TSB-AD, nine measures', '',
        '(tests: `REPORT.md` Sections 7.9 to 7.11), the versions were not tuned, and the control without any network '
        'is a row of its own because it is hard to beat on univariate series.', '']
 
+report = []
 for name, lists in SETS.items():
     n = sum(LISTS[l] for l in lists)
     s = name[0]
@@ -138,6 +139,10 @@ for name, lists in SETS.items():
         out += [f'## TSB-AD-{s}, all {n} series: {what}', '',
                 f'Mean over the {n} series, trained versions unless a row says otherwise, sorted by VUS-PR; the '
                 'highest value of a column is bold.', '', md(shown), '']
+        if score == 'pred' or (s, score) == ('U', 'embed'):
+            report.append(f'#### TSB-AD-{s}, all {n} series, {what}: mean of the nine measures, trained versions '
+                          'unless a row says otherwise, sorted by VUS-PR; the highest value of a column is bold\n\n'
+                          + md(shown))
 
 # places among TSB-AD's published detectors (VUS-PR, evaluation lists)
 out += ['## Place among the detectors TSB-AD published (evaluation lists, VUS-PR)', '',
@@ -181,7 +186,59 @@ for name in SETS:
 out += [md(pd.DataFrame(rows).set_index('set')), '',
         'All means per list (the five lists and the two pooled sets), score type, and for trained and untrained '
         'runs: `results/leaderboard/tsb_nine_measures.csv`.', '']
+report.append('#### Spearman rank correlation, over the trained versions, between the mean VUS-PR and the mean of '
+              'each other measure (score `pred`)\n\n' + md(pd.DataFrame(rows).set_index('set')))
+# does a comparison depend on the measure?
+PAIRS = [(('vicreg', 'trained', 'pred'), ('lejepa', 'trained', 'pred')),
+         (('lewm', 'trained', 'pred'), ('lejepa', 'trained', 'pred')),
+         (('straight', 'trained', 'pred'), ('lejepa', 'trained', 'pred')),
+         (('hepa', 'trained', 'pred'), ('lejepa', 'trained', 'pred')),
+         (('ijepa', 'trained', 'pred'), ('lejepa', 'trained', 'pred')),
+         (('lejepa', 'trained', 'pred'), ('lejepa', 'untrained', 'pred')),
+         (('lejepa', 'trained', 'embed'), ('lejepa', 'trained', 'pred')),
+         (('lejepa', 'trained', 'embed'), ('no network (raw patches)', '-', 'embed'))]
+
+
+def name(spec):
+    return spec[0] if spec[1] == '-' else f'`{spec[0]}`' + (', untrained' if spec[1] == 'untrained' else '') \
+        + f', `{spec[2]}`'
+
+
+out += ['## Does a comparison depend on the measure?', '',
+        'Mean difference A − B over the series of a set, for each measure; in brackets the share of series on '
+        'which A is better among those where the two differ. No tests: Sections 7.9 to 7.11 of the report test '
+        'VUS-PR.', '']
+rows = []
+for set_name, lists in SETS.items():
+    d = per_file[per_file.list.isin(lists)]
+    for a, b in PAIRS:
+        xa = d[(d.version == a[0]) & (d.training == a[1]) & (d.score == a[2])].set_index('file')[MEASURES]
+        xb = d[(d.version == b[0]) & (d.training == b[1]) & (d.score == b[2])].set_index('file')[MEASURES]
+        if len(xa) != sum(LISTS[l] for l in lists) or len(xb) != len(xa):
+            continue
+        diff = xa - xb.reindex(xa.index)
+        r = {'set': f'TSB-AD-{set_name[0]}', 'A': name(a), 'B': name(b)}
+        for m in MEASURES:
+            x = diff[m].dropna()
+            decided = int((x != 0).sum())
+            r[m] = f'{x.mean():+.3f} ({100 * (x > 0).sum() / max(1, decided):.0f} %)'
+        rows.append(r)
+out += [md(pd.DataFrame(rows).set_index('set')), '']
+report.append('#### Does a comparison depend on the measure? Mean difference A − B over the series of a set; in '
+              'brackets the share of series on which A is better among those where the two differ. No tests.\n\n'
+              + md(pd.DataFrame(rows).set_index('set')))
 text = '\n'.join(out)
 open(os.path.join(ROOT, 'LEADERBOARD.md'), 'w').write(text)
+block = '\n\n'.join(report) + '\n'
+open(os.path.join(ROOT, 'results', 'leaderboard', 'report_tables.md'), 'w').write(block)
+narr = os.path.join(ROOT, 'results', 'leaderboard', 'narrative.md')
+rp = os.path.join(ROOT, 'REPORT.md')
+rep = open(rp).read()
+B, E = '<!-- LB:BEGIN -->', '<!-- LB:END -->'
+if os.path.exists(narr) and B in rep and E in rep:
+    rep = rep[:rep.index(B) + len(B)] + '\n\n' + open(narr).read().strip() + '\n\n' + block.strip() + '\n\n' \
+        + rep[rep.index(E):]
+    open(rp, 'w').write(rep)
+    print('REPORT.md section 7.12 refreshed')
 print(text[:3000])
 print('...', len(table), 'rows in the CSV')

@@ -13,8 +13,8 @@ from jepa_od.metrics import (METRICS, ts_metrics, vus, standard_f1, pa_f1,
                              event_f1, range_f1, affiliation_f1, acf_window,
                              _affiliation, _runs)
 
-FIXTURE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data',
-                       'tsb_metrics_fixture.npz')
+FIXTURE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures',
+                       'tsb_metrics.npz')
 
 
 class TestMetrics(unittest.TestCase):

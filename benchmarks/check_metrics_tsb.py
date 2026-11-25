@@ -7,7 +7,7 @@ also compares ``acf_window`` with TSB-AD's ``find_length_rank`` on the data file
 difference per measure.
 
     python -I benchmarks/check_metrics_tsb.py --tsb <TSB-AD clone> [--results <results folder> --data <data folder>]
-        [--random 400] [--real 60] [--max-len 60000] [--jobs 32] [--fixture tests/data/tsb_metrics_fixture.npz]
+        [--random 400] [--real 60] [--max-len 60000] [--jobs 32] [--fixture tests/fixtures/tsb_metrics.npz]
 
 ``--fixture`` writes a few of the random cases with TSB-AD's values, for tests/test_metrics.py.
 """

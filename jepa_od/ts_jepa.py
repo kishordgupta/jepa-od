@@ -18,8 +18,8 @@ second score is the Mahalanobis distance of every patch embedding to the
 training embeddings (``score='embed'``).
 
 The detector is a family: ``variant`` selects which JEPA trains the
-network (LeJEPA, I-JEPA, TS-JEPA, T-JEPA and twenty-two further versions,
-see :class:`TSJEPAOD`). Scores, training budget and the PyOD interface are
+network (LeJEPA, I-JEPA, TS-JEPA, T-JEPA and twenty-three further
+versions, see :class:`TSJEPAOD`). Scores, training budget and the PyOD interface are
 the same for all of them.
 """
 # License: BSD 2 clause
@@ -163,6 +163,16 @@ class TSJEPAOD(BaseDetector):
     hide patches either. The untrained networks of the last three are
     that of ``'lewm'``.
 
+    ``'scjepa'`` (version 0.5.1) is SC-JEPA, also named MTS-JEPA, the JEPA
+    its authors built for anomalies in multivariate series: the first half
+    of the window predicts the second half, one variable at a time, as
+    distributions over the prototypes of a soft codebook, at the patch
+    resolution and for one time-averaged view; EMA targets; a
+    reconstruction term. It hides no patches; the patches of the first
+    half get no ``pred`` score; its ``embed`` score is computed on the code
+    distributions. Constants are the paper's (``jepa_od/_recipes2.py``;
+    REPORT.md, section 7.13).
+
     Parameters
     ----------
     window_size : int, optional (default=100)
@@ -200,7 +210,8 @@ class TSJEPAOD(BaseDetector):
         position (deterministic, complete coverage).
 
     variant : str, optional (default='lejepa')
-        The JEPA version, one of the twenty-six names in the tables above.
+        The JEPA version, one of the twenty-six names in the tables above
+        or ``'scjepa'``.
 
     variant_params : dict or None, optional (default=None)
         Overrides of the constants of a version of the second or third
@@ -224,8 +235,8 @@ class TSJEPAOD(BaseDetector):
         fixed) for ``'vjepa21'``, 0.983 (cosine schedule) for
         ``'cfjepa'`` and 0.9996 (rising to 0.9999) for ``'ststjepa'``;
         ``'njepa'``, ``'gmmjepa'``, ``'variational'``, ``'phijepa'`` and
-        ``'harjepa'`` use 0.996. Ignored by the versions without an EMA
-        target.
+        ``'harjepa'`` use 0.996, and so does ``'scjepa'`` (held fixed).
+        Ignored by the versions without an EMA target.
 
     recon_weight : float, optional (default=0.0)
         Weight of the reconstruction anchor, see :class:`jepa_od.JEPAOD`.

@@ -40,9 +40,8 @@ class TestTSJEPAODTenVersions(unittest.TestCase):
                       for v in MORE}
 
     def test_registry(self):
-        self.assertEqual(_VARIANTS[16:], MORE)
-        self.assertEqual(len(_VARIANTS), 26)
-        self.assertEqual(len(set(_VARIANTS)), 26)
+        self.assertEqual(_VARIANTS[16:26], MORE)
+        self.assertEqual(len(set(_VARIANTS[:26])), 26)
         for v in MORE:
             recipe = RECIPES[v]
             self.assertTrue(recipe.__doc__, v)

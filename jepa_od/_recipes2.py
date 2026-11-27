@@ -21,7 +21,7 @@ from ._sigreg import sigreg_loss
 from ._variant_nets2 import (ShallowTargetCore, HEPACore, SubspaceLatentCore,
                              MotionCore, NoiseJEPACore, GMMJEPACore,
                              VariationalJEPACore, PhiJEPACore,
-                             PlainTargetCore, cosine_distance)
+                             PlainTargetCore, SCJEPACore, cosine_distance)
 
 
 def _sizes(size, *names):
@@ -324,6 +324,63 @@ class HARJEPA(Recipe):
         return (hp['sim_weight'] * l_pred + hp['var_weight'] * l_var
                 + hp['cov_weight'] * l_cov + hp['norm_weight'] * l_norm), \
             l_pred
+
+
+class SCJEPA(Recipe):
+    """SC-JEPA (He et al., arXiv:2602.04643; first version: MTS-JEPA), the
+    JEPA its authors built for anomalies in multivariate series. The first
+    half of the window predicts the second half, one variable at a time,
+    in the space of a soft codebook and at two resolutions; EMA copies of
+    the encoder and the codebook give the targets (decay 0.996, constant);
+    a decoder reconstructs the first half. The objective and all its
+    constants are the paper's (its Appendix B.1): 128 codes, temperature
+    0.1, weights 1 (fine), 0.5 (coarse), 0.1 (squared error of the
+    expected prototype), 1 and 0.25 (codebook alignment), 0.005 and 0.01
+    (the two entropy terms), and a reconstruction weight that falls
+    linearly from 0.5 to 0.1.
+
+    Ours: the two halves of the detector's window stand for the paper's
+    two consecutive windows (five patches each at the defaults, as in the
+    paper); the tokenizer is an MLP per patch (the paper: a residual CNN);
+    positions are sinusoidal; the decoder is linear; the instance
+    normalisation has no learned affine map; and the scores
+    (:class:`SCJEPACore`), since the paper trains a classifier on labels
+    instead."""
+    ema_momentum, ema_schedule = 0.996, 'fixed'
+    masked = False
+    params = dict(n_codes=128, temperature=0.1, fine_weight=1.0,
+                  coarse_weight=0.5, mse_weight=0.1, emb_weight=1.0,
+                  com_weight=0.25, ent_sample_weight=0.005,
+                  ent_batch_weight=0.01, rec_weight_start=0.5,
+                  rec_weight_end=0.1)
+
+    def build(self, det, n_tokens, n_channels, size, hp):
+        return SCJEPACore(
+            n_tokens, det.patch_len, n_channels, n_codes=int(hp['n_codes']),
+            temperature=hp['temperature'], mse_weight=hp['mse_weight'],
+            coarse_weight=hp['coarse_weight'] / hp['fine_weight'], **size)
+
+    def ema_pairs(self, model):
+        return [(model.target_encoder, model.encoder),
+                (model.target_codebook, model.codebook)]
+
+    def pretrain(self, det, model, make_loader, device, gen, hp):
+        # the paper removes the variables with zero variance in training
+        patches = make_loader().dataset.tensors[0]
+        model.set_channels(patches.reshape(-1, model.n_channels).std(0) > 1e-6)
+
+    def loss(self, det, model, xb, ctx, tgt, gen, state, hp):
+        t = model.training_terms(xb)
+        rec_weight = hp['rec_weight_start'] + (
+            hp['rec_weight_end'] - hp['rec_weight_start']) * state['frac']
+        loss = (hp['fine_weight'] * (t['kl_fine']
+                                     + hp['mse_weight'] * t['mse_fine'])
+                + hp['coarse_weight'] * t['kl_coarse']
+                + hp['emb_weight'] * t['emb'] + hp['com_weight'] * t['com']
+                + hp['ent_sample_weight'] * t['ent_sample']
+                - hp['ent_batch_weight'] * t['ent_batch']
+                + rec_weight * t['rec'])
+        return loss, t['kl_fine']
 
 
 MORE_RECIPES = {

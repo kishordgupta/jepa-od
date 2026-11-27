@@ -409,6 +409,7 @@ RECIPES = {
 }
 
 # the ten versions of version 0.5.0 (the module needs the classes above)
-from ._recipes2 import MORE_RECIPES  # noqa: E402
+from ._recipes2 import MORE_RECIPES, SCJEPA  # noqa: E402
 
 RECIPES.update(MORE_RECIPES)
+RECIPES['scjepa'] = SCJEPA()   # added in version 0.5.1

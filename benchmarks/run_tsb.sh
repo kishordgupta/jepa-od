@@ -12,6 +12,8 @@
 #   QUEUE=confirm ROOT=<work folder> GPUS=2,5,6,7 JOBS=12 sh benchmarks/run_tsb.sh
 # runs the confirmation of results/tsb_confirm_plan.md instead (REPORT.md section 7.10): every version, trained and
 # untrained, and the control without a network, on the lists M-Tuning, U-Tuning and U-Rest.
+#   QUEUE=scjepa ROOT=<work folder> GPUS=2,5,6,7 JOBS=10 sh benchmarks/run_tsb.sh
+# runs scjepa of 0.5.1 the same way (ten runs, REPORT.md section 7.13).
 #   QUEUE=more ROOT=<work folder> GPUS=2,5,6,7 JOBS=12 sh benchmarks/run_tsb.sh
 # runs the ten versions of 0.5.0 on all five lists (REPORT.md section 7.11). They are run with jepa_od.TSJEPAOD of
 # ROOT/jepa-od (a copy of this repository), since the PyOD port does not have them. The zero-epoch controls of
@@ -19,6 +21,7 @@
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=${ROOT:-$HOME/jepa-od-gpu}
 MORE="ststjepa hepa subjepa straight motionjepa njepa gmmjepa variational phijepa harjepa"
+PROTOTYPE="$MORE scjepa"   # the versions that only jepa_od.TSJEPAOD has
 GPUS=${GPUS:-0}
 OUT=$ROOT/results/tsb
 mkdir -p "$OUT/logs"
@@ -36,7 +39,7 @@ if [ "$1" = --one ]; then   # one run: list (M or U: the evaluation list; or M-T
         *) echo "unknown kind $kind"; exit 1;;
     esac
     pkg=""   # the ten versions of 0.5.0 are in the prototype only
-    case " $MORE " in *" $v "*) pkg="--jepa-od $ROOT/jepa-od";; esac
+    case " $PROTOTYPE " in *" $v "*) pkg="--jepa-od $ROOT/jepa-od";; esac
     log=$OUT/logs/$2_${tag}.log
     if tail -n 1 "$log" 2>/dev/null | grep -q 'ALL DONE'; then exit 0; fi
     while :; do
@@ -50,7 +53,9 @@ fi
 JOBS=${JOBS:-3}
 FIRST="lejepa kerjepa vicreg lambdajepa ijepa tsjepa tjepa"
 REST="vjepa vjepa21 cjepa sjepa salt lpjepa lenepa lewm cfjepa"
-if [ "$QUEUE" = more ]; then
+if [ "$QUEUE" = scjepa ]; then   # version 0.5.1 (REPORT.md section 7.13)
+    for l in M U U-Rest U-Tuning M-Tuning; do echo "$l scjepa trained"; echo "$l scjepa untrained"; done > "$OUT/.queue"
+elif [ "$QUEUE" = more ]; then
     {
         for l in M U U-Rest U-Tuning M-Tuning; do for v in $MORE; do echo "$l $v trained"; done; done
         for l in M U U-Rest U-Tuning M-Tuning; do

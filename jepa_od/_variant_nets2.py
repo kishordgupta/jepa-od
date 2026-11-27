@@ -440,3 +440,237 @@ class PlainTargetCore(JEPACore):
     def encode_target(self, tokens):
         with torch.no_grad():
             return self.target_encoder(tokens)
+
+
+# ----------------------------------------------------------------------
+# SC-JEPA (MTS-JEPA): soft codes, two resolutions, one variable at a time
+# ----------------------------------------------------------------------
+class _CodeEncoder(nn.Module):
+    """An MLP per patch of one variable, sinusoidal positions and a
+    Transformer; takes any number of patches up to ``max_tokens``."""
+
+    def __init__(self, patch_len, d_model, n_heads, n_layers, dropout,
+                 final_norm, max_tokens):
+        super().__init__()
+        self.tokenizer = nn.Sequential(nn.Linear(patch_len, d_model),
+                                       nn.GELU(), nn.Linear(d_model, d_model))
+        self.register_buffer('pos', _sinusoid(max_tokens, d_model))
+        self.body = TransformerStack(d_model, n_heads, n_layers, dropout,
+                                     final_norm=final_norm)
+
+    def forward(self, x):
+        return self.body(self.tokenizer(x) + self.pos[:x.size(1)])
+
+
+class _Codebook(nn.Module):
+    """Soft codebook: the distribution over the prototypes is a softmax of
+    the cosine similarities divided by the temperature."""
+
+    def __init__(self, n_codes, d_model, temperature):
+        super().__init__()
+        self.codes = nn.Parameter(torch.randn(n_codes, d_model)
+                                  / math.sqrt(d_model))
+        self.temperature = temperature
+
+    def forward(self, h):
+        """Returns the log code probabilities (..., K) and the expected
+        code embedding (..., D)."""
+        logits = F.normalize(h, dim=-1) @ F.normalize(self.codes, dim=-1).T
+        logp = F.log_softmax(logits / self.temperature, dim=-1)
+        return logp, logp.exp() @ self.codes
+
+
+def _kl(target_logp, logp):
+    """KL(target || prediction) of log-probabilities, over the last axis."""
+    return (target_logp.exp() * (target_logp - logp)).sum(-1)
+
+
+class SCJEPACore(nn.Module):
+    """Network and training terms of the ``'scjepa'`` version.
+
+    After SC-JEPA (He et al., arXiv:2602.04643; its first version is named
+    MTS-JEPA), which predicts the next window from the current one. Here
+    the window of the detector is cut in two: the first half is the
+    paper's current window and the second half the next one.
+
+    * Every variable is processed on its own (the paper's
+      channel-independent input); variables that are constant in the
+      training data are dropped (:meth:`set_channels`).
+    * Each half is normalised by its own mean and standard deviation per
+      variable (the paper applies RevIN; no affine map is learned here).
+    * A shared encoder embeds the patches of the first half; a soft
+      codebook turns every embedding into a distribution over
+      ``n_codes`` prototypes and into the expected prototype.
+    * A fine predictor maps the code distributions of the first half to
+      those of the patches of the second half, a coarse predictor (a
+      learned query attending to the history) to the code distribution of
+      one coarse view of the second half: its time-average over every
+      ``n_fut`` steps, which has the length of one patch.
+    * EMA copies of the encoder and of the codebook give the targets.
+    * A linear decoder reconstructs the patches of the first half from
+      their expected prototypes, in the units before normalisation.
+
+    For scoring, a patch of the second half gets, per variable, the
+    training's predictive terms (the KL divergence of its code
+    distribution, ``mse_weight`` times the squared error of its expected
+    prototype, and ``coarse_weight`` times the coarse KL divergence of its
+    window), and the largest value over the variables. The embedding of a
+    patch is the EMA branch's code distribution, with the largest
+    probability over the variables for every code: the features the paper
+    passes to its downstream classifier.
+    """
+
+    def __init__(self, n_tokens, patch_len, n_channels, d_model=64, n_heads=4,
+                 n_layers=2, pred_layers=1, dropout=0.0, encoder_norm=False,
+                 n_codes=128, temperature=0.1, mse_weight=0.1,
+                 coarse_weight=0.5, max_sequences=32768):
+        super().__init__()
+        self.n_tokens = n_tokens
+        self.patch_len = patch_len
+        self.n_channels = n_channels
+        self.n_fut = n_tokens // 2
+        self.n_ctx = n_tokens - self.n_fut
+        self.d_model = d_model
+        self.mse_weight = mse_weight
+        self.coarse_weight = coarse_weight
+        self.max_sequences = max_sequences
+        pred_dim = max(16, d_model // 2)
+        pred_heads = max(1, min(n_heads, pred_dim // 16))
+
+        self.encoder = _CodeEncoder(patch_len, d_model, n_heads, n_layers,
+                                    dropout, encoder_norm, self.n_ctx)
+        self.codebook = _Codebook(n_codes, d_model, temperature)
+        self.target_encoder = _frozen_copy(self.encoder)
+        self.target_codebook = _frozen_copy(self.codebook)
+
+        self.fine_in = nn.Linear(n_codes, pred_dim)
+        self.fine_pos = nn.Parameter(torch.randn(self.n_ctx, pred_dim) * 0.02)
+        self.fine_body = TransformerStack(pred_dim, pred_heads, pred_layers,
+                                          dropout)
+        self.fine_out = nn.Linear(pred_dim, n_codes)
+        self.coarse_in = nn.Linear(n_codes, pred_dim)
+        self.coarse_pos = nn.Parameter(
+            torch.randn(self.n_ctx, pred_dim) * 0.02)
+        self.coarse_body = TransformerStack(pred_dim, pred_heads, pred_layers,
+                                            dropout)
+        self.coarse_query = nn.Parameter(torch.randn(pred_dim) * 0.02)
+        self.coarse_attn = nn.MultiheadAttention(
+            pred_dim, pred_heads, dropout=dropout, batch_first=True)
+        self.coarse_out = nn.Linear(pred_dim, n_codes)
+        self.decoder = nn.Linear(d_model, patch_len)
+        self.register_buffer('keep', torch.ones(n_channels, dtype=torch.bool))
+
+    def set_channels(self, keep):
+        """Use only the variables marked in ``keep`` (all, if none is)."""
+        keep = torch.as_tensor(keep, dtype=torch.bool)
+        if not keep.any():
+            keep = torch.ones_like(keep)
+        self.keep.copy_(keep.to(self.keep.device))
+
+    def eval_mask_set(self):
+        """The first half is the context, the second half is predicted."""
+        return (torch.arange(self.n_ctx).unsqueeze(0),
+                torch.arange(self.n_ctx, self.n_tokens).unsqueeze(0))
+
+    def views(self, x, eps=1e-5):
+        """Raw tokens (B, T, patch_len * C) -> one sequence per kept
+        variable, N = B * V in all: the normalised patches of the first
+        half (N, n_ctx, L) and of the second half (N, n_fut, L), the first
+        half before normalisation, and its mean and standard deviation
+        (N, 1, 1)."""
+        L = self.patch_len
+        xs = x.reshape(x.size(0), self.n_tokens * L, self.n_channels)
+        xs = xs[:, :, self.keep].transpose(1, 2).reshape(-1, self.n_tokens * L)
+
+        def normalise(u):
+            mean = u.mean(1, keepdim=True)
+            std = (u.var(1, unbiased=False, keepdim=True) + eps).sqrt()
+            return (u - mean) / std, mean, std
+
+        raw, fut = xs[:, :self.n_ctx * L], xs[:, self.n_ctx * L:]
+        ctx, mean, std = normalise(raw)
+        fut = normalise(fut)[0]
+        N = xs.size(0)
+        return (ctx.view(N, self.n_ctx, L), fut.view(N, self.n_fut, L),
+                raw.view(N, self.n_ctx, L), mean.unsqueeze(-1),
+                std.unsqueeze(-1))
+
+    def coarse_view(self, fut):
+        """The second half (N, n_fut, L) averaged over every ``n_fut``
+        time steps: one patch (N, 1, L)."""
+        N = fut.size(0)
+        return fut.reshape(N, self.patch_len, self.n_fut).mean(-1).unsqueeze(1)
+
+    def predict(self, p):
+        """Code distributions of the first half (N, n_ctx, K) -> log code
+        probabilities of the patches of the second half (N, n_fut, K) and
+        of its coarse view (N, K). Position ``i`` of the last ``n_fut``
+        patches of the first half predicts patch ``i`` of the second."""
+        fine = self.fine_out(self.fine_body(self.fine_in(p) + self.fine_pos))
+        memory = self.coarse_body(self.coarse_in(p) + self.coarse_pos)
+        query = self.coarse_query.expand(p.size(0), 1, -1)
+        coarse = self.coarse_attn(query, memory, memory,
+                                  need_weights=False)[0][:, 0]
+        return (F.log_softmax(fine[:, self.n_ctx - self.n_fut:], dim=-1),
+                F.log_softmax(self.coarse_out(coarse), dim=-1))
+
+    @torch.no_grad()
+    def targets(self, fut):
+        """EMA targets: log code probabilities (N, n_fut, K) and expected
+        prototypes (N, n_fut, D) of the second half, and the log code
+        probabilities of its coarse view (N, K)."""
+        logp, z = self.target_codebook(self.target_encoder(fut))
+        coarse = self.target_codebook(
+            self.target_encoder(self.coarse_view(fut)))[0][:, 0]
+        return logp, z, coarse
+
+    def training_terms(self, x):
+        """The eight terms of the paper's objective, each summed over the
+        patches (and embedding dimensions or patch values) and averaged
+        over the sequences."""
+        ctx, fut, raw, mean, std = self.views(x)
+        h = self.encoder(ctx)
+        logp, z = self.codebook(h)
+        p = logp.exp()
+        fine, coarse = self.predict(p)
+        t_logp, t_z, t_coarse = self.targets(fut)
+        marginal = p.mean(dim=(0, 1))
+        return dict(
+            kl_fine=_kl(t_logp, fine).sum(1).mean(),
+            mse_fine=(t_z - fine.exp() @ self.codebook.codes).pow(2).sum(
+                (1, 2)).mean(),
+            kl_coarse=_kl(t_coarse, coarse).mean(),
+            emb=(z.detach() - h).pow(2).sum((1, 2)).mean(),
+            com=(z - h.detach()).pow(2).sum((1, 2)).mean(),
+            ent_sample=-(p * logp).sum(-1).mean(),
+            ent_batch=-(marginal * (marginal + 1e-12).log()).sum(),
+            rec=(self.decoder(z) * std + mean - raw).pow(2).sum(
+                (1, 2)).mean())
+
+    def _score(self, x):
+        B = x.size(0)
+        ctx, fut, _, _, _ = self.views(x)
+        fine, coarse = self.predict(self.codebook(self.encoder(ctx))[0].exp())
+        t_logp, t_z, t_coarse = self.targets(fut)
+        err = (_kl(t_logp, fine) + self.mse_weight
+               * (t_z - fine.exp() @ self.codebook.codes).pow(2).sum(-1)
+               + self.coarse_weight * _kl(t_coarse, coarse).unsqueeze(1))
+        codes = torch.cat([self.target_codebook(self.target_encoder(ctx))[0],
+                           t_logp], dim=1).exp()
+        return (err.view(B, -1, self.n_fut).max(1).values,
+                codes.view(B, -1, self.n_tokens, codes.size(-1)).max(1).values)
+
+    @torch.no_grad()
+    def multi_mask_errors(self, x, ctx_idx, tgt_idx):
+        """Error of the patches of the second half, (B, 1, n_fut), and the
+        code distributions of all patches, (B, T, K). The split is fixed;
+        the arguments are unused. Windows are processed a few at a time so
+        that at most ``max_sequences`` sequences are in one pass."""
+        step = max(1, self.max_sequences // int(self.keep.sum()))
+        out = [self._score(x[i:i + step]) for i in range(0, x.size(0), step)]
+        return (torch.cat([o[0] for o in out]).unsqueeze(1),
+                torch.cat([o[1] for o in out]))
+
+    @torch.no_grad()
+    def token_embeddings(self, x):
+        return self.multi_mask_errors(x, None, None)[1]

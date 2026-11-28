@@ -30,7 +30,7 @@ embedding** to the training Gaussian, usable alone (`score='embed'`) or fused (`
 
 | | `JEPAOD` | `TJEPAOD` | `TSJEPAOD` |
 |---|---|---|---|
-| origin | this project, built on I-JEPA and LeJEPA | training recipe of T-JEPA (Thimonier et al., ICLR 2025, [arXiv 2410.05016](https://arxiv.org/abs/2410.05016)) | this project; twenty-six selectable JEPA versions (below) |
+| origin | this project, built on I-JEPA and LeJEPA | training recipe of T-JEPA (Thimonier et al., ICLR 2025, [arXiv 2410.05016](https://arxiv.org/abs/2410.05016)) | this project; twenty-seven selectable JEPA versions (below) |
 | collapse prevention | SIGReg, one shared encoder | EMA target encoder and a [REG] token | SIGReg by default, an EMA target encoder in the other versions |
 | context / targets | 70 % of the tokens visible, one mask per row | 20-40 % visible, four target subsets per row | block or causal patch masks |
 | encoder output | not normalised | LayerNorm'ed | not normalised (`lejepa`, `ijepa`), normalised (`tsjepa`, `tjepa`) |
@@ -44,8 +44,8 @@ implemented, because its text could not be read (login required).
 
 ### JEPA versions of `TSJEPAOD`
 
-`TSJEPAOD(variant=...)` selects which JEPA trains the time-series network: twenty-six versions, the
-four below, twelve more in the second table and ten more in the third. Scores, model sizes, training
+`TSJEPAOD(variant=...)` selects which JEPA trains the time-series network: twenty-seven versions, the
+four below, twelve more in the second table, ten more in the third, and `'scjepa'`. Scores, model sizes, training
 budget and the PyOD interface are the same for all of them. [LEADERBOARD.md](LEADERBOARD.md) has
 every version on all of TSB-AD with nine evaluation measures.
 
@@ -104,9 +104,18 @@ ours, section 7.11 the results). They are in this package only, not in the PyOD 
 
 Several of these papers leave more open than the earlier twelve did, `'variational'` most of all (its
 paper is a framework without fixed networks or constants); `REPORT.md` section 4.10 says what is the
-paper's and what is ours for each. SC-JEPA (MTS-JEPA), the one JEPA built for anomalies in
-multivariate series, was read again and is still not implemented: the text read gives none of its nine
-loss weights.
+paper's and what is ours for each.
+
+`'scjepa'` (added in 0.5.1; `REPORT.md` sections 4.11 and 7.13) is
+[SC-JEPA](https://arxiv.org/abs/2602.04643), first published as MTS-JEPA, the one JEPA of the survey
+that its authors built for anomalies in multivariate series. The first half of a window predicts the
+second half, one variable at a time, as distributions over the prototypes of a soft codebook, for
+every patch and for one time-averaged view of the half; EMA copies of the encoder and the codebook give
+the targets, and a decoder reconstructs the first half. The objective and all its constants are those
+of the paper's Appendix B.1. (Version 0.5.0 said here that the paper gives no loss weights. That was
+wrong: only its main text had been read.) Ours are the mapping of the paper's two consecutive windows
+onto the two halves of the detector's window, the tokenizer and decoder, and the scores, because the
+paper trains a classifier on labels instead.
 
 ## What the benchmarks show
 
@@ -313,16 +322,41 @@ Mean VUS-PR of the default score `pred`, trained:
 (274 runs of a list, 174,890 score vectors, all 200 multivariate and 870 univariate series) now has the nine
 measures of TSB-AD, computed with `jepa_od.metrics`.
 
-* AUC-PR and Standard-F1 rank the 26 versions like VUS-PR (rank correlation 0.94 to 1.00), the
-  event-based and range-based F1 nearly so (0.84 to 0.88). VUS-ROC and AUC-ROC do not (0.17 to 0.50).
-* PA-F1 turns the multivariate table around (rank correlation −0.38): TSB-AD's own PCA has the highest
-  PA-F1 of all rows (0.791) and is 18th of 28 by VUS-PR.
+* AUC-PR and Standard-F1 rank the 27 versions like VUS-PR (rank correlation 0.95 to 1.00), the
+  event-based and range-based F1 nearly so (0.86 to 0.89). VUS-ROC and AUC-ROC do not (0.26 to 0.55).
+* PA-F1 turns the multivariate table around (rank correlation −0.43): TSB-AD's own PCA has the highest
+  PA-F1 of all rows (0.791) and is 18th of 29 by VUS-PR, and `scjepa`, last by VUS-PR, has the
+  second-highest PA-F1 of the versions.
 * The comparisons the report rests on do not depend on the measure: `vicreg`, `lewm` and `straight` are
   above the default on all nine measures on both sets, and training the default helps on all nine.
   "The EMA versions are worse" holds for the precision-recall measures only.
-* On the 870 univariate series the control without a network (raw patches, `embed`) is first on five
+* On the 870 univariate series the control without a network (raw patches, `embed`) is first on four
   of nine measures, VUS-PR included (0.508; the best version has 0.495).
-* The default version is 10th of 26 by VUS-PR on both sets.
+* The default version is 10th of 27 by VUS-PR on both sets.
+
+### SC-JEPA (`scjepa`, 0.5.1)
+
+`REPORT.md` section 7.13. The recipe of SC-JEPA with the paper's constants, run on the small benchmarks
+and on all 1070 TSB-AD series (ten runs, no failed series); 16 tests fixed and pushed before the runs.
+
+| mean VUS-PR, trained | M-Eva (180) | M-Tuning (20) | U-Eva (350) | U-Tuning (48) | U-Rest (472) |
+|---|---|---|---|---|---|
+| `lejepa` (default), `pred` | 0.351 | 0.363 | 0.378 | 0.337 | 0.177 |
+| `scjepa`, `pred` | 0.122 | 0.184 | 0.150 | 0.150 | 0.132 |
+| `scjepa`, `embed` | 0.190 | 0.244 | 0.325 | 0.316 | 0.529 |
+| no network (raw patches), `embed` | 0.345 | 0.374 | 0.465 | 0.458 | 0.545 |
+
+* With the default score it is behind the default version on all five lists and the weakest of the 27
+  versions. Training helps a little (0.015 to 0.075 on four lists).
+* The reason is the paper's normalisation: every half-window is normalised by its own mean and scale, so
+  a change of level never reaches the network. It loses most on Exathlon, OPPORTUNITY, NEK, SMD, SMAP
+  and MSL and is level or ahead on sets with shape anomalies (MGAB, UCR, WSD). On SKAB it is at chance
+  (0.482), and at 0.782 with the normalisation switched off (`variant_params={'instance_norm': False}`,
+  an ablation, not the paper's method).
+* Its `embed` score, on the code distributions, has the highest value of any version on the 472 further
+  univariate series (0.529) and is low on the other lists.
+* The paper uses the model with a classifier trained on labels, to predict anomalies in the next window.
+  Nothing here tests that; the result is about the recipe as an unsupervised detector at this budget.
 
 ## Install
 
@@ -357,7 +391,7 @@ ts_scores = ts.decision_function(X_test)    # shape (n_timestamps,)
 # the same detector trained with another JEPA version: 'lejepa' (default), 'ijepa', 'tsjepa', 'tjepa',
 # 'vjepa', 'vjepa21', 'cjepa', 'sjepa', 'salt', 'vicreg', 'kerjepa', 'lpjepa', 'lambdajepa', 'lenepa',
 # 'lewm', 'cfjepa', 'ststjepa', 'hepa', 'subjepa', 'straight', 'motionjepa', 'njepa', 'gmmjepa',
-# 'variational', 'phijepa', 'harjepa'
+# 'variational', 'phijepa', 'harjepa', 'scjepa'
 ts2 = TSJEPAOD(window_size=100, patch_len=10, variant='tsjepa').fit(X_train)
 
 # the nine evaluation measures of the TSB-AD benchmark for a score vector
@@ -508,6 +542,9 @@ python -I benchmarks/eval_tsb.py --tsb <TSB-AD clone> --data <folder with TSB-AD
     --results <work folder>/results/tsb --jobs 64    # the nine measures of every saved score vector
 SET=ten sh benchmarks/run_ts_versions.sh 5           # the small benchmarks of the ten versions
 python benchmarks/make_tsb_more_tables.py            # tables and REPORT.md section 7.11
+QUEUE=scjepa ROOT=<work folder> GPUS=0,1 JOBS=5 sh benchmarks/run_tsb.sh    # scjepa (section 7.13), then
+SET=scjepa sh benchmarks/run_ts_versions.sh 2        # eval_tsb.py as above, and
+python benchmarks/make_tsb_scjepa_tables.py          # tables and REPORT.md section 7.13
 python benchmarks/make_leaderboard.py                # LEADERBOARD.md and REPORT.md section 7.12
 python -I benchmarks/diag_ts_collapse.py --pyod <pyod checkout> <a TSB-AD csv file>   # finding 4 of 7.11
 ```
@@ -515,7 +552,7 @@ python -I benchmarks/diag_ts_collapse.py --pyod <pyod checkout> <a TSB-AD csv fi
 Result tables for the committed runs are in `results/report_tables.md`, `results/tjepa_tables.md`,
 `results/extended_tables.md`, `results/ts_control_tables.md`, `results/ts_variant_tables.md`,
 `results/ts_versions_tables.md`, `results/tsb_tables.md`, `results/tsb_confirm_tables.md`,
-`results/tsb_more_tables.md` and `LEADERBOARD.md`
+`results/tsb_more_tables.md`, `results/tsb_scjepa_tables.md` and `LEADERBOARD.md`
 (`benchmarks/make_tjepa_tables.py` builds `results/tjepa_tables.md`; the committed run was five parallel jobs with
 3 threads each, see the header of `bench_tjepa.py`). Runs are deterministic for a fixed seed and thread count; a different thread count
 changes single results (by up to 0.08 ROC-AUC between one and three threads) and leaves the means over datasets within 0.002.
@@ -538,8 +575,8 @@ showed on long series are listed in `integration/PYOD_PR_CHECKLIST.md` and are n
 `JEPA_VERSIONS_SURVEY.md` lists the further JEPA recipes that fit the `variant` family and the ones
 that do not. Twelve of them are implemented in this repository (version 0.4.0, 16 versions in all) and,
 since 2026-11-22, in the PyOD branch, where `TSJEPA` returns the same scores as `TSJEPAOD` for all sixteen.
-Version 0.5.0 (2026-11-25) adds ten more versions and `jepa_od.metrics` to this repository only; the
-PyOD branch is unchanged and has neither.
+Version 0.5.0 (2026-11-25) adds ten more versions and `jepa_od.metrics` to this repository only, and
+0.5.1 (2026-11-28) adds `scjepa`; the PyOD branch is unchanged and has none of them.
 The first comment on the PyOD issue describes four versions. A second one, posted on 2026-11-22, links the
 branch and names the three versions level with the default (`kerjepa`, `vicreg`, `lambdajepa`); its text is
 in `integration/PYOD_ISSUE_COMMENT2_DRAFT.md`. It does not mention the nine other versions in the branch.

@@ -370,3 +370,6 @@ At the user's request the work of 2026-11-25 went into the jepa-od repository on
   What it should not say: that `straight` is the best version in general (its lead over `lewm` is the GHL
   dataset, and it is weak on SKAB).
 * Nothing about 0.5.0 has been posted on issue 795.
+* Version 0.5.1 (2026-11-28) adds `scjepa` (SC-JEPA / MTS-JEPA with the paper's constants) to the prototype.
+  It is the weakest of the 27 versions as an unsupervised detector (`REPORT.md` section 7.13) and is not a
+  candidate for the branch.

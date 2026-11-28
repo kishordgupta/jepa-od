@@ -1,7 +1,7 @@
 # JEPA-OD: Can Joint-Embedding Predictive Architectures Detect Outliers?
 
 *Research study, design and prototype for a PyOD-compatible JEPA outlier detector (tabular and time series).*
-*Date: 2026-11-20; updated 2026-11-21 with the T-JEPA family and an untrained control (Section 7.5), and with the full ADBench suite and the time-series control (Section 7.6), which revise the headline results, and with selectable JEPA versions for the time-series detector (Sections 4.8 and 7.7); updated 2026-11-22 with twelve further versions (Sections 4.9 and 7.8) and 2026-11-24 with the TSB-AD benchmark on a GPU (Section 7.9) and its confirmation on 540 further series (Section 7.10); updated 2026-11-25 with ten more versions (Sections 4.10 and 7.11) and all nine TSB-AD measures with a leaderboard (Section 7.12, `LEADERBOARD.md`). Code: `jepa_od/`, benchmarks: `benchmarks/`, raw results: `results/`.*
+*Date: 2026-11-20; updated 2026-11-21 with the T-JEPA family and an untrained control (Section 7.5), and with the full ADBench suite and the time-series control (Section 7.6), which revise the headline results, and with selectable JEPA versions for the time-series detector (Sections 4.8 and 7.7); updated 2026-11-22 with twelve further versions (Sections 4.9 and 7.8) and 2026-11-24 with the TSB-AD benchmark on a GPU (Section 7.9) and its confirmation on 540 further series (Section 7.10); updated 2026-11-25 with ten more versions (Sections 4.10 and 7.11) and all nine TSB-AD measures with a leaderboard (Section 7.12, `LEADERBOARD.md`); updated 2026-11-28 with SC-JEPA as a 27th version (Sections 4.11 and 7.13). Code: `jepa_od/`, benchmarks: `benchmarks/`, raw results: `results/`.*
 
 ---
 
@@ -22,9 +22,10 @@
 * **TSB-AD, 530 longer series (Section 7.9, added 2026-11-24).** The PyOD port of the time-series detector was run at its class defaults, untuned, on the two evaluation lists of TSB-AD (180 multivariate and 350 univariate series, 37.7 million timestamps) for all sixteen versions, trained and untrained, on a GPU. Mean VUS-PR of the default version is 0.351 on the multivariate list, above all 23 published means (best 0.313), and 0.378 on the univariate list, seventh of 33 (best 0.423). The lead on the multivariate list is a lead in the mean and not per series (better on 87 of 180, p = 0.11), about 0.011 of it comes from an accident of the scaling, and the published numbers are taken as published. Training adds a significant but small part of the default score (+0.004 and +0.032); the untrained network places the same on the multivariate list, and a Mahalanobis distance on raw patches with no network matches the `embed` score (0.345 and 0.465 against 0.353 and 0.461). `vicreg`, `lambdajepa` and `lewm` are significantly ahead of the default on both lists. The highest scores, 0.434 and 0.530, come from the `embed` score of the `cfjepa` encoder, on the multivariate list with or without training; that cell was picked after the results were seen.
 * **Confirmation on 540 series no run had used (Section 7.10, added 2026-11-24).** With the comparisons and tests fixed beforehand, everything was run again on the rest of TSB-AD: its two tuning lists (20 multivariate and 48 univariate series) and the 472 univariate series outside its evaluation and tuning lists. Ten of the 18 tests hold, seven have the expected sign without being significant (five of them on the 20 multivariate series) and one is reversed. `vicreg`, `lambdajepa` and `lewm` are ahead of the default version again on all three lists, and training again adds 0.03 to the default score on univariate series. The `embed` score of `cfjepa` is ahead of the default detector again (+0.16 to +0.17), but it is not the best configuration in general: on the 472 series it is 0.21 below a Mahalanobis distance of raw patches with no network, which there is above all sixteen versions with every score type. Per source dataset the numbers repeat those of the evaluation list; `cfjepa` `embed` gains on UCR, the ECG sets, SMAP and NAB and loses on YAHOO, which is 224 of the 472 series. On univariate series the default score `pred` is 0.08 to 0.22 below `combined` on all three lists.
 * **Ten more versions, 26 in all (Sections 4.10 and 7.11, added 2026-11-25).** Ten further recipes were implemented in the prototype and run on all 1070 TSB-AD series, with 100 tests fixed before any result was read. Against the default version 11 of 50 tests are ahead, 9 behind and 30 not separated. The versions that predict the next patch lead on the multivariate series: `straight` (temporal straightening) is ahead of the default on all five lists, with three seeds, and `hepa` on both evaluation lists. Neither is a general recommendation. The lead of `straight` over `lewm`, whose network it has, is one source dataset (GHL: 0.348 against 0.045 or less for every other version; without it 0.441 against 0.446), where its embeddings collapse to about two dimensions, and it is weak on SKAB. `hepa` gains on the ECG sets and SMAP and loses on YAHOO and WSD. The four new versions with normalised EMA targets end below the default on the evaluation lists. Two new versions with an EMA target that is not normalised keep SKAB, which shows that the normalisation of the targets, not the EMA teacher, fails under that regime shift. The default was not changed.
-* **All nine measures of TSB-AD (Section 7.12, `LEADERBOARD.md`, added 2026-11-25).** `jepa_od.metrics` computes TSB-AD's nine measures with numpy and agrees with TSB-AD's own code to 3e-15. Every run of Sections 7.9 to 7.11 now has them. AUC-PR and Standard-F1 rank the 26 versions like VUS-PR; VUS-ROC and AUC-ROC do not; PA-F1 turns the multivariate table around (TSB-AD's own PCA has the highest PA-F1 of all rows). The comparisons this report rests on hold under all nine: `vicreg`, `lewm` and `straight` are above the default, and training the default helps. On the 870 univariate series the control without a network is first on five of the nine measures, VUS-PR included. The default version is 10th of 26 by VUS-PR on both sets.
+* **All nine measures of TSB-AD (Section 7.12, `LEADERBOARD.md`, added 2026-11-25).** `jepa_od.metrics` computes TSB-AD's nine measures with numpy and agrees with TSB-AD's own code to 3e-15. Every run of Sections 7.9 to 7.11 now has them. AUC-PR and Standard-F1 rank the versions like VUS-PR; VUS-ROC and AUC-ROC do not; PA-F1 turns the multivariate table around (TSB-AD's own PCA has the highest PA-F1 of all rows). The comparisons this report rests on hold under all nine: `vicreg`, `lewm` and `straight` are above the default, and training the default helps. On the 870 univariate series the control without a network is first on four of the nine measures, VUS-PR included. The default version is 10th of 27 by VUS-PR on both sets.
+* **SC-JEPA as a 27th version (Sections 4.11 and 7.13, added 2026-11-28).** `scjepa` is the recipe of SC-JEPA (MTS-JEPA), the one JEPA of the survey built for anomalies in multivariate series, with the constants of its paper. As an unsupervised detector with our scores it is the weakest of the 27 versions with the default score (VUS-PR 0.12 to 0.18 on the five TSB-AD lists; default 0.18 to 0.38), behind the default in all five tests fixed in advance. The reason is the paper's normalisation of every window by its own mean and scale, which hides changes of level: on SKAB it is at chance (0.48), and 0.78 with the normalisation switched off. The paper uses the model differently, with a classifier trained on labels; nothing here tests that.
 
-**Verdict for the library goal (revised after Section 7.6).** The evidence does not support adding the tabular detector to PyOD on performance grounds: on the full ADBench suite it is a mid-table detector, significantly behind IForest, not ahead of AutoEncoder and about 40 times slower than it, and a network with no training scores at least as well. The time-series detector has one supported strength, anomalies that break temporal structure, where training is what makes its default score work. On the two real benchmarks training adds nothing, and the known weak spots remain (sustained level shifts, large raw-space deviations that a windowed KNN already finds). The earlier verdict, "the highest mean among the deep models on the tabular sweep", described the 16-dataset subset and is withdrawn. The code in this repo is structured to drop into `pyod/models/jepa.py` and `pyod/models/ts_jepa.py` (Section 6). PyOD's inclusion policy requires an accepted issue first and, for a new method, a two-year maintenance commitment. Section 7.9 adds to the verdict for the time-series detector: on TSB-AD it is competitive with the published detectors at its defaults, which is a reason to include it that the earlier benchmarks did not give, and the evidence that JEPA training is what makes it work stays weak. Section 7.10 confirms the comparison of versions on series that were not used to find it, and takes back the reading of `cfjepa` with the `embed` score as the best configuration. Sections 7.11 and 7.12 widen the family to 26 versions and the evaluation to nine measures without changing this verdict: several versions are ahead of the default on TSB-AD, each on particular kinds of series, and on univariate series no version beats a Mahalanobis distance of raw patches.
+**Verdict for the library goal (revised after Section 7.6).** The evidence does not support adding the tabular detector to PyOD on performance grounds: on the full ADBench suite it is a mid-table detector, significantly behind IForest, not ahead of AutoEncoder and about 40 times slower than it, and a network with no training scores at least as well. The time-series detector has one supported strength, anomalies that break temporal structure, where training is what makes its default score work. On the two real benchmarks training adds nothing, and the known weak spots remain (sustained level shifts, large raw-space deviations that a windowed KNN already finds). The earlier verdict, "the highest mean among the deep models on the tabular sweep", described the 16-dataset subset and is withdrawn. The code in this repo is structured to drop into `pyod/models/jepa.py` and `pyod/models/ts_jepa.py` (Section 6). PyOD's inclusion policy requires an accepted issue first and, for a new method, a two-year maintenance commitment. Section 7.9 adds to the verdict for the time-series detector: on TSB-AD it is competitive with the published detectors at its defaults, which is a reason to include it that the earlier benchmarks did not give, and the evidence that JEPA training is what makes it work stays weak. Section 7.10 confirms the comparison of versions on series that were not used to find it, and takes back the reading of `cfjepa` with the `embed` score as the best configuration. Sections 7.11 to 7.13 widen the family to 27 versions and the evaluation to nine measures without changing this verdict: several versions are ahead of the default on TSB-AD, each on particular kinds of series, and on univariate series no version beats a Mahalanobis distance of raw patches.
 
 ---
 
@@ -207,7 +208,27 @@ For all ten:
 * **Masking.** Six versions hide patches with the detector's `mask_mode` and `mask_ratio`. `'hepa'`, `'subjepa'`, `'straight'` and `'motionjepa'` hide nothing and ignore both, like `'lenepa'`, `'lewm'` and `'cfjepa'`.
 * **Scores.** `pred` is the squared latent prediction error of the hidden patches, with these exceptions: for `'variational'` it is the negative log-likelihood of the EMA target under the predicted Gaussian, so a patch the model expects to be hard to predict is penalised less; for `'phijepa'` it is the cosine distance of the second stage to the clean target, from uncorrupted input; for `'subjepa'`, `'straight'` and `'motionjepa'` it is the next-patch error of `'lewm'`; for `'hepa'` every interval of 1, 2, 4 and 8 patches that starts after the first patch is predicted and a patch gets the mean absolute error of the intervals that contain it. `embed` is the Mahalanobis distance of: the encoder's embeddings for `'ststjepa'`, the causal summaries for `'hepa'`, the per-patch embeddings for the three versions on the `'lewm'` network, and the target encoder's embeddings for the five EMA versions (not normalised for `'harjepa'`).
 * **Untrained controls.** `'subjepa'`, `'straight'` and `'motionjepa'` add buffers or modules to the `'lewm'` network without changing its initialisation, so their zero-epoch scores are those of `'lewm'` (a unit test checks it).
-* **Read and not implemented.** SC-JEPA (MTS-JEPA, arXiv 2602.04643), the one JEPA built for anomalies in multivariate series: it predicts the code distributions of the next window from the current one with channel-independent input, a soft codebook, two predictors and a decoder, and the text read gives none of its nine loss weights, codebook size or temperature. W-JEPA (wavelet tokens that cover different time spans), Flow-JEPA, DSeq-JEPA, Gaussian Joint Embeddings, LEF-JEPA and SADL need more than a recipe change. "Gaussian Embeddings" (arXiv 2510.05949) proposes an outlier *score* from the encoder's Jacobian, not a version; it is not implemented (one Jacobian per window).
+* **Read and not implemented.** SC-JEPA (MTS-JEPA, arXiv 2602.04643), the one JEPA built for anomalies in multivariate series, was left out here with the remark that the text read gives none of its loss weights. That was wrong: they are in the paper's Appendix B.1, which had not been read. It is implemented since version 0.5.1 (Section 4.11). W-JEPA (wavelet tokens that cover different time spans), Flow-JEPA, DSeq-JEPA, Gaussian Joint Embeddings, LEF-JEPA and SADL need more than a recipe change. "Gaussian Embeddings" (arXiv 2510.05949) proposes an outlier *score* from the encoder's Jacobian, not a version; it is not implemented (one Jacobian per window).
+
+### 4.11 SC-JEPA (`scjepa`)
+
+*Added 2026-11-28 (version 0.5.1).* SC-JEPA (He et al., arXiv 2602.04643; its first version is named MTS-JEPA) is the one JEPA of the survey that its authors built for anomalies in multivariate series. It is the 27th value of `variant` (code: `SCJEPA` in `jepa_od/_recipes2.py`, `SCJEPACore` in `_variant_nets2.py`; results: Section 7.13).
+
+**The paper's method.** From the current window of 100 time steps the model predicts the next, non-overlapping one. Every variable is processed on its own; variables with zero variance in training are removed, and each window is normalised per variable (RevIN). A window is cut into five patches of 20 steps. A shared encoder embeds the patches; a soft codebook turns every embedding into a distribution over 128 prototypes (softmax of cosine similarities at temperature 0.1) and into the expected prototype. Two predictors read the code distributions of the current window: a fine one returns the code distributions of the five patches of the next window, a coarse one (a learned query attending to the history) the code distribution of one coarse view of the next window, its average over every five time steps. EMA copies of the encoder and the codebook (decay 0.996) give the targets. A decoder reconstructs the current window from its expected prototypes. The loss is
+
+`1.0 (KL_fine + 0.1 MSE_fine) + 0.5 KL_coarse + 1.0 L_emb + 0.25 L_com + 0.005 E[H(p)] − 0.01 H(E[p]) + λ_r L_rec`, with λ_r falling linearly from 0.5 to 0.1.
+
+For anomaly prediction the paper freezes the encoder and codebook and trains an MLP on labels, on the code distributions max-pooled over the variables.
+
+**What `scjepa` takes from the paper:** all of the above objective with its constants, the processing of one variable at a time, the removal of constant variables, the normalisation, the codebook, the two predictors, the EMA targets and the reconstruction.
+
+**What is ours:**
+
+* The two halves of the detector's window stand for the paper's two consecutive windows. At the defaults that is five patches of ten time steps each, where the paper has five patches of twenty.
+* The tokenizer is an MLP per patch (the paper: a residual CNN), positions are sinusoidal, the decoder is linear, and the normalisation has no learned affine map. Sizes, optimiser and budget are the detector's (64 dimensions and two layers where the paper has 256 and six; 10 epochs where it has up to 100).
+* The scores, since the paper has a supervised classifier instead. `pred` of a patch of the second half is, per variable, the training's predictive terms (the KL divergence of its code distribution, 0.1 times the squared error of its expected prototype, 0.5 times the coarse KL divergence of its window), and the largest value over the variables. The patches of the first half get none. `embed` is the Mahalanobis distance of the EMA branch's code distributions (128 values per patch, the largest probability over the variables for every code), the features the paper gives its classifier.
+
+One consequence of the paper's normalisation matters for the results: each half is normalised by its own mean and standard deviation, so a level or scale that differs from the training data, or between the two halves, never reaches the network. `variant_params={'instance_norm': False}` switches the normalisation off; that is an ablation, not the paper's method.
 
 ---
 
@@ -1919,7 +1940,7 @@ Coverage: 10 versions on 5 lists (1070 series), 85 runs; every run has every ser
 
 ### 7.12 All nine TSB-AD measures, and a leaderboard
 
-*Added 2026-11-25.* Sections 7.9 to 7.11 use one measure, VUS-PR, because TSB-AD ranks by it. TSB-AD's evaluation code computes eight more for a score vector. This section adds them for every run of the three sections, to see which conclusions depend on the measure.
+*Added 2026-11-25; updated 2026-11-28 with `scjepa` of Section 7.13, so that the tables and numbers below are for 27 versions.* Sections 7.9 to 7.11 use one measure, VUS-PR, because TSB-AD ranks by it. TSB-AD's evaluation code computes eight more for a score vector. This section adds them for every run of the three sections, to see which conclusions depend on the measure.
 
 **What was computed.** `jepa_od/metrics.py` (new in version 0.5.0) has the nine measures: VUS-PR, VUS-ROC, AUC-PR, AUC-ROC, and the best F over 100 thresholds in five forms: point-wise (Standard-F1), after point adjustment (PA-F1), event recall with point precision (Event-based-F1), range-based (R-based-F1) and affiliation (Affiliation-F). The definitions follow `TSB_AD.evaluation` (commit 303dffb), including its edge cases, which the module's docstrings name. They are computed with numpy where TSB-AD loops in Python.
 
@@ -1931,13 +1952,13 @@ Coverage: 10 versions on 5 lists (1070 series), 85 runs; every run has every ser
 
 **Findings.** All for the two pooled sets (200 and 870 series); no tests.
 
-1. **Three measures rank the versions like VUS-PR, four do not.** Over the 26 trained versions with the default score, the rank correlation with VUS-PR is 0.94 to 1.00 for AUC-PR and Standard-F1 and 0.84 to 0.88 for the event-based and range-based F1. For VUS-ROC and AUC-ROC it is 0.17 to 0.50. For Affiliation-F it is 0.31 (multivariate) and 0.78 (univariate), with all versions within 0.04 (multivariate) and 0.07 (univariate) of each other. For PA-F1 it is 0.70 on the univariate set and **−0.38 on the multivariate set**.
-2. **PA-F1 turns the multivariate table around.** TSB-AD's PCA, re-run, has the highest PA-F1 of all rows (0.791) and is 18th of 28 rows by VUS-PR. Twelve of the thirteen versions with normalised targets (`ijepa`, `tjepa`, `tsjepa`, `salt` and others) have a PA-F1 of 0.65 to 0.69, above the default's 0.616, while their VUS-PR is 0.02 to 0.08 below it.
+1. **Four measures rank the versions like VUS-PR, four do not.** Over the 27 trained versions with the default score, the rank correlation with VUS-PR is 0.95 to 1.00 for AUC-PR and Standard-F1 and 0.86 to 0.89 for the event-based and range-based F1. For VUS-ROC and AUC-ROC it is 0.26 to 0.55. For Affiliation-F it is 0.39 (multivariate) and 0.80 (univariate), with all versions but `scjepa` within 0.04 (multivariate) and 0.07 (univariate) of each other. For PA-F1 it is 0.70 on the univariate set and **−0.43 on the multivariate set**.
+2. **PA-F1 turns the multivariate table around.** TSB-AD's PCA, re-run, has the highest PA-F1 of all rows (0.791) and is 18th of 29 rows by VUS-PR. `scjepa` is last by VUS-PR (0.128) and has the second-highest PA-F1 of the 27 versions (0.711). Twelve of the thirteen versions with normalised targets (`ijepa`, `tjepa`, `tsjepa`, `salt` and others) have a PA-F1 of 0.65 to 0.69, above the default's 0.616, while their VUS-PR is 0.02 to 0.08 below it.
 3. **The comparisons Sections 7.9 to 7.11 rest on do not depend on the measure.** `vicreg`, `lewm` and `straight` are above the default on all nine measures on both sets. Training the default version helps on all nine on both sets (by 0.004 to 0.013 on the multivariate, 0.017 to 0.064 on the univariate set). On the univariate set the default version's `embed` score is above its `pred` score on all nine (by 0.05 to 0.18).
 4. **"The EMA versions are worse" is a statement about precision-recall measures.** `ijepa` is below the default on VUS-PR (−0.057, −0.045), AUC-PR, Standard-F1 and the event-based and range-based F1, and level or above on VUS-ROC, AUC-ROC, PA-F1 and Affiliation-F on both sets.
 5. **`hepa` depends on the measure too.** On the multivariate set it is above the default on seven measures (VUS-PR +0.069), level on Event-based-F1 and below on PA-F1 (−0.014); on the univariate set it is below or level on eight.
-6. **Univariate series: the control without a network leads on five of nine measures.** With the `embed` score, raw patches are first of 28 rows on VUS-PR (0.508), AUC-PR, Standard-F1, PA-F1 and Affiliation-F; `hepa` is first on VUS-ROC, AUC-ROC and R-based-F1, `lenepa` on Event-based-F1. Against the default version's `embed` score the control is ahead in the mean on eight measures, but the default is the better one on 44 to 54 % of the series on which the two differ: the mean difference comes from a part of the series (YAHOO, Section 7.10).
-7. **The first row changes with the measure less than the order below it.** With the default score on the multivariate set, `straight` is first on six measures (Section 7.11 shows that one source dataset carries its lead), `hepa` on R-based-F1 and `tsjepa` on Affiliation-F. On the univariate set `lenepa` is first on three (VUS-PR 0.348), `vicreg` on three, `variational` on the two ROC measures and `lewm` on one. The default version is 10th of 26 by VUS-PR on both sets.
+6. **Univariate series: the control without a network leads on four of nine measures.** With the `embed` score, raw patches are first of 29 rows on VUS-PR (0.508), AUC-PR, Standard-F1 and Affiliation-F; `hepa` is first on VUS-ROC, AUC-ROC and R-based-F1, `lenepa` on Event-based-F1 and `scjepa` on PA-F1 (0.713; raw patches 0.703). Against the default version's `embed` score the control is ahead in the mean on eight measures, but the default is the better one on 44 to 54 % of the series on which the two differ: the mean difference comes from a part of the series (YAHOO, Section 7.10).
+7. **The first row changes with the measure less than the order below it.** With the default score on the multivariate set, `straight` is first on six measures (Section 7.11 shows that one source dataset carries its lead), `hepa` on R-based-F1 and `tsjepa` on Affiliation-F. On the univariate set `lenepa` is first on three (VUS-PR 0.348), `vicreg` on three, `variational` on the two ROC measures and `lewm` on one. The default version is 10th of 27 by VUS-PR on both sets.
 
 **Limits.** One seed. The F measures use the labels for the threshold. The versions are not tuned, and for the ten of Section 7.11 some constants are ours. Places among published detectors exist for VUS-PR on the evaluation lists only (`LEADERBOARD.md`); there the caveats of Section 7.9 apply: the multivariate lead is in the mean, not per series, and the published numbers are as published.
 
@@ -1973,6 +1994,7 @@ Coverage: 10 versions on 5 lists (1070 series), 85 runs; every run has every ser
 | `gmmjepa` | 26 | 0.279 | 0.739 | 0.231 | 0.701 | 0.301 | 0.647 | 0.446 | 0.284 | 0.815 |
 | `njepa` | 27 | 0.274 | 0.729 | 0.231 | 0.692 | 0.297 | 0.660 | 0.452 | 0.300 | 0.820 |
 | `cfjepa` | 28 | 0.265 | 0.708 | 0.210 | 0.672 | 0.285 | 0.622 | 0.462 | 0.290 | 0.827 |
+| `scjepa` | 29 | 0.128 | 0.602 | 0.079 | 0.543 | 0.138 | 0.711 | 0.273 | 0.204 | 0.752 |
 
 #### TSB-AD-U, all 870 series, the default score `pred` (latent prediction error): mean of the nine measures, trained versions unless a row says otherwise, sorted by VUS-PR; the highest value of a column is bold
 
@@ -2006,12 +2028,13 @@ Coverage: 10 versions on 5 lists (1070 series), 85 runs; every run has every ser
 | `vjepa` | 26 | 0.212 | 0.797 | 0.189 | 0.754 | 0.244 | 0.481 | 0.357 | 0.283 | 0.818 |
 | `vjepa21` | 27 | 0.208 | 0.806 | 0.183 | 0.762 | 0.243 | 0.488 | 0.360 | 0.273 | 0.815 |
 | `njepa` | 28 | 0.206 | 0.732 | 0.196 | 0.672 | 0.241 | 0.452 | 0.347 | 0.278 | 0.790 |
+| `scjepa` | 29 | 0.140 | 0.748 | 0.114 | 0.664 | 0.169 | 0.494 | 0.284 | 0.222 | 0.778 |
 
 #### TSB-AD-U, all 870 series, the score `embed` (Mahalanobis distance of patch embeddings): mean of the nine measures, trained versions unless a row says otherwise, sorted by VUS-PR; the highest value of a column is bold
 
 | version | place | VUS-PR | VUS-ROC | AUC-PR | AUC-ROC | Standard-F1 | PA-F1 | Event-based-F1 | R-based-F1 | Affiliation-F |
 |---|---|---|---|---|---|---|---|---|---|---|
-| no network (raw patches) | 1 | **0.508** | 0.841 | **0.446** | 0.802 | **0.486** | **0.703** | 0.611 | 0.504 | **0.908** |
+| no network (raw patches) | 1 | **0.508** | 0.841 | **0.446** | 0.802 | **0.486** | 0.703 | 0.611 | 0.504 | **0.908** |
 | `tsjepa` | 2 | 0.495 | 0.859 | 0.435 | 0.832 | 0.473 | 0.657 | 0.578 | 0.486 | 0.904 |
 | `hepa` | 3 | 0.476 | **0.864** | 0.445 | **0.837** | 0.480 | 0.694 | 0.613 | **0.509** | 0.902 |
 | `lenepa` | 4 | 0.467 | 0.861 | 0.435 | 0.833 | 0.473 | 0.700 | **0.622** | 0.504 | 0.905 |
@@ -2027,25 +2050,26 @@ Coverage: 10 versions on 5 lists (1070 series), 85 runs; every run has every ser
 | `vicreg` | 14 | 0.443 | 0.848 | 0.417 | 0.820 | 0.449 | 0.651 | 0.567 | 0.478 | 0.886 |
 | `kerjepa` | 15 | 0.442 | 0.837 | 0.414 | 0.808 | 0.446 | 0.648 | 0.560 | 0.477 | 0.884 |
 | `tjepa` | 16 | 0.439 | 0.835 | 0.350 | 0.794 | 0.398 | 0.639 | 0.520 | 0.437 | 0.891 |
-| `cfjepa` | 17 | 0.422 | 0.840 | 0.371 | 0.820 | 0.410 | 0.548 | 0.479 | 0.444 | 0.871 |
-| `lambdajepa` | 18 | 0.407 | 0.802 | 0.383 | 0.768 | 0.414 | 0.604 | 0.522 | 0.451 | 0.868 |
-| `lpjepa` | 19 | 0.401 | 0.815 | 0.382 | 0.784 | 0.415 | 0.622 | 0.544 | 0.451 | 0.872 |
-| `njepa` | 20 | 0.377 | 0.831 | 0.318 | 0.795 | 0.372 | 0.620 | 0.499 | 0.408 | 0.870 |
-| `gmmjepa` | 21 | 0.360 | 0.824 | 0.299 | 0.787 | 0.354 | 0.610 | 0.477 | 0.393 | 0.862 |
-| `variational` | 22 | 0.357 | 0.826 | 0.298 | 0.789 | 0.353 | 0.618 | 0.485 | 0.396 | 0.866 |
-| `ijepa` | 23 | 0.355 | 0.826 | 0.295 | 0.789 | 0.350 | 0.612 | 0.480 | 0.391 | 0.864 |
-| `sjepa` | 24 | 0.355 | 0.826 | 0.296 | 0.790 | 0.351 | 0.613 | 0.479 | 0.392 | 0.865 |
-| `cjepa` | 25 | 0.355 | 0.827 | 0.295 | 0.790 | 0.350 | 0.612 | 0.480 | 0.391 | 0.864 |
-| `phijepa` | 26 | 0.355 | 0.828 | 0.295 | 0.791 | 0.351 | 0.613 | 0.476 | 0.391 | 0.863 |
-| `vjepa` | 27 | 0.354 | 0.822 | 0.295 | 0.785 | 0.350 | 0.609 | 0.477 | 0.390 | 0.863 |
-| `vjepa21` | 28 | 0.350 | 0.819 | 0.291 | 0.782 | 0.346 | 0.601 | 0.467 | 0.387 | 0.860 |
+| `scjepa` | 17 | 0.435 | 0.831 | 0.353 | 0.790 | 0.399 | **0.713** | 0.558 | 0.460 | 0.892 |
+| `cfjepa` | 18 | 0.422 | 0.840 | 0.371 | 0.820 | 0.410 | 0.548 | 0.479 | 0.444 | 0.871 |
+| `lambdajepa` | 19 | 0.407 | 0.802 | 0.383 | 0.768 | 0.414 | 0.604 | 0.522 | 0.451 | 0.868 |
+| `lpjepa` | 20 | 0.401 | 0.815 | 0.382 | 0.784 | 0.415 | 0.622 | 0.544 | 0.451 | 0.872 |
+| `njepa` | 21 | 0.377 | 0.831 | 0.318 | 0.795 | 0.372 | 0.620 | 0.499 | 0.408 | 0.870 |
+| `gmmjepa` | 22 | 0.360 | 0.824 | 0.299 | 0.787 | 0.354 | 0.610 | 0.477 | 0.393 | 0.862 |
+| `variational` | 23 | 0.357 | 0.826 | 0.298 | 0.789 | 0.353 | 0.618 | 0.485 | 0.396 | 0.866 |
+| `ijepa` | 24 | 0.355 | 0.826 | 0.295 | 0.789 | 0.350 | 0.612 | 0.480 | 0.391 | 0.864 |
+| `sjepa` | 25 | 0.355 | 0.826 | 0.296 | 0.790 | 0.351 | 0.613 | 0.479 | 0.392 | 0.865 |
+| `cjepa` | 26 | 0.355 | 0.827 | 0.295 | 0.790 | 0.350 | 0.612 | 0.480 | 0.391 | 0.864 |
+| `phijepa` | 27 | 0.355 | 0.828 | 0.295 | 0.791 | 0.351 | 0.613 | 0.476 | 0.391 | 0.863 |
+| `vjepa` | 28 | 0.354 | 0.822 | 0.295 | 0.785 | 0.350 | 0.609 | 0.477 | 0.390 | 0.863 |
+| `vjepa21` | 29 | 0.350 | 0.819 | 0.291 | 0.782 | 0.346 | 0.601 | 0.467 | 0.387 | 0.860 |
 
 #### Spearman rank correlation, over the trained versions, between the mean VUS-PR and the mean of each other measure (score `pred`)
 
 | set | VUS-ROC | AUC-PR | AUC-ROC | Standard-F1 | PA-F1 | Event-based-F1 | R-based-F1 | Affiliation-F |
 |---|---|---|---|---|---|---|---|---|
-| TSB-AD-M (26 versions) | +0.40 | +1.00 | +0.50 | +1.00 | -0.38 | +0.88 | +0.84 | +0.31 |
-| TSB-AD-U (26 versions) | +0.30 | +0.95 | +0.17 | +0.94 | +0.70 | +0.85 | +0.88 | +0.78 |
+| TSB-AD-M (27 versions) | +0.46 | +1.00 | +0.55 | +1.00 | -0.43 | +0.89 | +0.86 | +0.39 |
+| TSB-AD-U (27 versions) | +0.38 | +0.96 | +0.26 | +0.95 | +0.70 | +0.86 | +0.89 | +0.80 |
 
 #### Does a comparison depend on the measure? Mean difference A − B over the series of a set; in brackets the share of series on which A is better among those where the two differ. No tests.
 
@@ -2070,6 +2094,152 @@ Coverage: 10 versions on 5 lists (1070 series), 85 runs; every run has every ser
 
 <!-- LB:END -->
 
+<!-- SCJ:BEGIN -->
+
+### 7.13 SC-JEPA (`scjepa`): the small benchmarks and all of TSB-AD
+
+*Added 2026-11-28.* `scjepa` (Section 4.11) is the SC-JEPA recipe, first published as MTS-JEPA, with the constants of the paper. It was benchmarked like the ten versions of Section 7.11.
+
+**Setup.** The tests are in the addendum of `results/tsb_more_plan.md`, committed with the code (commit b41a7f9) before the benchmark runs: `scjepa`, trained, with the default score `pred`, against the default version and against its untrained control, on the five TSB-AD lists (10 tests, Holm over the ten) and in the three small groups (6 tests, Holm over the six). Before the addendum was written, three synthetic series of the small benchmark had been run to see that the code works, and their ROC-AUC was seen; nothing was changed afterwards. The ten TSB-AD runs had no failed series and took 3.3 hours of fitting and scoring (56 minutes on four H100s).
+
+**Findings.**
+
+1. **With the default score `scjepa` is the weakest of the 27 versions.** It is behind the default version on all five lists, in all five tests after correction (VUS-PR 0.122, 0.184, 0.150, 0.150 and 0.132, against 0.351, 0.363, 0.378, 0.337 and 0.177). It is last of the 27 on four lists and 26th on the fifth.
+2. **Training helps a little.** On four of the five lists the trained model is ahead of the untrained one, by 0.015 to 0.075; the 20 multivariate tuning series do not separate them.
+3. **Small benchmarks.** On the synthetic series it needs training (ROC-AUC 0.916 trained, 0.556 untrained) and stays behind the default (0.941; better on 1 of 15 series). On SKAB it is at chance (0.482; default 0.825, better on 0 of 16). On NAB it has 0.576 against 0.628, not separated with seven series.
+4. **The reason is the paper's normalisation** (not in the plan). Each half of a window is normalised by its own mean and standard deviation, per variable. A level or scale that differs from the training data, or between the two halves, never reaches the network, so only a change of shape can be scored. Per source dataset the losses are largest where the default detector finds changes of level: Exathlon (0.120 against 0.898 multivariate, 0.132 against 0.923 univariate, better on none of 59 series), OPPORTUNITY, NEK, SMD, SMAP and MSL. `scjepa` is level with or ahead of the default where the anomalies are changes of shape: MGAB (better on all 9 series), SVDB in the univariate set (0.200 against 0.128), UCR (better on 124, worse on 104), WSD (0.272 against 0.265). An ablation on the small benchmarks agrees: with the normalisation switched off (`instance_norm=False`, which is not the paper's method), SKAB goes from 0.482 to 0.782 and NAB from 0.576 to 0.646, and the synthetic series stay where they were (0.923).
+5. **The `embed` score, computed on the code distributions, is strong on one list only.** On the 472 further univariate series it has 0.529, the highest value of any version and score type there, trained or not, and still below the control without a network (0.545). On the other four lists it has 0.19 to 0.33, below the default version's `embed` score (0.35 to 0.46).
+6. **PA-F1 says the opposite again** (Section 7.12): on the 200 multivariate series `scjepa` has the lowest VUS-PR of the 27 versions (0.128) and the second-highest PA-F1 (0.711).
+7. **Cost.** One variable at a time makes the model's size independent of the number of variables and its cost proportional to it: the series with 248 variables needed 1.7 GB of GPU memory, the largest of the runs.
+
+**What this means.**
+
+* The result is about this recipe as an unsupervised detector with our scores, at this detector's budget (a tenth of the paper's epochs, a quarter of its width, a third of its depth). The paper does something else with the model: it trains a classifier on labels to predict whether the next window holds an anomaly, on MSL, SMAP, SWaT, PSM and SMD. Nothing here tests that.
+* Invariance to level and scale is built into this version. That is a property a user may want, for series whose normal level drifts, and it rules the version out where anomalies are level changes.
+* Version 0.5.0 of this report said the paper's text gives no loss weights. They are in its Appendix B.1 and are used here unchanged.
+
+Coverage: `scjepa`, trained and untrained, on 5 lists (1070 series); every run has every series; series with an error: 0; fitting and scoring took 3.3 hours in all; largest GPU memory of a run 1.7 GB.
+
+#### Mean VUS-PR, trained / untrained (`straight` shares the untrained control of `lewm`; the ablation was run trained only); the other rows are from Sections 7.9 to 7.11
+
+| version | score | M-Eva | M-Tuning | U-Eva | U-Tuning | U-Rest |
+|---|---|---|---|---|---|---|
+| lejepa (default) | `pred` | 0.351 / 0.347 | 0.363 / 0.353 | 0.378 / 0.346 | 0.337 / 0.304 | 0.177 / 0.146 |
+| lejepa (default) | `embed` | 0.353 / 0.352 | 0.373 / 0.375 | 0.461 / 0.467 | 0.449 / 0.459 | 0.432 / 0.435 |
+| lejepa (default) | `combined` | 0.352 / 0.351 | 0.368 / 0.368 | 0.455 / 0.458 | 0.443 / 0.447 | 0.401 / 0.403 |
+| lewm | `pred` | 0.386 / 0.369 | 0.441 / 0.391 | 0.394 / 0.309 | 0.398 / 0.304 | 0.213 / 0.143 |
+| lewm | `embed` | 0.367 / 0.366 | 0.386 / 0.388 | 0.462 / 0.472 | 0.435 / 0.437 | 0.438 / 0.442 |
+| lewm | `combined` | 0.385 / 0.373 | 0.414 / 0.396 | 0.482 / 0.473 | 0.454 / 0.439 | 0.442 / 0.436 |
+| straight | `pred` | 0.427 / 0.369 | 0.444 / 0.391 | 0.398 / 0.309 | 0.396 / 0.304 | 0.232 / 0.143 |
+| straight | `embed` | 0.364 / 0.366 | 0.389 / 0.388 | 0.468 / 0.472 | 0.435 / 0.437 | 0.442 / 0.442 |
+| straight | `combined` | 0.381 / 0.373 | 0.404 / 0.396 | 0.484 / 0.473 | 0.452 / 0.439 | 0.443 / 0.436 |
+| hepa | `pred` | 0.414 / 0.396 | 0.481 / 0.433 | 0.418 / 0.373 | 0.338 / 0.293 | 0.134 / 0.097 |
+| hepa | `embed` | 0.377 / 0.378 | 0.418 / 0.407 | 0.509 / 0.513 | 0.487 / 0.498 | 0.451 / 0.439 |
+| hepa | `combined` | 0.407 / 0.401 | 0.450 / 0.424 | 0.523 / 0.513 | 0.507 / 0.497 | 0.431 / 0.416 |
+| scjepa | `pred` | 0.122 / 0.107 | 0.184 / 0.164 | 0.150 / 0.116 | 0.150 / 0.118 | 0.132 / 0.056 |
+| scjepa | `embed` | 0.190 / 0.167 | 0.244 / 0.237 | 0.325 / 0.318 | 0.316 / 0.307 | 0.529 / 0.529 |
+| scjepa | `combined` | 0.166 / 0.152 | 0.221 / 0.209 | 0.305 / 0.298 | 0.303 / 0.301 | 0.517 / 0.517 |
+| no network (raw patches) | `embed` | 0.345 | 0.374 | 0.465 | 0.458 | 0.545 |
+| PCA / Sub-PCA, re-run |  | 0.307 | 0.323 | 0.417 | 0.326 | 0.146 |
+
+#### The ten tests of the addendum: A = `scjepa`, trained, `pred` (two-sided Wilcoxon signed-rank over series, Holm over the ten; CI: bootstrap over series)
+
+|  | against | list | series | VUS-PR A / B | A − B [95 % CI] | A / B better | p | p (Holm) | reading |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | the default version `lejepa`, trained | M-Eva | 180 | 0.122 / 0.351 | -0.229 [-0.277, -0.183] | 33 / 147 | <0.001 | <0.001 | behind |
+| 2 | the default version `lejepa`, trained | M-Tuning | 20 | 0.184 / 0.363 | -0.179 [-0.307, -0.070] | 4 / 16 | 0.002 | 0.010 | behind |
+| 3 | the default version `lejepa`, trained | U-Eva | 350 | 0.150 / 0.378 | -0.229 [-0.267, -0.191] | 114 / 235 | <0.001 | <0.001 | behind |
+| 4 | the default version `lejepa`, trained | U-Tuning | 48 | 0.150 / 0.337 | -0.187 [-0.290, -0.091] | 17 / 31 | 0.002 | 0.012 | behind |
+| 5 | the default version `lejepa`, trained | U-Rest | 472 | 0.132 / 0.177 | -0.046 [-0.071, -0.021] | 230 / 242 | 0.016 | 0.033 | behind |
+| 6 | its untrained control | M-Eva | 180 | 0.122 / 0.107 | +0.015 [+0.004, +0.027] | 110 / 70 | 0.009 | 0.028 | training helps |
+| 7 | its untrained control | M-Tuning | 20 | 0.184 / 0.164 | +0.019 [-0.005, +0.049] | 12 / 8 | 0.261 | 0.261 | not separated |
+| 8 | its untrained control | U-Eva | 350 | 0.150 / 0.116 | +0.033 [+0.019, +0.048] | 252 / 98 | <0.001 | <0.001 | training helps |
+| 9 | its untrained control | U-Tuning | 48 | 0.150 / 0.118 | +0.032 [+0.002, +0.067] | 32 / 16 | 0.005 | 0.019 | training helps |
+| 10 | its untrained control | U-Rest | 472 | 0.132 / 0.056 | +0.075 [+0.062, +0.090] | 380 / 92 | <0.001 | <0.001 | training helps |
+
+#### Place of `scjepa` among the 27 trained versions, per score type
+
+| list | `pred` | `embed` | `combined` |
+|---|---|---|---|
+| M-Eva | 0.122, place 27 of 27 (first: straight 0.427) | 0.190, place 27 of 27 (first: cfjepa 0.434) | 0.166, place 27 of 27 (first: cfjepa 0.431) |
+| M-Tuning | 0.184, place 27 of 27 (first: hepa 0.481) | 0.244, place 27 of 27 (first: cfjepa 0.528) | 0.221, place 27 of 27 (first: cfjepa 0.525) |
+| U-Eva | 0.150, place 27 of 27 (first: hepa 0.418) | 0.325, place 19 of 27 (first: tsjepa 0.530) | 0.305, place 27 of 27 (first: cfjepa 0.524) |
+| U-Tuning | 0.150, place 27 of 27 (first: vicreg 0.410) | 0.316, place 18 of 27 (first: cfjepa 0.508) | 0.303, place 27 of 27 (first: hepa 0.507) |
+| U-Rest | 0.132, place 26 of 27 (first: lenepa 0.342) | 0.529, place 1 of 27 (first: scjepa 0.529) | 0.517, place 1 of 27 (first: scjepa 0.517) |
+
+#### Not in the plan: mean VUS-PR of trained `pred` per source dataset, all 200 multivariate series (the lists pooled)
+
+| dataset | series | lejepa | lewm | straight | hepa | scjepa | scjepa better / worse than lejepa |
+|---|---|---|---|---|---|---|---|
+| SVDB | 31 | 0.168 | 0.270 | 0.244 | 0.347 | 0.137 | 10 / 21 |
+| Exathlon | 27 | 0.898 | 0.901 | 0.899 | 0.903 | 0.120 | 0 / 27 |
+| SMAP | 27 | 0.286 | 0.376 | 0.373 | 0.517 | 0.045 | 1 / 26 |
+| GHL | 25 | 0.015 | 0.014 | 0.348 | 0.045 | 0.010 | 9 / 16 |
+| SMD | 22 | 0.434 | 0.436 | 0.450 | 0.398 | 0.063 | 1 / 21 |
+| MSL | 16 | 0.399 | 0.438 | 0.439 | 0.444 | 0.086 | 0 / 16 |
+| MITDB | 13 | 0.074 | 0.121 | 0.113 | 0.169 | 0.076 | 6 / 7 |
+| TAO | 13 | 0.841 | 0.870 | 0.858 | 0.771 | 0.806 | 3 / 10 |
+| OPPORTUNITY | 8 | 0.128 | 0.134 | 0.132 | 0.130 | 0.038 | 3 / 5 |
+| CATSv2 | 6 | 0.161 | 0.171 | 0.136 | 0.139 | 0.045 | 1 / 5 |
+| LTDB | 5 | 0.295 | 0.409 | 0.360 | 0.478 | 0.210 | 1 / 4 |
+| SWaT | 2 | 0.357 | 0.338 | 0.403 | 0.370 | 0.144 | 0 / 2 |
+| CreditCard | 1 | 0.123 | 0.092 | 0.095 | 0.098 | 0.078 | 0 / 1 |
+| PSM | 1 | 0.197 | 0.207 | 0.274 | 0.200 | 0.142 | 0 / 1 |
+| Genesis | 1 | 0.030 | 0.211 | 0.020 | 0.014 | 0.085 | 1 / 0 |
+| GECCO | 1 | 0.039 | 0.035 | 0.329 | 0.048 | 0.052 | 1 / 0 |
+| Daphnet | 1 | 0.438 | 0.334 | 0.415 | 0.508 | 0.091 | 0 / 1 |
+| all | 200 | 0.352 | 0.392 | 0.429 | 0.421 | 0.128 | 37 / 163 |
+
+#### Not in the plan: mean VUS-PR of trained `pred` per source dataset, all 870 univariate series (the lists pooled)
+
+| dataset | series | lejepa | lewm | straight | hepa | scjepa | scjepa better / worse than lejepa |
+|---|---|---|---|---|---|---|---|
+| YAHOO | 259 | 0.215 | 0.208 | 0.240 | 0.142 | 0.120 | 121 / 137 |
+| UCR | 228 | 0.036 | 0.089 | 0.076 | 0.065 | 0.023 | 124 / 104 |
+| WSD | 111 | 0.265 | 0.383 | 0.412 | 0.184 | 0.272 | 50 / 61 |
+| SMD | 38 | 0.506 | 0.689 | 0.681 | 0.679 | 0.051 | 6 / 32 |
+| Exathlon | 32 | 0.923 | 0.787 | 0.878 | 0.948 | 0.132 | 0 / 32 |
+| OPPORTUNITY | 29 | 0.804 | 0.568 | 0.571 | 0.806 | 0.052 | 1 / 28 |
+| NAB | 28 | 0.276 | 0.289 | 0.307 | 0.325 | 0.154 | 3 / 25 |
+| Stock | 20 | 0.719 | 0.694 | 0.690 | 0.668 | 0.694 | 2 / 18 |
+| SVDB | 20 | 0.128 | 0.299 | 0.233 | 0.410 | 0.200 | 14 / 6 |
+| SMAP | 19 | 0.448 | 0.488 | 0.485 | 0.560 | 0.239 | 7 / 12 |
+| IOPS | 17 | 0.375 | 0.328 | 0.371 | 0.257 | 0.107 | 4 / 13 |
+| TODS | 15 | 0.487 | 0.488 | 0.500 | 0.492 | 0.451 | 7 / 8 |
+| NEK | 9 | 0.947 | 0.932 | 0.938 | 0.885 | 0.275 | 0 / 9 |
+| MSL | 9 | 0.388 | 0.410 | 0.415 | 0.360 | 0.197 | 2 / 7 |
+| MGAB | 9 | 0.008 | 0.182 | 0.072 | 0.035 | 0.094 | 9 / 0 |
+| LTDB | 9 | 0.316 | 0.413 | 0.377 | 0.443 | 0.266 | 3 / 6 |
+| MITDB | 8 | 0.101 | 0.168 | 0.155 | 0.196 | 0.104 | 4 / 4 |
+| SED | 3 | 0.048 | 0.067 | 0.118 | 0.048 | 0.186 | 3 / 0 |
+| TAO | 3 | 0.911 | 0.889 | 0.886 | 0.876 | 0.864 | 0 / 3 |
+| CATSv2 | 1 | 0.259 | 0.339 | 0.389 | 0.392 | 0.131 | 0 / 1 |
+| SWaT | 1 | 0.428 | 0.413 | 0.430 | 0.367 | 0.098 | 0 / 1 |
+| Daphnet | 1 | 0.462 | 0.424 | 0.450 | 0.488 | 0.095 | 0 / 1 |
+| Power | 1 | 0.074 | 0.077 | 0.088 | 0.125 | 0.120 | 1 / 0 |
+| all | 870 | 0.267 | 0.296 | 0.308 | 0.260 | 0.140 | 361 / 508 |
+
+#### Small benchmarks (protocol of Section 7.8, 5 seeds): mean ROC-AUC, trained / zero-epoch control
+
+| version | synthetic `pred` | synthetic `embed` | synthetic `combined` | SKAB `pred` | SKAB `embed` | SKAB `combined` | NAB `pred` | NAB `embed` | NAB `combined` |
+|---|---|---|---|---|---|---|---|---|---|
+| lejepa (default) | 0.941 / 0.798 | 0.928 / 0.932 | 0.936 / 0.877 | 0.825 / 0.831 | 0.825 / 0.828 | 0.825 / 0.829 | 0.628 / 0.671 | 0.627 / 0.619 | 0.629 / 0.658 |
+| scjepa | 0.916 / 0.556 | 0.942 / 0.945 | 0.945 / 0.899 | 0.482 / 0.472 | 0.475 / 0.501 | 0.482 / 0.497 | 0.576 / 0.489 | 0.530 / 0.527 | 0.545 / 0.523 |
+| scjepa without normalisation (ablation, trained) | 0.923 | 0.950 | 0.943 | 0.782 | 0.663 | 0.630 | 0.646 | 0.659 | 0.663 |
+
+#### Small benchmarks: the six tests of the addendum, A = `scjepa`, trained, `block[pred]` (Holm over the six)
+
+|  | B | group | series | ROC-AUC A / B | A − B | A / B better | p | p (Holm) |
+|---|---|---|---|---|---|---|---|---|
+| 1 | its untrained control | synthetic | 15 | 0.916 / 0.556 | +0.360 | 15 / 0 | <0.001 | <0.001 |
+| 2 | its untrained control | SKAB | 16 | 0.482 / 0.472 | +0.010 | 9 / 7 | 0.464 | 0.469 |
+| 3 | its untrained control | NAB | 7 | 0.576 / 0.489 | +0.087 | 5 / 2 | 0.219 | 0.469 |
+| 4 | lejepa, trained | synthetic | 15 | 0.916 / 0.941 | -0.025 | 1 / 14 | <0.001 | <0.001 |
+| 5 | lejepa, trained | SKAB | 16 | 0.482 / 0.825 | -0.343 | 0 / 16 | <0.001 | <0.001 |
+| 6 | lejepa, trained | NAB | 7 | 0.576 / 0.628 | -0.052 | 2 / 5 | 0.156 | 0.469 |
+
+<!-- SCJ:END -->
+
 ---
 
 ## 8. Limitations and next steps
@@ -2084,6 +2254,7 @@ Coverage: 10 versions on 5 lists (1070 series), 85 runs; every run has every ser
 * **Pre-training / transfer**: MTS-JEPA shows cross-domain pre-training transfers; a pre-trained TS-JEPA encoder with a frozen Gaussian head would make `TSJEPAOD` fit in milliseconds.
 * **Selection on the evaluation series.** Section 7.9 reports 96 cells per list (sixteen versions, three scores, trained and untrained) on TSB-AD's evaluation series, and its tuning series were not used. The tests fixed in advance concern the `pred` score only; the best cell (`cfjepa`, `embed`) and the remarks on the default version and score are selections after the fact. Section 7.10 is the run on other series: the version comparison holds there, the best cell does not hold as a general choice, and the comparison of score types was again not among the tests fixed in advance. The multivariate part of that confirmation has 20 series.
 * **The ten versions of Section 7.11 are further from their papers than the earlier ones.** Several papers fix fewer constants, and the image, speech and EEG recipes needed counterparts for a series (Section 4.10); `variational` is mostly ours. They exist in the prototype only. One seed on TSB-AD, three for `straight`; all five lists had been used for the sixteen earlier versions, so none is a held-out list in the sense of Section 7.10, although nothing about the ten was chosen on them. The reading of `straight` on GHL rests on one series.
+* **`scjepa` (Section 7.13) is the paper's objective inside this detector, not the paper's method.** Its two consecutive windows became the two halves of one window, its sizes and budget are much smaller, and its scores are ours. One seed.
 * **The five F measures of Section 7.12 use the labels for the threshold**, as TSB-AD reports them, so they bound what a detector could reach. TSB-AD publishes per-series numbers for VUS-PR only; `jepa_od.metrics` was compared with TSB-AD's code on series of up to 40,000 timestamps.
 * **Not evaluated**: MPS throughput, very long windows (>1 000 steps), streaming updates. GPU throughput was measured on one H100 (Section 7.9): at the class defaults the GPU is slower than 8 CPU threads.
 
@@ -2108,7 +2279,7 @@ Coverage: 10 versions on 5 lists (1070 series), 85 runs; every run has every ser
 * Ennadir, S., Golkar, S., Sarra, L. (2025). *Joint Embeddings Go Temporal (TS-JEPA).* arXiv:2509.25449. https://arxiv.org/abs/2509.25449
 * Thimonier, H., De Melo Costa, J. L., Popineau, F., Rimmel, A., Doan, B.-L. (2025). *T-JEPA: Augmentation-Free Self-Supervised Learning for Tabular Data.* ICLR 2025. arXiv:2410.05016. https://arxiv.org/abs/2410.05016. Code: https://github.com/jose-melo/t-jepa
 * *τ-JEPA* (working paper, indexed title "self-supervised learning for fraud detection in tabular data"; authors not visible to us). https://callforpapers.institutlouisbachelier.org/Papers/45d23018-3e36-4042-9c53-c905c84b8f5f.pdf (login required; not read in full)
-* He, Y., Wen, Y., Wang, X., Ma, T. (2026). *MTS-JEPA: Multi-Resolution Joint-Embedding Predictive Architecture for Time-Series Anomaly Prediction.* arXiv:2602.04643. https://arxiv.org/abs/2602.04643
+* He, Y., Wen, Y., Wang, X., Ma, T. (2026). *MTS-JEPA: Multi-Resolution Joint-Embedding Predictive Architecture for Time-Series Anomaly Prediction*; second version: *SC-JEPA: Stabilizing Latent Predictive Learning for Time-Series Anomaly Prediction.* arXiv:2602.04643. https://arxiv.org/abs/2602.04643
 * Stoian, S. et al. (2026). *MADJEPA: Enhanced Multi-Stage Joint-Embedding Predictive Architecture for Medical Anomaly Detection.* arXiv:2611.25194. https://arxiv.org/abs/2611.25194
 * *T-SAR-JEPA: Self-Supervised Temporal Anomaly Detection in SAR Amplitude Stacks via Latent Prediction* (2026). arXiv:2606.05700. https://arxiv.org/abs/2606.05700
 * *Online Monitoring Framework for Automotive Time Series Data using JEPA Embeddings* (2026). arXiv:2602.09985. https://arxiv.org/abs/2602.09985

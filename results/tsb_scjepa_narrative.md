@@ -1,0 +1,21 @@
+### 7.13 SC-JEPA (`scjepa`): the small benchmarks and all of TSB-AD
+
+*Added 2026-11-28.* `scjepa` (Section 4.11) is the SC-JEPA recipe, first published as MTS-JEPA, with the constants of the paper. It was benchmarked like the ten versions of Section 7.11.
+
+**Setup.** The tests are in the addendum of `results/tsb_more_plan.md`, committed with the code (commit b41a7f9) before the benchmark runs: `scjepa`, trained, with the default score `pred`, against the default version and against its untrained control, on the five TSB-AD lists (10 tests, Holm over the ten) and in the three small groups (6 tests, Holm over the six). Before the addendum was written, three synthetic series of the small benchmark had been run to see that the code works, and their ROC-AUC was seen; nothing was changed afterwards. The ten TSB-AD runs had no failed series and took 3.3 hours of fitting and scoring (56 minutes on four H100s).
+
+**Findings.**
+
+1. **With the default score `scjepa` is the weakest of the 27 versions.** It is behind the default version on all five lists, in all five tests after correction (VUS-PR 0.122, 0.184, 0.150, 0.150 and 0.132, against 0.351, 0.363, 0.378, 0.337 and 0.177). It is last of the 27 on four lists and 26th on the fifth.
+2. **Training helps a little.** On four of the five lists the trained model is ahead of the untrained one, by 0.015 to 0.075; the 20 multivariate tuning series do not separate them.
+3. **Small benchmarks.** On the synthetic series it needs training (ROC-AUC 0.916 trained, 0.556 untrained) and stays behind the default (0.941; better on 1 of 15 series). On SKAB it is at chance (0.482; default 0.825, better on 0 of 16). On NAB it has 0.576 against 0.628, not separated with seven series.
+4. **The reason is the paper's normalisation** (not in the plan). Each half of a window is normalised by its own mean and standard deviation, per variable. A level or scale that differs from the training data, or between the two halves, never reaches the network, so only a change of shape can be scored. Per source dataset the losses are largest where the default detector finds changes of level: Exathlon (0.120 against 0.898 multivariate, 0.132 against 0.923 univariate, better on none of 59 series), OPPORTUNITY, NEK, SMD, SMAP and MSL. `scjepa` is level with or ahead of the default where the anomalies are changes of shape: MGAB (better on all 9 series), SVDB in the univariate set (0.200 against 0.128), UCR (better on 124, worse on 104), WSD (0.272 against 0.265). An ablation on the small benchmarks agrees: with the normalisation switched off (`instance_norm=False`, which is not the paper's method), SKAB goes from 0.482 to 0.782 and NAB from 0.576 to 0.646, and the synthetic series stay where they were (0.923).
+5. **The `embed` score, computed on the code distributions, is strong on one list only.** On the 472 further univariate series it has 0.529, the highest value of any version and score type there, trained or not, and still below the control without a network (0.545). On the other four lists it has 0.19 to 0.33, below the default version's `embed` score (0.35 to 0.46).
+6. **PA-F1 says the opposite again** (Section 7.12): on the 200 multivariate series `scjepa` has the lowest VUS-PR of the 27 versions (0.128) and the second-highest PA-F1 (0.711).
+7. **Cost.** One variable at a time makes the model's size independent of the number of variables and its cost proportional to it: the series with 248 variables needed 1.7 GB of GPU memory, the largest of the runs.
+
+**What this means.**
+
+* The result is about this recipe as an unsupervised detector with our scores, at this detector's budget (a tenth of the paper's epochs, a quarter of its width, a third of its depth). The paper does something else with the model: it trains a classifier on labels to predict whether the next window holds an anomaly, on MSL, SMAP, SWaT, PSM and SMD. Nothing here tests that.
+* Invariance to level and scale is built into this version. That is a property a user may want, for series whose normal level drifts, and it rules the version out where anomalies are level changes.
+* Version 0.5.0 of this report said the paper's text gives no loss weights. They are in its Appendix B.1 and are used here unchanged.

@@ -43,7 +43,7 @@ class TestSCJEPA(unittest.TestCase):
             n_codes=128, temperature=0.1, fine_weight=1.0, coarse_weight=0.5,
             mse_weight=0.1, emb_weight=1.0, com_weight=0.25,
             ent_sample_weight=0.005, ent_batch_weight=0.01,
-            rec_weight_start=0.5, rec_weight_end=0.1))
+            rec_weight_start=0.5, rec_weight_end=0.1, instance_norm=True))
 
     def test_scores(self):
         clf = self.clf
@@ -138,6 +138,25 @@ class TestSCJEPA(unittest.TestCase):
         chunked = net.multi_mask_errors(x, None, None)
         self.assertTrue(torch.allclose(err, chunked[0], atol=1e-6))
         self.assertTrue(torch.allclose(codes, chunked[1], atol=1e-6))
+
+    def test_without_instance_norm(self):
+        torch.manual_seed(1)
+        net = SCJEPACore(n_tokens=6, patch_len=4, n_channels=2, d_model=16,
+                         n_heads=2, n_layers=1, n_codes=12,
+                         instance_norm=False).eval()
+        x = torch.randn(4, 6, 8)
+        ctx, fut, raw, mean, std = net.views(x)
+        self.assertTrue(torch.equal(ctx, raw))
+        self.assertEqual(float(mean.abs().max()), 0.0)
+        self.assertEqual(float((std - 1).abs().max()), 0.0)
+        err = net.multi_mask_errors(x, None, None)[0]
+        moved = net.multi_mask_errors(3.0 * x + 5.0, None, None)[0]
+        self.assertFalse(torch.allclose(err, moved, atol=1e-3))
+        clf = TSJEPAOD(**dict(self.kw, epochs=1),
+                       variant_params={'instance_norm': False}).fit(
+            self.X_train)
+        self.assertFalse(clf.model_.instance_norm)
+        self.assertTrue(np.isfinite(clf.decision_scores_).all())
 
     def test_codebook(self):
         torch.manual_seed(2)

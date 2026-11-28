@@ -20,7 +20,7 @@ R = os.path.join(ROOT, 'results', 'tsb')
 PUB = os.path.join(ROOT, 'data', 'tsb_published')
 VERSIONS = ['lejepa', 'ijepa', 'tsjepa', 'tjepa', 'vjepa', 'vjepa21', 'cjepa', 'sjepa', 'salt', 'vicreg', 'kerjepa',
             'lpjepa', 'lambdajepa', 'lenepa', 'lewm', 'cfjepa', 'ststjepa', 'hepa', 'subjepa', 'straight',
-            'motionjepa', 'njepa', 'gmmjepa', 'variational', 'phijepa', 'harjepa']
+            'motionjepa', 'njepa', 'gmmjepa', 'variational', 'phijepa', 'harjepa', 'scjepa']
 CONTROL = {'subjepa': 'lewm', 'straight': 'lewm', 'motionjepa': 'lewm'}   # same untrained network
 MEASURES = ['VUS-PR', 'VUS-ROC', 'AUC-PR', 'AUC-ROC', 'Standard-F1', 'PA-F1', 'Event-based-F1', 'R-based-F1',
             'Affiliation-F']

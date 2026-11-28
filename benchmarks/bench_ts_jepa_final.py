@@ -37,6 +37,7 @@ ap.add_argument('--variant', default='lejepa', help='JEPA version: lejepa (class
 ap.add_argument('--modes', default='block,forecast', help='mask modes to run, comma separated')
 ap.add_argument('--mask', default=None, help="MODE:RATIO, e.g. random:0.7; default: block and forecast at the "
                                              "class-default ratio")
+ap.add_argument('--variant-params', default='', help='variant_params as key=value,..., e.g. instance_norm=0')
 ap.add_argument('--threads', type=int, default=3)
 ap.add_argument('--out', default=os.path.join(ROOT, 'results', 'ts_results_jepa_final.csv'))
 args = ap.parse_args()
@@ -45,6 +46,9 @@ torch.set_num_threads(args.threads)
 KW = {} if args.epochs is None else {'epochs': args.epochs}
 if args.variant != 'lejepa':
     KW['variant'] = args.variant
+if args.variant_params:
+    KW['variant_params'] = {k: float(v) if '.' in v else int(v)
+                            for k, v in (item.split('=') for item in args.variant_params.split(','))}
 MODES = tuple(args.modes.split(','))
 if args.mask:
     MODES, KW['mask_ratio'] = (args.mask.split(':')[0],), float(args.mask.split(':')[1])

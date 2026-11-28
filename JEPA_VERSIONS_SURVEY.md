@@ -30,6 +30,14 @@ version). SC-JEPA (MTS-JEPA) was read again and is still in group D: besides wha
 gives none of its nine loss weights, its codebook size or its temperature. Var-JEPA (2603.20111) and VJEPA
 (2601.14354, implemented as `variational`) are two different papers.
 
+**Status, 2026-11-28 (version 0.5.1).** The last sentence on SC-JEPA above was wrong: its loss weights,
+codebook size and temperature are in the paper's Appendix B.1, which had not been read. SC-JEPA is now
+implemented as `scjepa` with those constants (`REPORT.md` sections 4.11 and 7.13). The supervised head
+the table of group D mentions is the paper's downstream step and is not part of the version; the
+codebook, the coarse view and the reconstruction branch are. As an unsupervised detector with this
+detector's scores it is the weakest of the 27 versions, because the paper's per-window normalisation
+hides changes of level.
+
 ## How the candidates were found and judged
 
 * Two curated lists were read in full: [AbdelStark/awesome-jepa](https://github.com/AbdelStark/awesome-jepa)

@@ -498,6 +498,9 @@ class SCJEPACore(nn.Module):
       training data are dropped (:meth:`set_channels`).
     * Each half is normalised by its own mean and standard deviation per
       variable (the paper applies RevIN; no affine map is learned here).
+      A level or scale that differs between the halves, or from the
+      training data, is therefore invisible to the network;
+      ``instance_norm=False`` switches the normalisation off.
     * A shared encoder embeds the patches of the first half; a soft
       codebook turns every embedding into a distribution over
       ``n_codes`` prototypes and into the expected prototype.
@@ -523,11 +526,12 @@ class SCJEPACore(nn.Module):
     def __init__(self, n_tokens, patch_len, n_channels, d_model=64, n_heads=4,
                  n_layers=2, pred_layers=1, dropout=0.0, encoder_norm=False,
                  n_codes=128, temperature=0.1, mse_weight=0.1,
-                 coarse_weight=0.5, max_sequences=32768):
+                 coarse_weight=0.5, instance_norm=True, max_sequences=32768):
         super().__init__()
         self.n_tokens = n_tokens
         self.patch_len = patch_len
         self.n_channels = n_channels
+        self.instance_norm = bool(instance_norm)
         self.n_fut = n_tokens // 2
         self.n_ctx = n_tokens - self.n_fut
         self.d_model = d_model
@@ -583,6 +587,8 @@ class SCJEPACore(nn.Module):
         xs = xs[:, :, self.keep].transpose(1, 2).reshape(-1, self.n_tokens * L)
 
         def normalise(u):
+            if not self.instance_norm:     # an ablation, not the paper
+                return u, torch.zeros_like(u[:, :1]), torch.ones_like(u[:, :1])
             mean = u.mean(1, keepdim=True)
             std = (u.var(1, unbiased=False, keepdim=True) + eps).sqrt()
             return (u - mean) / std, mean, std

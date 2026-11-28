@@ -345,20 +345,22 @@ class SCJEPA(Recipe):
     positions are sinusoidal; the decoder is linear; the instance
     normalisation has no learned affine map; and the scores
     (:class:`SCJEPACore`), since the paper trains a classifier on labels
-    instead."""
+    instead. ``instance_norm=False`` is an ablation that switches the
+    normalisation of each half off."""
     ema_momentum, ema_schedule = 0.996, 'fixed'
     masked = False
     params = dict(n_codes=128, temperature=0.1, fine_weight=1.0,
                   coarse_weight=0.5, mse_weight=0.1, emb_weight=1.0,
                   com_weight=0.25, ent_sample_weight=0.005,
                   ent_batch_weight=0.01, rec_weight_start=0.5,
-                  rec_weight_end=0.1)
+                  rec_weight_end=0.1, instance_norm=True)
 
     def build(self, det, n_tokens, n_channels, size, hp):
         return SCJEPACore(
             n_tokens, det.patch_len, n_channels, n_codes=int(hp['n_codes']),
             temperature=hp['temperature'], mse_weight=hp['mse_weight'],
-            coarse_weight=hp['coarse_weight'] / hp['fine_weight'], **size)
+            coarse_weight=hp['coarse_weight'] / hp['fine_weight'],
+            instance_norm=hp['instance_norm'], **size)
 
     def ema_pairs(self, model):
         return [(model.target_encoder, model.encoder),

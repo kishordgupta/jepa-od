@@ -44,6 +44,7 @@ ap.add_argument('--mode', default='semi', choices=('semi', 'unsup'),
                 help='semi: fit on the training prefix (the protocol); unsup: fit on the whole series')
 ap.add_argument('--window', type=int, default=None, help='window_size; patch_len is a tenth of it')
 ap.add_argument('--params', default='', help='further TSJEPA parameters, e.g. d_model=128,n_layers=4')
+ap.add_argument('--variant-params', default='', help='variant_params as key=value,..., e.g. instance_norm=0')
 ap.add_argument('--rawpatch', action='store_true',
                 help='control without a network: the embedding of a patch is the patch itself, so the embed score '
                      'is the Mahalanobis distance of raw patches to those of the training prefix (pred is constant)')
@@ -131,11 +132,15 @@ if args.rawpatch:
 for item in filter(None, args.params.split(',')):
     key, value = item.split('=')
     KW[key] = float(value) if '.' in value or 'e' in value else int(value)
+if args.variant_params:
+    KW['variant_params'] = {k: float(v) if '.' in v else int(v)
+                            for k, v in (item.split('=') for item in args.variant_params.split(','))}
 tag = args.tag or '_'.join(filter(None, [
     'rawpatch' if args.rawpatch else args.variant,
     None if args.rawpatch else 'trained' if args.epochs is None else f'e{args.epochs}',
     f's{TSJEPA().random_state if args.seed is None else args.seed}', args.mode,
     None if args.window is None else f'w{args.window}', args.params.replace(',', '+').replace('=', '') or None,
+    args.variant_params.replace(',', '+').replace('=', '') or None,
     'unitconst' if args.unit_const else None]))
 out_dir = os.path.join(args.out, 'scores', f'{args.suite}-{args.split}', tag)
 os.makedirs(out_dir, exist_ok=True)

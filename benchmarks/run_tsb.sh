@@ -36,6 +36,7 @@ if [ "$1" = --one ]; then   # one run: list (M or U: the evaluation list; or M-T
         unitconst)  opts="--unit-const";            tag=${v}_trained_s42_semi_unitconst;;
         unitconst0) opts="--epochs 0 --unit-const"; tag=${v}_e0_s42_semi_unitconst;;
         rawpatch)  opts="--rawpatch --device cpu"; tag=rawpatch_s42_semi; gpu="";;   # no network, on the CPU
+        nonorm)    opts="--variant-params instance_norm=0"; tag=${v}_trained_s42_semi_instance_norm0;;   # scjepa
         *) echo "unknown kind $kind"; exit 1;;
     esac
     pkg=""   # the ten versions of 0.5.0 are in the prototype only
@@ -53,7 +54,9 @@ fi
 JOBS=${JOBS:-3}
 FIRST="lejepa kerjepa vicreg lambdajepa ijepa tsjepa tjepa"
 REST="vjepa vjepa21 cjepa sjepa salt lpjepa lenepa lewm cfjepa"
-if [ "$QUEUE" = scjepa ]; then   # version 0.5.1 (REPORT.md section 7.13)
+if [ "$QUEUE" = scjepa_nonorm ]; then   # the ablation of section 7.13: no normalisation of the halves
+    for l in M U U-Rest U-Tuning M-Tuning; do echo "$l scjepa nonorm"; done > "$OUT/.queue"
+elif [ "$QUEUE" = scjepa ]; then   # version 0.5.1 (REPORT.md section 7.13)
     for l in M U U-Rest U-Tuning M-Tuning; do echo "$l scjepa trained"; echo "$l scjepa untrained"; done > "$OUT/.queue"
 elif [ "$QUEUE" = more ]; then
     {

@@ -19,6 +19,9 @@ Coverage: `scjepa`, trained and untrained, on 5 lists (1070 series); every run h
 | scjepa | `pred` | 0.122 / 0.107 | 0.184 / 0.164 | 0.150 / 0.116 | 0.150 / 0.118 | 0.132 / 0.056 |
 | scjepa | `embed` | 0.190 / 0.167 | 0.244 / 0.237 | 0.325 / 0.318 | 0.316 / 0.307 | 0.529 / 0.529 |
 | scjepa | `combined` | 0.166 / 0.152 | 0.221 / 0.209 | 0.305 / 0.298 | 0.303 / 0.301 | 0.517 / 0.517 |
+| scjepa without normalisation (ablation) | `pred` | 0.259 | 0.306 | 0.352 | 0.301 | 0.121 |
+| scjepa without normalisation (ablation) | `embed` | 0.346 | 0.388 | 0.475 | 0.437 | 0.307 |
+| scjepa without normalisation (ablation) | `combined` | 0.351 | 0.394 | 0.475 | 0.430 | 0.297 |
 | no network (raw patches) | `embed` | 0.345 | 0.374 | 0.465 | 0.458 | 0.545 |
 | PCA / Sub-PCA, re-run |  | 0.307 | 0.323 | 0.417 | 0.326 | 0.146 |
 
@@ -46,6 +49,16 @@ Coverage: `scjepa`, trained and untrained, on 5 lists (1070 series); every run h
 | U-Eva | 0.150, place 27 of 27 (first: hepa 0.418) | 0.325, place 19 of 27 (first: tsjepa 0.530) | 0.305, place 27 of 27 (first: cfjepa 0.524) |
 | U-Tuning | 0.150, place 27 of 27 (first: vicreg 0.410) | 0.316, place 18 of 27 (first: cfjepa 0.508) | 0.303, place 27 of 27 (first: hepa 0.507) |
 | U-Rest | 0.132, place 26 of 27 (first: lenepa 0.342) | 0.529, place 1 of 27 (first: scjepa 0.529) | 0.517, place 1 of 27 (first: scjepa 0.517) |
+
+#### Not in the plan: `scjepa` without the normalisation of the two halves (`variant_params={'instance_norm': False}`), trained, `pred`. Differences: mean, series better / worse, two-sided Wilcoxon signed-rank p, not corrected.
+
+| list | without / with normalisation | difference | without normalisation / default version | difference to the default |
+|---|---|---|---|---|
+| M-Eva | 0.259 / 0.122 | +0.137, 141 / 39, p <0.001 | 0.259 / 0.351 | -0.092, 83 / 97, p 0.001 |
+| M-Tuning | 0.306 / 0.184 | +0.122, 15 / 5, p 0.008 | 0.306 / 0.363 | -0.057, 10 / 10, p 0.571 |
+| U-Eva | 0.352 / 0.150 | +0.203, 251 / 98, p <0.001 | 0.352 / 0.378 | -0.026, 183 / 164, p 0.433 |
+| U-Tuning | 0.301 / 0.150 | +0.151, 32 / 16, p 0.001 | 0.301 / 0.337 | -0.036, 22 / 26, p 0.373 |
+| U-Rest | 0.121 / 0.132 | -0.011, 191 / 281, p <0.001 | 0.121 / 0.177 | -0.057, 166 / 302, p <0.001 |
 
 #### Not in the plan: mean VUS-PR of trained `pred` per source dataset, all 200 multivariate series (the lists pooled)
 

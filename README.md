@@ -319,7 +319,7 @@ Mean VUS-PR of the default score `pred`, trained:
 ### All nine TSB-AD measures: the leaderboard
 
 `REPORT.md` section 7.12 and [LEADERBOARD.md](LEADERBOARD.md). Every run of sections 7.9 to 7.11
-(274 runs of a list, 174,890 score vectors, all 200 multivariate and 870 univariate series) now has the nine
+(289 runs of a list with those of section 7.13, 184,520 score vectors, all 200 multivariate and 870 univariate series) now has the nine
 measures of TSB-AD, computed with `jepa_od.metrics`.
 
 * AUC-PR and Standard-F1 rank the 27 versions like VUS-PR (rank correlation 0.95 to 1.00), the
@@ -352,7 +352,8 @@ and on all 1070 TSB-AD series (ten runs, no failed series); 16 tests fixed and p
   a change of level never reaches the network. It loses most on Exathlon, OPPORTUNITY, NEK, SMD, SMAP
   and MSL and is level or ahead on sets with shape anomalies (MGAB, UCR, WSD). On SKAB it is at chance
   (0.482), and at 0.782 with the normalisation switched off (`variant_params={'instance_norm': False}`,
-  an ablation, not the paper's method).
+  an ablation, not the paper's method). On TSB-AD that switch raises `pred` to 0.259, 0.306, 0.352 and
+  0.301 on the first four lists, still 0.03 to 0.09 below the default, and lowers it to 0.121 on the fifth.
 * Its `embed` score, on the code distributions, has the highest value of any version on the 472 further
   univariate series (0.529) and is low on the other lists.
 * The paper uses the model with a classifier trained on labels, to predict anomalies in the next window.
@@ -532,7 +533,7 @@ python benchmarks/make_tsb_confirm_tables.py         # tables and REPORT.md sect
 
 The ten versions of section 7.11 and the nine measures of section 7.12 use the same folder layout, with a
 copy of this repository in `<work folder>/jepa-od` (85 runs, 26 hours of fitting and scoring; the nine
-measures of all 274 runs take a quarter of an hour on 72 processes):
+measures of all runs take a quarter of an hour on 72 processes):
 
 ```bash
 QUEUE=more ROOT=<work folder> GPUS=0,1 JOBS=6 sh benchmarks/run_tsb.sh      # the ten versions, five lists
@@ -543,6 +544,7 @@ python -I benchmarks/eval_tsb.py --tsb <TSB-AD clone> --data <folder with TSB-AD
 SET=ten sh benchmarks/run_ts_versions.sh 5           # the small benchmarks of the ten versions
 python benchmarks/make_tsb_more_tables.py            # tables and REPORT.md section 7.11
 QUEUE=scjepa ROOT=<work folder> GPUS=0,1 JOBS=5 sh benchmarks/run_tsb.sh    # scjepa (section 7.13), then
+QUEUE=scjepa_nonorm ROOT=<work folder> GPUS=0,1 JOBS=5 sh benchmarks/run_tsb.sh    # its ablation,
 SET=scjepa sh benchmarks/run_ts_versions.sh 2        # eval_tsb.py as above, and
 python benchmarks/make_tsb_scjepa_tables.py          # tables and REPORT.md section 7.13
 python benchmarks/make_leaderboard.py                # LEADERBOARD.md and REPORT.md section 7.12
